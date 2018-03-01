@@ -1,44 +1,46 @@
 package perf.parse;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 import perf.parse.internal.CheatChars;
 import perf.parse.internal.IMatcher;
 import perf.parse.internal.JsonBuilder;
 import perf.parse.internal.RegexMatcher;
+import perf.yaup.HashedLists;
+import perf.yaup.json.Json;
 
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by wreicher
  */
 public class Exp {
 
-    public static final String CHILD_KEY = "_children";
+    private static final String NEST_ARRAY = "_array";
+    private static final String NEST_VALUE = "_value";
 
     private final Matcher fieldMatcher = java.util.regex.Pattern.compile("\\(\\?<([^>]+)>").matcher("");
 
     //Execute Rule
     private LinkedList<MatchAction> callbacks;
 
+    private String pattern;
     private IMatcher matcher;
     private LinkedHashMap<String,String> fieldValues; //Map<Name,Value|name of value for KeyValue pair>
 
-    private LinkedHashSet<Rule> rules;
+    private HashedLists<Rule,Rule> rules;
+
     private LinkedHashSet<String> enables;
     private LinkedHashSet<String> disables;
     private LinkedHashSet<String> requires;
 
-    private enum GroupType {Name,Extend,Key};
+    private enum GroupType {Name,Extend,Key}
 
     private LinkedHashMap<String,GroupType> grouping;
 
-    private int eat=Eat.None.getId();
+    private int eat=Eat.Match.getId();
 
     private Merge merge = Merge.Collection;
 
@@ -62,14 +64,16 @@ public class Exp {
 
     public Exp(String name, String pattern){
         this.name = name;
-
-        this.matcher = /* StringMatcher.canMatch(pattern) ? new StringMatcher(pattern) :*/ new RegexMatcher(pattern);
+        this.pattern = pattern;
 
         this.fieldValues = parsePattern(pattern);
+        pattern = removePatternValues(pattern);
+
+        this.matcher = new RegexMatcher(pattern);
 
         this.callbacks = new LinkedList<>();
 
-        this.rules = new LinkedHashSet<>();
+        this.rules = new HashedLists<>();
 
         this.grouping = new LinkedHashMap<>();
 
@@ -80,27 +84,59 @@ public class Exp {
         this.requires = new LinkedHashSet<>();
 
     }
+    public String getPattern(){return this.pattern;}
+
+    public Exp clone(){
+        Exp rtrn = new Exp(this.getName(),this.getPattern());
+
+        rtrn.eat(this.eat);
+        rtrn.merge = this.merge;
+        rtrn.fieldValues = copyMap(this.fieldValues);
+
+        for(MatchAction action : callbacks){
+            rtrn.execute(action);
+        }
+        for(Rule rule : rules.keys()){
+            rtrn.rules.putAll(rule,rules.get(rule));
+        }
+        for(String group: this.grouping.keySet()){
+            rtrn.grouping.put(group,this.grouping.get(group));
+        }
+        for(Exp child : children){
+            rtrn.add(child.clone());
+        }
+        for(String enable : enables){
+            rtrn.enables(enable);
+        }
+        for(String disable : disables){
+            rtrn.disables(disable);
+        }
+        for(String require : requires){
+            rtrn.requires(require);
+        }
+        return rtrn;
+    }
 
 
-    public JSONObject appendNames(JSONObject input){
-        JSONObject ctx = input;
+    public Json appendNames(Json input){
+        Json ctx = input;
         for(String name : grouping.keySet()){
             GroupType gt = grouping.get(name);
 
-            ctx.accumulate(name,new JSONObject());
-            ctx = ctx.getJSONObject(name);
+            ctx.add(name,new Json());
+            ctx = ctx.getJson(name);
         }
         for(String value : fieldValues.keySet()){
             Value v = Value.from(fieldValues.get(value));
-            ctx.put(value,v);
+            ctx.set(value,v);
         }
         for(Exp child : children){
             child.appendNames(ctx);
         }
         return ctx;
     }
-    public JSONObject getNames(){
-        JSONObject rtrn = new JSONObject();
+    public Json getNames(){
+        Json rtrn = new Json();
         appendNames(rtrn);
         return rtrn;
     }
@@ -152,7 +188,41 @@ public class Exp {
 
         fieldMatcher.reset(pattern);
         while(fieldMatcher.find()){
-            rtrn.put(fieldMatcher.group(1),Value.List.getId());
+            Queue<String> fieldKeys = new LinkedList<>( Arrays.asList(fieldMatcher.group(1).split(":")) );
+            String name = fieldKeys.poll();
+            rtrn.put(name,Value.List.getId());
+            //fieldKeys.remove(0); first poll should remove it
+            while(!fieldKeys.isEmpty()){
+                String key = "_"+fieldKeys.poll().toLowerCase()+"_";
+                Value v = Value.from(key);
+
+
+                if(v.equals(Value.Key)){
+                    rtrn.put(name,key);
+                }else{
+                    rtrn.put(name,v.getId());
+                }
+
+            }
+        }
+        return rtrn;
+    }
+    private LinkedHashMap<String,String> copyMap(Map<String,String> map){
+        LinkedHashMap<String,String> rtrn = new LinkedHashMap<>();
+        for(String key : map.keySet()){
+            rtrn.put(key,map.get(key));
+        }
+        return rtrn;
+    }
+    private String removePatternValues(String pattern) {
+        String rtrn = pattern;
+        fieldMatcher.reset(pattern);
+        while(fieldMatcher.find()){
+            String match = fieldMatcher.group(1);
+            if(match.indexOf(":") > -1){
+                rtrn = rtrn.replace(match,match.substring(0,match.indexOf(":")));
+            }
+
         }
         return rtrn;
     }
@@ -167,22 +237,49 @@ public class Exp {
         grouping.put(name,GroupType.Key);
         return this;
     }
+    //
     public Exp extend(String name){
         grouping.put(name,GroupType.Extend);
         return this;
     }
+
+    /**
+     * Set a custom width to to remove from the CheatChars input whenever the Exp matches
+     * @param width the number of characters to remove
+     * @return this
+     */
     public Exp eat(int width){
         eat = width;
         return this;
     }
+
+    /**
+     * Defines how much of the input CheatChars should be removed if this Exp matches. The default is Eat.None.
+     * Eat.Line takes effect after all child iterations and self iterations while Eat.Match or custom width take effect
+     * before child matching.
+     * @param toEat
+     * @return this
+     */
     public Exp eat(Eat toEat){
         eat = toEat.getId();
         return this;
     }
+
+    /**
+     * Run the MatchAction AFTER all match iterations and child match iterations.
+     * @param action
+     * @return
+     */
     public Exp execute(MatchAction action){
         callbacks.add(action);
         return this;
     }
+
+    /**
+     * Add the child Exp. child will run after each time the expression matches
+     * @param child
+     * @return
+     */
     public Exp add(Exp child){
         children.add(child);
         return this;
@@ -203,14 +300,16 @@ public class Exp {
         fieldValues.put(name,valueKey);
         return this;
     }
-
+    public Value get(String key){
+        return Value.from(fieldValues.get(key));
+    }
     /**
      * Add a Rule for action to take when the perf.parse.Exp matches the input
      * @param rule the rule to add
      * @return this
      */
     public Exp set(Rule rule){
-        rules.add(rule);
+        rules.put(rule,rule);
         return this;
     }
 
@@ -225,8 +324,14 @@ public class Exp {
     }
 
     //Check status methods
+    public boolean is(Eat e){
+        return Eat.from(this.eat).equals(e);
+    }
     public boolean is(Rule r){
-        return rules.contains(r);
+        return rules.containsKey(r);
+    }
+    public int count(Rule r){
+        return rules.containsKey(r) ? rules.get(r).size() : 0;
     }
     public boolean is(Merge m){
         return this.merge == m;
@@ -235,9 +340,35 @@ public class Exp {
         return value == Value.from(fieldValues.get(field));
     }
 
+    private boolean hasValue(IMatcher m,Value v){
+        boolean rtrn = false;
+        for(String fieldName : fieldValues.keySet()){
+            if(v.equals(Value.from(fieldValues.get(fieldName)))){
+                rtrn = true;
+            }
+        }
+        return rtrn;
+    }
+    private String fieldForValue(Value v,String defaultValue){
+        String rtrn = defaultValue;
+        for(String fieldName : fieldValues.keySet()){
+            if(v.equals(Value.from(fieldValues.get(fieldName)))){
+                rtrn = fieldName;
+            }
+        }
+        return rtrn;
+    }
     private boolean populate(IMatcher m,JsonBuilder builder){
-        boolean changedContext = false;
-        JSONObject targetContext = builder.getCurrentContext();
+
+        if(isDebug()){
+            System.out.println(getName()+" > populate ");
+            System.out.println("  targets\n    "+builder.debugTargetString(true).replaceAll("\n","\n    "));
+            System.out.println("  contexts\n    "+builder.debugContextString(true).replaceAll("\n","\n    "));
+        }
+
+
+        boolean changedTarget = false;
+        //Json target = builder.getTarget();
 
         for(String fieldName : fieldValues.keySet()){
             String vString = fieldValues.get(fieldName);
@@ -245,85 +376,251 @@ public class Exp {
             String fieldValue = m.group(fieldName);
 
             switch(v){
+                case TargetId:
+                    if( !builder.getTarget().has(fieldName)) {//add event info, assume it belongs to the same event
+                        builder.getTarget().set(fieldName,fieldValue);
+
+                    } else if (fieldValue.equals(builder.getTarget().get(fieldName)) ){//same event
+
+                    }else{
+                        builder.close();
+                        //target = builder.getTarget();
+                        builder.getTarget().set(fieldName,fieldValue);
+                        changedTarget = true;
+                    }
+                    break;
+                case NestPeerless:
                 case NestLength:
+
+                    //TODO use another context variable to identify the nest array versus nest entry
                     int length = fieldValue.length();
-                    if( targetContext.has(fieldName) ) { // child
-
-                        if( length > targetContext.getInt(fieldName) ){
-
-                            JSONObject newChild = new JSONObject();
-                            targetContext.append(CHILD_KEY,newChild);
-                            builder.setCurrentContext(newChild);
-
-                            targetContext = newChild;
-                        } else if( length < targetContext.getInt(fieldName) ) { // parent
-
-                            builder.popContext();
-                            targetContext = builder.getCurrentContext();
-
-                        } else { // sibling
-                            builder.popContext();
-
-                            targetContext = builder.getCurrentContext();
-                            JSONObject newJSON = new JSONObject();
-                            targetContext.append(CHILD_KEY, newJSON);
-                            builder.setCurrentContext(newJSON);
-                            targetContext = newJSON;
+                    if( builder.hasContext(fieldName,true) ) { // the current context is already part of the tree
+                        if(isDebug()){
+                            System.out.println(getName()+"  has "+fieldName+" above in "+builder.getTarget());
+                            System.out.println("  length="+length+" context."+fieldName+"="+builder.getContextInteger(fieldName,true));
                         }
-                        changedContext = true;
+
+                        if( length > builder.getContextInteger(fieldName,true) ){//the current match needs to be a child of target
+
+                            if(isDebug()){
+                                System.out.println("  CHILD");
+                            }
+                            Json childAry = new Json();
+                            Json newChild = new Json(false);
+
+                            childAry.add(newChild);
+                            builder.getTarget().add(fieldName,childAry);
+
+
+                            builder.pushTarget(childAry);
+                            builder.setContext(fieldName+NEST_ARRAY,true);
+                            builder.pushTarget(newChild);
+
+                            //target = builder.getTarget();
+                            changedTarget = true;
+
+                        } else if( length < builder.getContextInteger(fieldName,true) ) { // elder (ancestor but not parent)
+
+                            if(isDebug()){
+                                System.out.println("  ELDER");
+                            }
+
+                            while(length < builder.getContextInteger(fieldName,true) || builder.getContextBoolean(fieldName+NEST_ARRAY,false)) {
+                                if(isDebug()){
+                                    System.out.println("    needPop: "+length+" < "+builder.getContextInteger(fieldName,true) +"|| NEST_ARRAY ? "+ builder.getContextBoolean(fieldName+NEST_ARRAY,false));
+                                }
+                                builder.popTarget();
+                                if(isDebug()){
+                                    System.out.println("    target ="+builder.getTarget());
+                                    System.out.println("    context = "+builder.debugContextString(false));
+                                }
+                                //target = builder.getTarget();
+                                changedTarget = true;
+
+                            }
+
+                            //
+                            if(isDebug()){
+                                System.out.println("    ElderTarget=\n"+builder.debugTargetString(true));
+                                System.out.println("    ElderContext\n"+builder.debugContextString(true));
+                            }
+
+                            if(isDebug()){
+                                System.out.println("    addSibling");
+                                System.out.println("    one more pop");
+                            }
+
+                            //aimed at the previous entry
+                            if(Value.NestPeerless.equals(v)){
+                                if( isDebug() ){
+                                    System.out.println("    NestPeerless, us last entry in nest_array");
+                                }
+                                Json lastEntry = builder.getTarget().getJson(builder.getTarget().size()-1);
+                                if( isDebug() ){
+                                    System.out.println("      lastEntry = "+lastEntry);
+                                    System.out.println("      context   = "+builder.debugContextString(false));
+                                }
+
+                            }else{
+                                builder.popTarget();
+                                if(isDebug()){
+                                    System.out.println("    NestLength, add entry to elder");
+                                    System.out.println("    target ="+builder.getTarget());
+                                    System.out.println("    context = "+builder.debugContextString(false));
+                                }
+
+                                //target = builder.getTarget();
+
+                                Json newEntry = new Json(false);
+                                builder.getTarget().add(fieldName,newEntry);
+                                builder.pushTarget(newEntry);
+
+                            }
+
+                            //pop the previous entry (sibling of this new entry)
+                            changedTarget = true;
+                            //target = newEntry;
+                            //need to add a new entry for the context to use?
+                        } else { // sibling
+                            if(isDebug()){
+                                System.out.println("  SIBLING");
+                                //need to look recursively in case child Exp pushed targets
+                                if(builder.hasContext(fieldName+NEST_VALUE,true)){
+                                    System.out.println("    context.nest_value=||"+builder.getContextString(fieldName+NEST_VALUE,true)+"||");
+                                    System.out.println("            nest_value=||"+fieldValue+"||");
+                                }
+
+                            }
+                            if(Value.NestPeerless.equals(v)){
+                                if(isDebug()){
+                                    System.out.println("    NestPeerless");
+                                }
+
+
+
+                            }else{//NestLength
+
+                                if(isDebug()){
+                                    System.out.println("    NestLength");
+                                }
+                                //current context is somewhere above the NEST_ARRY, need to pop until we are aimed at the array?
+                                while (!builder.getContextBoolean(fieldName + NEST_ARRAY, false)) {
+                                    if (isDebug()) {
+                                        System.out.println("    NEST_ARRAY ? " + builder.getContextBoolean(fieldName + NEST_ARRAY, false));
+                                    }
+                                    builder.popTarget();//
+                                    if (isDebug()) {
+                                        System.out.println("      target =" + builder.getTarget());
+                                        System.out.println("      context = " + builder.debugContextString(false));
+                                    }
+                                }
+                                //don't need to create the array because it muse exist for this to be a peer
+                                Json newJSON = new Json(false);
+                                builder.getTarget().add(newJSON);//adding to to existing fieldName NEST_ARRAY
+                                builder.pushTarget(newJSON);
+                                //target = newJSON;
+                                changedTarget = true;
+
+                            }
+                        }
+                    }else{//start the tree
+
+                        if(isDebug()){
+                            System.out.println("  creating nest "+fieldName+" on target: "+builder.getTarget());
+                        }
+
+                        Json treeArry = new Json(true);
+                        Json treeStart = new Json(false);
+
+                        treeArry.add(treeStart);
+
+                        builder.getTarget().add(fieldName,treeArry);
+
+                        builder.pushTarget(treeArry);
+                        builder.setContext(fieldName+NEST_ARRAY,true);
+                        builder.pushTarget(treeStart);
+
+                        //target = builder.getTarget();
+                        changedTarget = true;
                     }
 
-                    //NestLength starts a new Object
-                    targetContext.put(fieldName,length);
+                    builder.setContext(fieldName,length);
+                    //TODO only set NEST_VALUE if not already set
+                    if(changedTarget && !builder.hasContext(fieldName+NEST_VALUE,false)){
+                        if(isDebug()){
+                            System.out.println("    set NEST_VALUE=||"+fieldValue+"||");
+                        }
+                        builder.setContext(fieldName+NEST_VALUE,fieldValue);
+                    }
+                    if(isDebug()){
+                        System.out.println("  POST-NEST:");
+                        System.out.println("    targets\n      "+builder.debugTargetString(true).replaceAll("\n","\n      "));
+                        System.out.println("    contexts\n      "+builder.debugContextString(true).replaceAll("\n","\n      "));
+                    }
 
                     break;
                 case Number:
                     double number = Double.parseDouble(fieldValue);
-                    targetContext.put(fieldName,number);
+                    builder.getTarget().add(fieldName,number);
                     break;
                 case KMG:
                     long kmg = parseKMG(fieldValue);
-                    targetContext.put(fieldName,kmg);
+                    builder.getTarget().set(fieldName,kmg);
                     break;
                 case Count:
-                    targetContext.increment(fieldValue);
+                    builder.getTarget().set(fieldValue,1+builder.getTarget().getLong(fieldValue,0));
                     break;
                 case Sum:
                     double sum = Double.parseDouble(fieldValue);
-                    targetContext.put(fieldName,targetContext.optDouble(fieldName,0)+sum);
+                    builder.getTarget().set(fieldName,builder.getTarget().getDouble(fieldName,0)+sum);
                     break;
                 case Key:
                     String keyValue = m.group(vString);
                     if(!keyValue.isEmpty()){
-                        targetContext.put(fieldValue,keyValue);
+                        builder.getTarget().set(fieldValue,keyValue);
                     }
                     break;
                 case BooleanKey:
-                    targetContext.put(fieldName,true);
+                    builder.getTarget().set(fieldName,true);
                     break;
                 case BooleanValue:
-                    targetContext.put(fieldValue,true);
+                    builder.getTarget().set(fieldValue,true);
                     break;
                 case Position:
-                    targetContext.put(fieldName,m.start());
+                    builder.getTarget().set(fieldName,m.start());
                     break;
                 case String:
-                    targetContext.put(fieldName,targetContext.optString(fieldName)+System.lineSeparator()+fieldValue);
+                    builder.getTarget().set(fieldName,builder.getTarget().getString(fieldName,"")+fieldValue);
                     break;
                 case List:
-                    defaut:
-                    targetContext.accumulate(fieldName,fieldValue);
+                defaut:
+                    if(Pattern.matches("\\d+",fieldValue)){//long
+                        Long value = Long.parseLong(fieldValue);
+                        builder.getTarget().add(fieldName,value);
+                    }else if (Pattern.matches("\\d+\\.\\d+",fieldValue)){//double
+                        Double value = Double.parseDouble(fieldValue);
+                        builder.getTarget().add(fieldName,value);
+                    }else{
+                        builder.getTarget().add(fieldName,fieldValue);
+                    }
+
                     break;
             }
         }
-        return changedContext;
+        if(isDebug()){
+            System.out.println(getName()+" < populate");
+            System.out.println("  target  "+builder.getTarget());
+            System.out.println("  rtrn    "+changedTarget);
+        }
+
+        return changedTarget;
     }
     public boolean test(CharSequence input){
         matcher.reset(input);
         return matcher.find();
     }
     public boolean apply(CheatChars line, JsonBuilder builder, Parser parser){
-        boolean result = applyWithStart(line,builder,parser,0);
+        boolean result = applyWithStart(line,builder,parser,new AtomicInteger(0));
         return result;
     }
 
@@ -340,10 +637,13 @@ public class Exp {
         return this;
     }
 
-    private boolean applyWithStart(CheatChars line,JsonBuilder builder,Parser parser,int start){
+    //changed to atomic integer so pattern can change start offset if it eats before start
+    private boolean applyWithStart(CheatChars line, JsonBuilder builder, Parser parser, AtomicInteger start){
 
-        //TODO enable disable Exp with a boolean state? allows state dependent parsers similar to child parsers but for other lines
-        //Parser would maintain the "state" of what is enabled / disabled and the expression would check if it is enabled
+        if(isDebug()){
+            System.out.println(this.getName()+" > applyWithStart @ "+start+": line=||"+line+"||");
+            System.out.println("  line@start=||"+line.subSequence(start.get(),line.length())+"||");
+        }
 
         if(!this.requires.isEmpty()){
             boolean satisfyRequired = true;
@@ -351,49 +651,121 @@ public class Exp {
                 satisfyRequired = satisfyRequired & parser.getState(required);
             }
             if( !satisfyRequired ){
+
+                if(isDebug()){
+                    System.out.println("  missing required");
+                }
+
                 return false;
             }
         }
 
-        if(isDebug()){
-            System.out.println(this.getName()+" "+start+": line = "+line);
-            System.out.println(builder.getRoot().toString(2));
-        }
         boolean rtrn = false;
         matcher.reset(line);
-        int startPoint = is(Rule.LineStart) ? 0 : start;
-        if(isDebug()){
-            System.out.printf("%10s startPoint=%d\n",this.getName(),startPoint);
+        int startPoint = is(Rule.LineStart) ? 0 : start.get();
+        if(isDebug() && startPoint != start.get()){
+            System.out.println("  startPoint="+startPoint);
         }
         matcher.region( startPoint,line.length() );
 
         if(matcher.find()){
             if(isDebug()){
-                System.out.printf("%10s found match\n",this.getName());
+                System.out.println("  MATCHED ||"+line.subSequence(matcher.start(),matcher.end())+"||");
+                System.out.println("    targets\n      "+builder.debugTargetString(true).replaceAll("\n","\n      "));
+                System.out.println("    contexts\n      "+builder.debugContextString(true).replaceAll("\n","\n      "));
+
             }
 
             rtrn = true;
             if ( is(Merge.NewStart) ) {
-                if(isDebug()){System.out.printf("%10s NewStart\n",this.getName());}
+
+                if(isDebug()){
+                    System.out.println("    NewStart");
+                }
+
                 builder.close();
-            }else if( is(Rule.AvoidContext) ) {
-                if(isDebug()){System.out.printf("%10s AvoidContext\n",this.getName());}
-                builder.popContext();
+            }else if( is(Rule.AvoidTarget) ) {
+
+                if(isDebug()){System.out.println("    AvoidTarget");}
+
+                builder.popTarget();
             }
 
-            JSONObject context = builder.getCurrentContext();
-            JSONObject target = context;
+            Json startTarget = builder.getTarget();
+            Json target = startTarget;
+            boolean needPop = false;
 
             do {
-                target = context;
-                JSONObject grouped = target;
+                target = startTarget;
+                Json grouped = target;
+                if(grouping.isEmpty()){
+                    if( is(Merge.Entry) ){
+                        if( isDebug() ){
+                            System.out.println("  > Entry w/o grouping");
+                            System.out.println("    targets\n      "+builder.debugTargetString(true).replaceAll("\n","\n      "));
+                            System.out.println("    contexts\n      "+builder.debugContextString(true).replaceAll("\n","\n      "));
 
+                        }
+                        if(target == builder.getRoot()){
+                            if(isDebug()){
+                                System.out.println("    target==ROOT");
+                            }
+                        }else if(target.isEmpty()){
+                            if( isDebug() ){
+                                System.out.println("    target is empty, creating a new entry");
+                            }
+                            Json newEntry = new Json();
+                            target.add(newEntry);
+                            builder.pushTarget(newEntry);
+                            target = builder.getTarget();
+                            grouped = target;
+                            //needPop = true;
+
+                        }else if (!target.isArray()){
+
+                            if( isDebug() ){
+                                System.out.println("    target is not an array, find an array");
+                                System.out.println("      target "+target);
+                                System.out.println("      peekT  "+builder.peekTarget(1));
+
+                            }
+
+                            if(builder.peekTarget(1) !=null && builder.peekTarget(1).isArray()){
+
+                                if( isDebug() ){
+                                    System.out.println("    parent is an array, create a new entry there");
+                                }
+                                Json newTarget = new Json();
+                                builder.popTarget();
+                                builder.getTarget().add(newTarget);
+                                builder.pushTarget(newTarget);
+
+                                target = builder.getTarget();
+                                grouped = target;
+
+                            }
+
+
+                        }else{
+                            if( isDebug() ){
+                                System.out.println("    target is an array (non-root) and we are an entry");
+                            }
+                        }
+
+                        if( isDebug() ){
+                            System.out.println("  < Entry w/o grouping");
+                            System.out.println("    targets\n      "+builder.debugTargetString(true).replaceAll("\n","\n      "));
+                            System.out.println("    contexts\n      "+builder.debugContextString(true).replaceAll("\n","\n      "));
+
+                        }
+                    }
+                }
                 for(Iterator<String> groupIter = grouping.keySet().iterator(); groupIter.hasNext();){
                     String groupName = groupIter.next();
                     GroupType groupType = grouping.get(groupName);
                     boolean extend = false;
                     if(isDebug()){
-                        System.out.printf("%10s grouping %s = %s\n",this.getName(),groupType,groupName);
+                        System.out.println("  grouping "+groupType+"="+groupName);
                     }
                     if( GroupType.Key.equals(groupType) ){
                         groupName = matcher.group( groupName );
@@ -408,114 +780,208 @@ public class Exp {
                         if ( is(Merge.Entry) ) {
                             if( grouped.has(groupName) ) {
                                 if(isDebug()){
-                                    System.out.printf("%10s already has %s\n",this.getName(),groupName);
+                                    System.out.println("    already has "+groupName);
                                 }
-                                JSONObject entry = new JSONObject();
-                                grouped.append(groupName,entry);
+                                Json entry = new Json(false);
+                                grouped.add(groupName,entry);
                                 grouped = entry;
                             } else {
                                 if(isDebug()){
-                                    System.out.printf("%10s does not have %s\n",this.getName(),groupName);
+                                    System.out.println("    does not have "+groupName);
                                 }
-                                JSONObject entry = new JSONObject();
-                                JSONArray arry = new JSONArray();
-                                arry.put(entry);
-                                grouped.put(groupName,arry);
+                                Json entry = new Json(false);
+                                Json arry = new Json();
+                                arry.add(entry);
+                                grouped.set(groupName,arry);
                                 grouped = entry;
                             }
                         } else if ( is(Merge.Extend) ) {
                             if( grouped.has(groupName) ) {
-                                JSONArray arry = grouped.getJSONArray(groupName);
-                                JSONObject last = arry.getJSONObject(arry.length()-1);
+                                Json arry = grouped.getJson(groupName);
+                                Json last = arry.getJson(arry.size()-1);
                                 grouped = last;
                             }else{
-                                JSONObject entry = new JSONObject();
-                                JSONArray arry = new JSONArray();
-                                arry.put(entry);
-                                grouped.put(groupName,arry);
+                                Json entry = new Json(false);
+                                Json arry = new Json();
+                                arry.add(entry);
+                                grouped.set(groupName,arry);
                                 grouped = entry;
                             }
 
                         } else if ( is(Merge.Collection) ) {
                             if( grouped.has(groupName) ) {
-                                grouped = grouped.getJSONObject(groupName);
+                                grouped = grouped.getJson(groupName);
                             } else {
-                                JSONObject newJSON = new JSONObject();
-                                grouped.put(groupName,newJSON);
+                                Json newJSON = new Json(false);
+                                grouped.set(groupName,newJSON);
                                 grouped = newJSON;
+
+                                //add to fix nestlength ?
+                                //builder.pushTarget(newJSON);
                             }
                         } else {
                             //will happen if NewEntry, no action because new-entry merges with the current context :)
                             if(isDebug()){
-                                System.out.printf("%10s new entry automatically merges with existing context",this.getName());
+                                System.out.println("    new entry automatically merges with existing context");
                             }
                         }
                     } else {
                         //same behavior as Merge.Collection
                         if(grouped.has(groupName)){
+                            if(isDebug()){
+                                System.out.println("    already has "+groupName);
+                            }
                             //could be an array
                             Object obj = grouped.get(groupName);
-                            if(obj instanceof JSONArray){
-                                JSONArray groupArry = (JSONArray)obj;
-                                if( (extend || is(Merge.Extend)) && groupArry.length()>0){
-                                    grouped = groupArry.getJSONObject(groupArry.length()-1);
+                            if(obj instanceof Json && ((Json)obj).isArray()){
+                                Json groupArry = (Json)obj;
+                                if( (extend || is(Merge.Extend)) && groupArry.size()>0){
+                                    grouped = groupArry.getJson(groupArry.size()-1);
                                 }else{
-                                    JSONObject newInstance = new JSONObject();
-                                    groupArry.put(newInstance);
+                                    Json newInstance = new Json(false);
+                                    groupArry.add(newInstance);
                                     grouped = newInstance;
                                 }
                             }else {
-                                grouped = grouped.getJSONObject(groupName);
+                                grouped = grouped.getJson(groupName);
                             }
                         }else{
-                            JSONObject newJSON = new JSONObject();
-                            grouped.put(groupName,newJSON);
+                            Json newJSON = new Json(false);
+                            grouped.set(groupName,newJSON);
                             grouped = newJSON;
+
                         }
                     }
                 }
 
-                boolean needPop = false;
+
                 if(target != grouped){
                     target = grouped; // will only change target if there was a grouping
-                    builder.setCurrentContext(target);
+                    builder.pushTarget(target);
                     needPop = true;
                 }
 
                 boolean changedContext = populate(matcher,builder);
 
-                if( changedContext ){//currently only happens for Value.KeyLength
-                    JSONObject cc = builder.getCurrentContext();
-
-
+                if( changedContext ){//NestLength or TargetId
+                    Json cc = builder.getTarget();
                     target = cc;
                 }
 
                 Eat toEat = Eat.from(this.eat);
                 int mStart = matcher.start();
                 int mEnd = matcher.end();
+                int currentStart = start.get();
                 switch(toEat){
+                    case ToMatch://TODO test works and impact on repeat and child matches
+                        int mToMatchStop = matcher.end();
+                        line.drop(0,mToMatchStop);
+
+                        if(start.get() > mToMatchStop){
+                            if(isDebug()){
+                                System.out.println(getName()+"    set start = "+(start.get()-mToMatchStop));
+                            }
+
+                            start.set(start.get()-mToMatchStop);
+                        }else{
+                            if(isDebug()){
+                                System.out.println(getName()+"    set start = 0");
+                            }
+
+                            start.set(0);
+                        }
+                        mStart = 0;
+                        matcher.region(mStart,line.length());
+                        mEnd = 0;
+                        break;
+                    case Line:
                     case Match:
                         int mStop = matcher.end();
                         line.drop(mStart,mStop);
+                        //start inside match
+                        if(isDebug()){
+                            System.out.println(" "+getName()+" match currentStart="+currentStart+" mStop="+mStop+" mStart="+mStart);
+
+                        }
+                        if(currentStart <= mStop && currentStart > mStart){
+                            if(isDebug()){
+                                System.out.println(getName()+"    set start = "+mStart);
+                            }
+                            start.set(mStart);
+                        }else if (currentStart > mStop) {//start after match
+                            if(isDebug()){
+                                System.out.println(getName()+"    set start = "+(currentStart-(mStop-mStart)));
+                            }
+                            start.set(currentStart-(mStop-mStart));
+                        }else{
+                            //if start was before the match
+                        }
                         matcher.region(mStart,line.length());
                         mEnd = mStart;
                         break;
                     case Width:
                         int wStop = this.eat;
-                        line.drop(mStart,wStop);
+                        //drop(mStart,wStop or mStart+wStop)?
+                        line.drop(mStart,mStart+wStop);
+                        //start inside match
+                        if(currentStart <= mStart+wStop && currentStart >= mStart){
+                            if(isDebug()){
+                                System.out.println(getName()+"    set start = "+(mStart));
+                            }
+
+                            start.set(mStart);
+                        }else if (currentStart > mStart+wStop){
+                            if(isDebug()){
+                                System.out.println(getName()+"    set start = "+(currentStart- (wStop)));
+                            }
+
+                            start.set(currentStart- (wStop));
+                        }
                         matcher.region(mStart,line.length());
                         mEnd = mStart;
                         break;
                 }
-
-                //call each child
-                for(Exp child : children){
-                    child.applyWithStart(line,builder,parser,mEnd);
+                if(isDebug() && currentStart != start.get()){
+                    System.out.println(this.getName()+" changed start from "+currentStart+" to "+start.get());
+                    System.out.println("  line@oldStart=||"+line.subSequence(currentStart,line.length())+"||");
+                    System.out.println("  line@newStart=||"+line.subSequence(start.get(),line.length())+"||");
                 }
 
-                if(needPop && !changedContext) { //TODO I'm sure this breaks NestLength
-                    builder.popContext();//pop target
+                //call each child
+                boolean childMatched = false;
+                //TODO line needs to decrease in size with each match or we infinite loop
+
+                //BUG if child eats then mEnd may be wrong (if child is LineStart
+                do {
+                    childMatched=false;
+                    AtomicInteger childStart = new AtomicInteger(mEnd);
+                    for (Exp child : children) {
+                        int childStartBefore = childStart.get();
+                        boolean thisChildMatched = child.applyWithStart(line, builder, parser, childStart);
+                        if(thisChildMatched && childStartBefore != childStart.get()){
+                            if(isDebug()){
+                                System.out.println(child.getName()+" changed childStart, need to update "+this.getName());
+                            }
+                            //we probably need to update start
+                            currentStart = start.get();
+                            if( currentStart > childStart.get() && currentStart < childStartBefore){
+                                start.set( childStart.get());
+                            }else if( currentStart > childStart.get() ){
+                                start.set( currentStart - (childStart.get() - childStartBefore));
+                            }else{
+
+                            }
+//                            System.out.println("child "+child.getName()+" changed start from "+childStartBefore+" to "+childStart.get());
+//                            System.out.print("  "+line);
+//                            System.out.println(String.format("  %"+(childStart.get()-1)+"s%s","","^"));
+
+                        }
+                        childMatched = thisChildMatched || childMatched;
+                    }
+                }while(childMatched && is(Rule.RepeatChildren));
+
+                if(needPop && !changedContext) {
+                    builder.popTarget();//pop target
                 }
                 //only notify the callbacks for the last occurrence of a match
                 if(!is(Rule.Repeat)) {
@@ -541,14 +1007,35 @@ public class Exp {
                 enables.forEach(((enable)->parser.setState(enable,true)));
             }
 
-            if( is(Rule.PopContext) ) {
-                builder.popContext();
+            if( is(Rule.PopTarget) ) {
+                if(isDebug()){
+                    System.out.println(">> Rule.PopTarget");
+                    System.out.println(builder.debugParallel(true));
+
+                }
+                int count = count(Rule.PopTarget);
+                if(isDebug()){
+                    System.out.println("   count = "+count);
+                }
+                for(int i=0; i<count; i++){
+                    builder.popTarget();
+                }
+                if(isDebug()){
+                    System.out.println("<< Rule.PopTarget");
+                    System.out.println(builder.debugParallel(true));
+                }
             }
-            if( is(Rule.ClearContext) ) {
-                builder.clearContext();
+            if( is(Rule.ClearTarget) ) {
+                builder.clearTargets();
             }
-            if( is(Rule.PushContext) ) {
-                builder.setCurrentContext(target);
+            if( is(Rule.PushTarget) ) {
+                if(isDebug()){
+                    System.out.println("Rule.PushTarget="+target);
+                }
+                builder.pushTarget(target);
+                if(isDebug()){
+                    System.out.println("Targets:\n"+builder.debugTargetString(true));
+                }
             }
 
             if(Eat.from(this.eat) == Eat.Line){ // eat the line after applying children and repeating
@@ -556,6 +1043,11 @@ public class Exp {
             }
 
         }//matched
+        else {
+            if(isDebug()){
+                System.out.println("  NOT matched");
+            }
+        }
 
         return rtrn;
     }

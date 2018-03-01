@@ -1,10 +1,10 @@
 package perf.parse;
 
-import org.json.JSONObject;
 import perf.parse.internal.CheatChars;
 import perf.parse.internal.JsonBuilder;
-import perf.util.json.Json;
+import perf.yaup.json.Json;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,8 +37,8 @@ public class Parser {
         return states.get(state);
     }
 
-    public JSONObject getNames(){
-        JSONObject rtrn = new JSONObject();
+    public Json getNames(){
+        Json rtrn = new Json();
         for(Exp p : patterns){
             p.appendNames(rtrn);
         }
@@ -46,14 +46,32 @@ public class Parser {
     }
     public JsonBuilder getBuilder(){return builder;}
 
+
     public void addAhead(Exp pattern){
         patterns.add(0,pattern);
+    }
+    public void addAt(Exp pattern,int order){
+        patterns.add(order,pattern);
     }
     public void add(Exp pattern){
         patterns.add(pattern);
     }
     public void add(JsonConsumer consumer){
         consumers.add(consumer);
+    }
+    public List<Exp> exps(){return Collections.unmodifiableList(patterns);}
+    public int remove(String patternName) {
+        int index = -1;
+        for(int i=0; i<patterns.size(); i++){
+            Exp exp = patterns.get(i);
+            if(exp.getName().equals(patternName)){
+                index = i;
+            }
+        }
+        if(index>-1) {
+            patterns.remove(index);
+        }
+        return index;
     }
     public void clearConsumers(){consumers.clear();}
 
@@ -67,15 +85,17 @@ public class Parser {
         }
         return false;
     }
-    public JSONObject onLine(String str){
+    public Json onLine(String str){
         return onLine(new CheatChars(str));
     }
-    public JSONObject onLine(CheatChars line){
-
+    public Json onLine(CheatChars line){
         boolean matched = false;
 
         for(Exp pattern : patterns){
             matched = pattern.apply(line,builder,this) && matched;
+            //TODO BUG what about parsers that use empty lines?
+            //check if line is empty to begin with then do 1 itteration before break?
+            //why do we stop when line is empty?
             if(line.isEmpty()){
                 break;
             }
@@ -89,20 +109,19 @@ public class Parser {
         }
     }
 
-    public JSONObject close(){
+    public Json close(){
         builder.close();
-        JSONObject rtrn = emit();
+        Json rtrn = emit();
         for (JsonConsumer consumer : consumers) {
             consumer.close();
         }
         return rtrn;
     }
-    private JSONObject emit(){
-        JSONObject toEmit = builder.takeClosedRoot();
+    private Json emit(){
+        Json toEmit = builder.takeClosedRoot();
         if(toEmit != null) {
-            Json json = Json.fromJSONObject(toEmit);
             for (JsonConsumer consumer : consumers) {
-                consumer.consume(json);
+                consumer.consume(toEmit);
             }
         }
         return toEmit;

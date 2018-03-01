@@ -1,10 +1,11 @@
 package perf.parse;
 
-import org.json.JSONObject;
+import perf.yaup.json.Json;
+
 /**
  *
  */
 public interface MatchAction {
 
-    void onMatch(JSONObject match, Exp pattern, Parser parser);
+    void onMatch(Json match, Exp pattern, Parser parser);
 }

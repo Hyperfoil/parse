@@ -10,14 +10,15 @@ import perf.parse.Parser;
 import perf.parse.Rule;
 import perf.parse.Value;
 import perf.parse.reader.TextLineReader;
-import perf.util.AsciiArt;
-import perf.util.json.Json;
+import perf.yaup.AsciiArt;
+import perf.yaup.json.Json;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.function.Consumer;
 
 /**
+ * Created by wreicher
  * DstatFactory - creates a Parser for
  */
 public class DstatFactory {
@@ -28,8 +29,8 @@ public class DstatFactory {
     private final ArrayList<String> headers = new ArrayList<String>();
 
     private MatchAction headerMatch = (match, pattern, parser) -> {
-        JSONArray arry = match.getJSONArray("header");
-        for(int i=0; i<arry.length(); i++){
+        Json arry = match.getJson("header");
+        for(int i=0; i<arry.size(); i++){
             String header = arry.getString(i);
             if(header.matches(".*[_\\-/].*")){
                 StringBuilder fixHeader = new StringBuilder(header.length());
@@ -55,15 +56,13 @@ public class DstatFactory {
 
     };
     private MatchAction columnMatch = (match, pattern, parser) -> {
-
-        JSONArray arry = match.getJSONArray("column");
+        Json arry = match.getJson("column");
         StringBuilder sb = new StringBuilder();
         sb.append("\\s*");
-        for(int i=0,h=0; i<arry.length(); i++){
+        for(int i=0,h=0; i<arry.size(); i++){
             String column = arry.getString(i);
             if("|".equals(column) || ":".equals(column)){
                 sb.append("[:\\|]?");
-
                 h++;
             } else {
                 String header = headers.get(h);
@@ -78,16 +77,13 @@ public class DstatFactory {
                     sb.append("\\-|\\d+\\.?\\d*[KkMmGgBb]?");
                 }
                 sb.append(")");
-
             }
             sb.append("\\s*");
         }
-
         Exp entryExp = new Exp("dstat",sb.toString());
             entryExp.execute(logMatch);
             entryExp.set(Merge.NewStart);
             entryExp.eat(Eat.Line);
-
         entryExp.forEachField(new Consumer<String>() {
             @Override
             public void accept(String s) {
@@ -96,7 +92,6 @@ public class DstatFactory {
         });
         parser.addAhead(entryExp);
     };
-
 
     public Exp defaultMessageExp(){
         return new Exp("default","You did not select any stats, using -cdngy by default")
@@ -109,7 +104,6 @@ public class DstatFactory {
             .set(Rule.Repeat)
             .eat(Eat.Line)
             .execute(headerMatch);
-
     }
     public Exp columnGroupExp(){
         return new Exp("columns","\\s*(?<column>[\\:\\|]|[^\\s\\:\\|]+)")
@@ -129,8 +123,6 @@ public class DstatFactory {
 
     public static void main(String[] args) {
         LinkedHashMap<String,String> rEntrantDstatPaths = new LinkedHashMap<>();
-//        rEntrantDstatPaths.set("client1","/home/wreicher/specWork/reentrant/reentrant-aio-196/client1.dstat.log");
-//        rEntrantDstatPaths.set("client4","/home/wreicher/specWork/reentrant/reentrant-aio-196/client4.dstat.log");
         rEntrantDstatPaths.put("server4","/home/wreicher/perfWork/amq/jdbc/00259/dstat.log");
 
         for(String fKey : rEntrantDstatPaths.keySet()){

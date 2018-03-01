@@ -5,12 +5,12 @@ package perf.parse.factory;
  */
 
 
-import org.json.JSONObject;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import perf.parse.Exp;
 import perf.parse.Parser;
 import perf.parse.internal.CheatChars;
+import perf.yaup.json.Json;
 
 import static org.junit.Assert.assertEquals;
 
@@ -50,8 +50,8 @@ public class ServerLogFactoryTest {
             p.onLine(new CheatChars(line));
         }
         //p.close();
-        JSONObject root = p.getBuilder().getRoot();
-        assertEquals("Top Stack should have 2 frames",2,root.getJSONArray("stack").length());
+        Json root = p.getBuilder().getRoot();
+        assertEquals("Top Stack should have 2 frames",2,root.getJson("stack").size());
 
 
 

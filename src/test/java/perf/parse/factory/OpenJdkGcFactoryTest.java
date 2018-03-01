@@ -7,8 +7,11 @@ import perf.parse.Exp;
 import perf.parse.Parser;
 import perf.parse.Value;
 import perf.parse.internal.CheatChars;
+import perf.parse.internal.JsonBuilder;
+import perf.yaup.json.Json;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -19,11 +22,51 @@ public class OpenJdkGcFactoryTest {
     private static OpenJdkGcFactory f;
 
 
+
     @BeforeClass
     public static void staticInit(){
         f = new OpenJdkGcFactory();
 
     }
+
+    @Test
+    public void jdk9Tags(){
+        Parser p = new Parser();
+        p.add(f.jdk9Tags());
+        p.onLine(new CheatChars("[gc]"));
+        assertTrue("tags should match a single tag",p.getBuilder().getRoot().has("tags"));
+        assertEquals("tag should be gc","gc",p.getBuilder().getRoot().get("tags"));
+        p.close();
+        assertTrue("tags should match multiple tags",p.getBuilder().getRoot().size()==0);
+        p.onLine(new CheatChars("[gc,heap,exit     ]"));
+        assertTrue("tags should match a single tag",p.getBuilder().getRoot().has("tags"));
+        assertEquals("there should be 3 tags",3,p.getBuilder().getRoot().getJson("tags").size());
+        assertEquals("0 should be gc","gc",p.getBuilder().getRoot().getJson("tags").get(0));
+        assertEquals("1 should be heap","heap",p.getBuilder().getRoot().getJson("tags").get(1));
+        assertEquals("2 should be exit","exit",p.getBuilder().getRoot().getJson("tags").get(2));
+    }
+    @Test
+    public void jdk9TagsEat(){
+        Parser p = new Parser();
+        p.add(f.jdk9Tags());
+        p.add(new Exp("all","\\[(?<all>[^\\]]+)\\s*\\]"));
+        p.onLine(new CheatChars("[gc,heap,exit     ]"));
+        assertTrue("match should contain tags",p.getBuilder().getRoot().has("tags"));
+        //no longer use Eat.None
+        //assertTrue("match should contain all",p.getBuilder().getRoot().has("all"));
+    }
+    @Test
+    public void jdk9LogStopHeapFormat(){
+        JsonBuilder b = new JsonBuilder();
+        Exp p = f.jdk9LogStopHeapFormat();
+        p.apply(new CheatChars("3433M->1249M(3982M)"),b,null);
+        Json r = b.getRoot();
+
+        assertTrue("Should have matched input",r.has("usedBefore") && r.has("usedAfter") && r.has("capacity"));
+
+    }
+
+
     @Test
     public void heap(){
         Parser p = f.newGcParser();

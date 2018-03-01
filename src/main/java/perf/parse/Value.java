@@ -1,13 +1,26 @@
 package perf.parse;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  *
  */
 public enum Value {
+
     /**
-     * Uses the length of the value to determine if it should be a child, sibling, or ancestor of the current context
+     * If the value does not match the previous value then close the current rot context and start a new one
      */
-    NestLength("_nestLength_"),
+    TargetId("_targetid_"),
+    /**
+     * Uses the length of the value to determine if it should be a child, sibling, or elder of the current target
+     */
+    NestLength("_nestlength_"),
+    /**
+     * Uses the length of the value to determien if it should be a child, sibling, or elder. Siblings must have the same
+     * prefix string
+     */
+    NestPeerless("_nestpeerless_"),
     /**
      * Convert the value to a number rather than leaving it as a String
      */
@@ -39,11 +52,11 @@ public enum Value {
     /**
      * Store a true of for the value if the Exp parameter matches
      */
-    BooleanKey("_booleanKey_"),
+    BooleanKey("_booleankey_"),
     /**
      * Use the value as a key with a value of true if the Exp parameter matches
      */
-    BooleanValue("_booleanValue_"),
+    BooleanValue("_booleanvalue_"),
     /**
      * Use the position in the input string as the value (0 indexed)
      */
@@ -57,25 +70,32 @@ public enum Value {
      */
     List("_list_");
 
+    private static final Map<String,Value> idMap = new HashMap<>();
+    static {
+        Value values[] = Value.values();
+        for(int i=0; i<values.length; i++){
+            idMap.put(values[i].getId().toLowerCase(),values[i]);
+        }
+    }
+
     private String id;
-    private Value(String id){this.id = id;};
+
+    Value(String id){this.id = id;}
+
     public String getId(){return id;}
 
     public static Value from(String value){
-        switch(value){
-            case "_nestLength_": return NestLength;
-            case "_number_": return Number;
-            case "_kmg_": return KMG;
-            case "_count_": return Count;
-            case "_sum_": return Sum;
-            case "_booleanKey_": return BooleanKey;
-            case "_booleanValue_": return BooleanValue;
-            case "_position_": return Position;
-            case "_string_" : return String;
-            case "_list_" : return List;
-            case "_key_":
-            default:
-                return Key;
+        value = value.toLowerCase();
+        if(!value.startsWith("_")){
+            value = "_"+value;
+        }
+        if(!value.endsWith("_")){
+            value = value+"_";
+        }
+        if(idMap.containsKey(value)){
+            return idMap.get(value);
+        }else{
+            return Key;
         }
     }
 }

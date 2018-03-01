@@ -1,6 +1,6 @@
 package perf.parse;
 
-import perf.util.json.Json;
+import perf.yaup.json.Json;
 
 /**
  *

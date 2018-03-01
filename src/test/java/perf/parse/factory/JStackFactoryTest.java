@@ -1,13 +1,13 @@
 package perf.parse.factory;
 
 
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import perf.parse.Exp;
 import perf.parse.internal.CheatChars;
 import perf.parse.internal.JsonBuilder;
+import perf.yaup.json.Json;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -22,34 +22,21 @@ public class JStackFactoryTest {
     @BeforeClass
     public static void staticInit(){
         f = new JStackFactory();
-
     }
-
-//    public void testPattternMatches(Pattern pattern,String matches[],String notMatches[]){
-//        for(String match : matches){
-//            assertNotNull(pattern.getName()+" should match: "+match,pattern.getMatch(new StringBuffer(match)));
-//        }
-//        for(String notMatch : notMatches){
-//            assertNull(pattern.getName()+" should not match "+notMatch,pattern.getMatch(new StringBuffer(notMatch)));
-//        }
-//    }
-
 
     @Before
-    public void reset(){
-
-    }
+    public void reset(){}
 
     @Test
     public void tidPattern(){
         JsonBuilder b = new JsonBuilder();
         Exp p = f.newTidPattern();
-        JSONObject o = null;
-
+        Json o = null;
 
         p.apply(new CheatChars("\"Name with \" and '\" prio=10 tid=0x00007fe444377000 nid=0x1036 in Object.wait() [0x00007fe42eef5000]"),b,null);
 
         o = b.getRoot();
+
         assertEquals("name","Name with \" and '",o.getString("name"));
         assertEquals("prio","10",o.getString("prio"));
         assertEquals("tid","0x00007fe444377000",o.getString("tid"));
@@ -94,11 +81,11 @@ public class JStackFactoryTest {
         lock.apply(new CheatChars("\t- locked <0x00000000d440b740> (a io.netty.channel.nio.SelectedSelectionKeySet)\n"),b,null);
         lock.apply(new CheatChars("\t- locked <0x00000000d440b760> (a java.util.Collections$UnmodifiableSet)\n"),b,null);
 
-        JSONObject o = b.getRoot();
-        assertEquals("stack should have 2 entries",2,o.getJSONArray("stack").length());
-        JSONObject f = o.getJSONArray("stack").getJSONObject(0);
-        JSONObject s = o.getJSONArray("stack").getJSONObject(1);
+        Json o = b.getRoot();
+        assertEquals("stack should have 2 entries",2,o.getJson("stack").size());
+        Json f = o.getJson("stack").getJson(0);
+        Json s = o.getJson("stack").getJson(1);
         assertEquals("first stack frame should be native",true,f.getBoolean("nativeMethod"));
-        assertEquals("second stack frame should have 2 locks",2,s.getJSONArray("lock").length());
+        assertEquals("second stack frame should have 2 locks",2,s.getJson("lock").size());
     }
 }

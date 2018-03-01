@@ -1,7 +1,7 @@
 package perf.parse.consumers.gc;
 
 import perf.parse.JsonConsumer;
-import perf.util.json.Json;
+import perf.yaup.json.Json;
 
 /**
  * Created by wreicher

@@ -3,7 +3,7 @@ package perf.parse.reader;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import perf.parse.JsonConsumer;
-import perf.util.json.Json;
+import perf.yaup.json.Json;
 
 import java.io.InputStream;
 import java.util.LinkedList;

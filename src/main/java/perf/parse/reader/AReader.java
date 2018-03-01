@@ -2,9 +2,12 @@ package perf.parse.reader;
 
 
 import perf.parse.Parser;
-import perf.util.file.FileUtility;
+import perf.yaup.HashedList;
+import perf.yaup.file.FileUtility;
 
+import java.io.BufferedInputStream;
 import java.io.InputStream;
+import java.io.Reader;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -18,24 +21,19 @@ public abstract class AReader {
     protected abstract void processInputStream(InputStream stream);
 
     public void read(String path) {
-
-        Iterator<Parser> iter = null;
-        iter = parsers();
-        while(iter.hasNext()){
-            iter.next().setup();
-        }
+        setup();
         processInputStream(FileUtility.getInputStream(path));
-
-        iter = parsers();
-        while(iter.hasNext()){
-            iter.next().close();
-        }
+        close();
     }
-
-    private Set<Parser> parsers;
+    public void read(InputStream stream){
+        setup();
+        processInputStream(stream);
+        close();
+    }
+    private HashedList<Parser> parsers;
 
     public AReader(){
-        parsers = new HashSet<Parser>();
+        parsers = new HashedList<Parser>();
     }
 
     public void addParser(Parser toAdd){
@@ -43,5 +41,20 @@ public abstract class AReader {
     }
     public int parserCount(){return parsers.size();}
 
-    protected Iterator<Parser> parsers(){return parsers.iterator();}
+    protected void onLine(String line){
+        for(int i=0; i<parsers.size();i++){
+            parsers.get(i).onLine(line);
+        }
+    }
+    protected void setup(){
+        for(int i=0; i<parsers.size();i++){
+            parsers.get(i).setup();
+        }
+    }
+    protected void close(){
+        for(int i=0; i<parsers.size();i++){
+            parsers.get(i).close();
+        }
+    }
+    //protected Iterator<Parser> parsers(){return parsers.iterator();}
 }

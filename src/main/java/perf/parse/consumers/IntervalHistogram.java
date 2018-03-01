@@ -4,8 +4,8 @@ import perf.parse.JsonConsumer;
 import perf.parse.Parser;
 import perf.parse.factory.OpenJdkGcFactory;
 import perf.parse.reader.TextLineReader;
-import perf.util.AsciiArt;
-import perf.util.json.Json;
+import perf.yaup.AsciiArt;
+import perf.yaup.json.Json;
 
 import java.util.function.Function;
 

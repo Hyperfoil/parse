@@ -1,5 +1,8 @@
 package perf.parse;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Created by wreicher
  */
@@ -17,13 +20,27 @@ public enum Eat {
      */
     Match(-1),
     /**
+     * Eat the line up to and including the match
+     */
+    ToMatch(-2),
+    /**
      * If the perf.parse.Exp matches any part of the line then consume the entire line
      * preventing other perf.parse.Exp from matching
      */
-    Line(-2);
+    Line(-3);
+
+
+    private static final Map<Integer,Eat> idMap = new HashMap<>();
+    static {
+        Eat values[] = Eat.values();
+        for(int i=0; i<values.length; i++){
+            idMap.put(values[i].getId(),values[i]);
+        }
+    }
+
     private int id;
 
-    private Eat(int id) {
+    Eat(int id) {
         this.id = id;
     }
 
@@ -32,15 +49,6 @@ public enum Eat {
     }
 
     public static Eat from(int value) {
-        switch (value) {
-            case -2:
-                return Line;
-            case -1:
-                return Match;
-            case 0:
-                return None;
-            default:
-                return Width;
-        }
+        return idMap.containsKey(value) ? idMap.get(value) : Width;
     }
 }

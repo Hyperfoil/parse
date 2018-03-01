@@ -8,16 +8,80 @@ import perf.parse.Parser;
 import perf.parse.Rule;
 import perf.parse.Value;
 import perf.parse.reader.TextLineReader;
-import perf.util.AsciiArt;
-import perf.util.json.Json;
+import perf.yaup.AsciiArt;
+import perf.yaup.json.Json;
 
 import java.util.LinkedList;
 
 /**
- *
+ * Created by wreicher
  */
 public class OpenJdkGcFactory {
 
+    public Exp jdk9Tags(){
+        return new Exp("tags","\\[(?<tags:List>[^\\s,\\]]+)")
+
+                .add(new Exp("otherTags",",(?<tags:List>[^\\s,\\]]+)")
+                        .set(Rule.Repeat)
+                )
+                .add(new Exp("tagsEnd","\\s*\\]")
+                );
+    }
+    public Exp jdk9LogStopHeapFormat(){
+        return new Exp("jdk9StopHeapFormat","(?<usedBefore>\\d+)M->(?<usedAfter>\\d+)M\\((?<capacity>\\d+)M\\)");
+    }
+    public Exp jdk9Level(){
+        return new Exp("level","\\[(?<level>error|warning|info|debug|trace|develop)\\s*\\]");
+    }
+
+    public Exp jdk9gcCpu(){
+        return new Exp("gcCpu","User=(?<user:Number>\\d+\\.\\d{3})s Sys=(?<sys:Number>\\d+\\.\\d{3})s Real=(?<real:Number>\\d+\\.\\d{3})s").group("gcCpu").eat(Eat.Line);
+    }
+    public Exp jdk9gcClassHistoEnd(){
+        return new Exp("gcClassHistoEnd","Class Histogram \\((?<phase>\\S+) full gc\\) (?<ms:Number>\\d+\\.\\d{3})ms")
+                .set(Merge.NewStart);
+
+    }
+    public Exp jdk9safepointStopTime(){
+        return new Exp("safepointStop","\\[safepoint\\s*\\] Total time for which application threads were stopped: (?<totalSeconds:Number>\\d+\\.\\d+) seconds, Stopping threads took: (?<threadSeconds:Number>\\d+\\.\\d+) seconds")
+                .group("safepoint")
+                .group("stop");
+    }
+    public Exp jdk9safepointAppTime(){
+        return new Exp("safepointApplication","\\[safepoint\\s*\\] Application time: (?<seconds:Number>\\d+\\.\\d+) seconds")
+                .group("safepoint")
+                .group("application");
+    }
+
+    public Exp jdk9gcClassHistoStart(){
+        return new Exp("gcClassHistoStart","Class Histogram \\((?<phase>\\S+) full gc\\)")
+                .set(Merge.NewStart);
+    }
+    public Exp jdk9gcClassHistoEntry(){
+        return new Exp("gcClassHistoEntry","(?<num:Number>\\d+):\\s+(?<count:Number>\\d+):\\s+(?<bytes:Number>\\d+)\\s+(?<name>.*)").group("histo").set(Merge.Entry);
+    }
+    public Exp jdk9gcClassHistoTotal(){
+        return new Exp("gcClassHistoTotal","Total\\s+(?<count:Number>\\d+)\\s+(?<bytes:Number>").group("total");
+    }
+
+    public Exp jdk9GcTarget(){
+
+        return new Exp("gcTarget","GC\\((?<gcId>\\d+)\\)").set("gcId",Value.TargetId);
+    }
+    public Exp jdk9Timestamp(){
+        return new Exp("timestamp","\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}-\\d{4}\\]");
+    }
+    public Exp jdk9UsingGC(){
+        return new Exp("using","Using (?<gc>\\S+)");
+    }
+    public Exp jdk9Expanding(){
+        return new Exp("expand","Expanding (?<gen>\\S+) from (?<from>\\d+[kKmMgG]?) by (?<by>\\d+[kKmMgG]?) to (?<to>\\d+[kKmMgG]?)")
+            .set("from",Value.KMG).set("by",Value.KMG).set("to",Value.KMG);
+    }
+    public Exp jdk9Shrinking(){
+        return new Exp("shrink","Shrinking (?<gen>\\S+) from (?<from>\\d+[kKmMgG]?) by (?<by>\\d+[kKmMgG]?) to (?<to>\\d+[kKmMgG]?)")
+            .set("from",Value.KMG).set("by",Value.KMG).set("to",Value.KMG);
+    }
     public Exp newJavaHotspotPattern(){
         return new Exp("javaHotspot","Java HotSpot\\(TM\\) (?<hotspot>.+?) for (?<platform>\\S+) JRE \\((?<jvmVersion>[^\\)]+)\\), built on (?<buildDate>.+?) by (?<builder>.*)")
                 .eat(Eat.Line)
@@ -28,7 +92,6 @@ public class OpenJdkGcFactory {
                 .eat(Eat.Line)
                 .set(Merge.NewStart);
     }
-
     public Exp newMemoryPattern(){
         return new Exp("memory","Memory: (?<pageSize>\\d+[kKmMgG]?) page, physical (?<physicalTotal>\\d+[kKmMgG]?)\\((?<physicalFree>\\d+[kKmMgG]?) free\\), swap (?<swapTotal>\\d+[kKmMgG]?)\\((?<swapFree>\\d+[kKmMgG]?) free\\)")
                 .eat(Eat.Line)
@@ -56,8 +119,8 @@ public class OpenJdkGcFactory {
                 .set(Merge.Entry)
                 .requires("heapSummary")
                 .group("section")
-                .set(Rule.AvoidContext)
-                .set(Rule.PushContext)
+                .set(Rule.AvoidTarget)
+                .set(Rule.PushTarget)
                 .set("total",Value.KMG)
                 .set("used",Value.KMG)
                 ;
@@ -77,8 +140,8 @@ public class OpenJdkGcFactory {
                 .requires("heapSummary")
                 .enables("heapMetaspaceSummary")
                 .group("section")
-                .set(Rule.AvoidContext)
-                .set(Rule.PushContext)
+                .set(Rule.AvoidTarget)
+                .set(Rule.PushTarget)
                 .set("used",Value.KMG)
                 .set("capacity",Value.KMG)
                 .set("committed",Value.KMG)

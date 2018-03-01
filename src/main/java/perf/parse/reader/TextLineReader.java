@@ -16,14 +16,12 @@ public class TextLineReader extends AReader {
 
     @Override protected void processInputStream(InputStream stream) {
         BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+
         String line = null;
         Iterator<Parser> iter = null;
         try {
             while((line = reader.readLine())!=null){
-                iter = parsers();
-                while(iter.hasNext()){
-                    iter.next().onLine(new CheatChars(line));
-                }
+                onLine(line);
             }
         } catch (IOException e) {
             e.printStackTrace();

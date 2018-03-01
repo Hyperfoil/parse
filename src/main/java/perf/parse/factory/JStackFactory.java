@@ -9,7 +9,7 @@ import perf.parse.Value;
 
 
 /**
- *
+ * Created by wreicher
  */
 public class JStackFactory {
     public Exp newThreadDump(){
@@ -22,14 +22,19 @@ public class JStackFactory {
                     .set(Rule.LineStart))
                 .add(new Exp("prio", " prio=(?<prio>\\d+)")
                     .set(Rule.LineStart))
-                .add(new Exp("daemon", " (?<daemon>daemon) ")
+                .add(new Exp("daemon", " (?<daemon>daemon)")
                     .set("daemon", Value.BooleanKey)
                     .set(Rule.LineStart))
-                .add(new Exp("name", "\\\"(?<name>.+)\\\"")
-                    .set(Rule.LineStart))
+                .add(new Exp("name", "\\\"(?<name>.+)\\\"(?: #\\d+)?")
+                    .set(Rule.LineStart)
+//                    .add(new Exp("#num"," #\\d+").debug()
+//                        .set(Rule.LineStart)
+//                    )
+                )
                 .add(new Exp("hex", "\\[(?<hex>0x[0-9a-f]+)\\]")
                     .eat(Eat.Match))
-                .add(new Exp("status", " (?<status>[^\\[\n]+) "));
+                .add(new Exp("status", " (?<status>[^\\[\n]+) ")
+                );
     }
     public Exp newThreadStatePattern(){
         return new Exp("ThreadState","\\s+java\\.lang\\.Thread\\.State: (?<state>.*)");

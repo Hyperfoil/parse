@@ -1,7 +1,7 @@
 package perf.parse.consumers;
 
 import perf.parse.JsonConsumer;
-import perf.util.json.Json;
+import perf.yaup.json.Json;
 
 import java.util.HashSet;
 import java.util.function.Function;

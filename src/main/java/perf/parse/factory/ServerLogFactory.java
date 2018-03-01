@@ -9,7 +9,7 @@ import perf.parse.Value;
 import perf.parse.reader.TextLineReader;
 
 /**
- *
+ * Created by wreicher
  */
 public class ServerLogFactory {
 
@@ -47,7 +47,7 @@ public class ServerLogFactory {
         return new Exp("causedBy","Caused by: (?<exception>[^:]+): (?<message>.+\n?)")
             //.group("stack")
             .group("causedBy")
-            .set(Rule.PushContext).eat(Eat.Line);
+            .set(Rule.PushTarget).eat(Eat.Line);
     }
     public Exp newStackRemainderExp(){
         return new Exp("more","\\s+\\.\\.\\. (?<stackRemainder>\\d+) more")
