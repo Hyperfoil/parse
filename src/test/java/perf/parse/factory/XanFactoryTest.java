@@ -21,7 +21,6 @@ public class XanFactoryTest {
         f = new XanFactory();
     }
 
-
     @Before
     public void reset(){}
 
@@ -30,7 +29,6 @@ public class XanFactoryTest {
         JsonBuilder b = new JsonBuilder();
         Exp p = f.headerExp();
         p.apply(new CheatChars("Name     Value"),b,null);
-        System.out.println(b.getRoot().toString(2));
 
         assertEquals("expect 2 headers",2,b.getRoot().getJson("header").size());
 

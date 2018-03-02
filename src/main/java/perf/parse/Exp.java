@@ -5,6 +5,7 @@ import perf.parse.internal.IMatcher;
 import perf.parse.internal.JsonBuilder;
 import perf.parse.internal.RegexMatcher;
 import perf.yaup.HashedLists;
+import perf.yaup.StringUtil;
 import perf.yaup.json.Json;
 
 import java.util.*;
@@ -20,6 +21,8 @@ public class Exp {
 
     private static final String NEST_ARRAY = "_array";
     private static final String NEST_VALUE = "_value";
+
+    private static final String CHAIN_SEPARATOR = ".";
 
     private final Matcher fieldMatcher = java.util.regex.Pattern.compile("\\(\\?<([^>]+)>").matcher("");
 
@@ -67,9 +70,10 @@ public class Exp {
         this.pattern = pattern;
 
         this.fieldValues = parsePattern(pattern);
-        pattern = removePatternValues(pattern);
 
-        this.matcher = new RegexMatcher(pattern);
+        String safePattern = removePatternValues(pattern);
+
+        this.matcher = new RegexMatcher(safePattern);
 
         this.callbacks = new LinkedList<>();
 
@@ -83,7 +87,9 @@ public class Exp {
         this.disables = new LinkedHashSet<>();
         this.requires = new LinkedHashSet<>();
 
+
     }
+
     public String getPattern(){return this.pattern;}
 
     public Exp clone(){
@@ -254,7 +260,7 @@ public class Exp {
     }
 
     /**
-     * Defines how much of the input CheatChars should be removed if this Exp matches. The default is Eat.None.
+     * Defines how much of the input CheatChars should be removed if this Exp matches. The default is Eat.Match.
      * Eat.Line takes effect after all child iterations and self iterations while Eat.Match or custom width take effect
      * before child matching.
      * @param toEat
@@ -339,7 +345,6 @@ public class Exp {
     public boolean is(String field,Value value){
         return value == Value.from(fieldValues.get(field));
     }
-
     private boolean hasValue(IMatcher m,Value v){
         boolean rtrn = false;
         for(String fieldName : fieldValues.keySet()){
@@ -358,6 +363,55 @@ public class Exp {
         }
         return rtrn;
     }
+    private List<String> chain(String keys){
+        return new ArrayList<>(
+            Arrays.asList(keys.split("\\.(?<!\\\\\\.)"))
+        );
+    }
+    private String lastKey(String key){
+        List<String> ids = chain(key);
+        return ids.get(ids.size()-1);
+    }
+    private Json chain(Json json,String key){
+        return chain(json,key,true);
+    }
+    private Json chain(Json json,String key,boolean dropLast){
+        Json rtrn = json;
+        if(key.contains(CHAIN_SEPARATOR)){
+            List<String> ids = chain(key);
+            if(dropLast){
+                ids.remove(ids.size()-1);
+            }
+            for(String id : ids){
+                if(!rtrn.has(id)){
+                    rtrn.set(id,new Json());
+                }
+                if( !(rtrn.get(id) instanceof Json) ){//this should never happen for our use case
+                    System.out.println("chain("+key+") exisiting "+id+" in "+json);
+                    Object existing = rtrn.get(id);
+                    rtrn.set(id,new Json());
+                    rtrn.getJson(id).add(existing);
+                }
+                rtrn = rtrn.getJson(id);
+            }
+        }
+        return rtrn;
+    }
+    private Json chainGet(Json json,String key){
+        Json rtrn = json;
+        List<String> chain = chain(key);
+        for(int i=0; i<chain.size()-1; i++){
+            String current = chain.get(i);
+            if(json.has(current)){
+                rtrn = rtrn.getJson(current);
+            }else{
+                rtrn = null;
+                break;
+            }
+        }
+        return rtrn;
+    }
+
     private boolean populate(IMatcher m,JsonBuilder builder){
 
         if(isDebug()){
@@ -368,7 +422,6 @@ public class Exp {
 
 
         boolean changedTarget = false;
-        //Json target = builder.getTarget();
 
         for(String fieldName : fieldValues.keySet()){
             String vString = fieldValues.get(fieldName);
@@ -384,7 +437,6 @@ public class Exp {
 
                     }else{
                         builder.close();
-                        //target = builder.getTarget();
                         builder.getTarget().set(fieldName,fieldValue);
                         changedTarget = true;
                     }
@@ -416,7 +468,6 @@ public class Exp {
                             builder.setContext(fieldName+NEST_ARRAY,true);
                             builder.pushTarget(newChild);
 
-                            //target = builder.getTarget();
                             changedTarget = true;
 
                         } else if( length < builder.getContextInteger(fieldName,true) ) { // elder (ancestor but not parent)
@@ -434,7 +485,6 @@ public class Exp {
                                     System.out.println("    target ="+builder.getTarget());
                                     System.out.println("    context = "+builder.debugContextString(false));
                                 }
-                                //target = builder.getTarget();
                                 changedTarget = true;
 
                             }
@@ -468,15 +518,10 @@ public class Exp {
                                     System.out.println("    target ="+builder.getTarget());
                                     System.out.println("    context = "+builder.debugContextString(false));
                                 }
-
-                                //target = builder.getTarget();
-
                                 Json newEntry = new Json(false);
                                 builder.getTarget().add(fieldName,newEntry);
                                 builder.pushTarget(newEntry);
-
                             }
-
                             //pop the previous entry (sibling of this new entry)
                             changedTarget = true;
                             //target = newEntry;
@@ -489,15 +534,11 @@ public class Exp {
                                     System.out.println("    context.nest_value=||"+builder.getContextString(fieldName+NEST_VALUE,true)+"||");
                                     System.out.println("            nest_value=||"+fieldValue+"||");
                                 }
-
                             }
                             if(Value.NestPeerless.equals(v)){
                                 if(isDebug()){
                                     System.out.println("    NestPeerless");
                                 }
-
-
-
                             }else{//NestLength
 
                                 if(isDebug()){
@@ -540,7 +581,6 @@ public class Exp {
                         builder.setContext(fieldName+NEST_ARRAY,true);
                         builder.pushTarget(treeStart);
 
-                        //target = builder.getTarget();
                         changedTarget = true;
                     }
 
@@ -561,49 +601,48 @@ public class Exp {
                     break;
                 case Number:
                     double number = Double.parseDouble(fieldValue);
-                    builder.getTarget().add(fieldName,number);
+                    chain(builder.getTarget(),fieldName).add(lastKey(fieldName),number);
                     break;
                 case KMG:
                     long kmg = parseKMG(fieldValue);
-                    builder.getTarget().set(fieldName,kmg);
+                    chain(builder.getTarget(),fieldName).set(lastKey(fieldName),kmg);
                     break;
                 case Count:
-                    builder.getTarget().set(fieldValue,1+builder.getTarget().getLong(fieldValue,0));
+                    chain(builder.getTarget(),fieldName,false).set(fieldValue,1+chain(builder.getTarget(),fieldName,false).getLong(fieldValue,0));
                     break;
                 case Sum:
                     double sum = Double.parseDouble(fieldValue);
-                    builder.getTarget().set(fieldName,builder.getTarget().getDouble(fieldName,0)+sum);
+                    chain(builder.getTarget(),fieldName).set(lastKey(fieldName),chain(builder.getTarget(),fieldName).getDouble(lastKey(fieldName),0)+sum);
                     break;
                 case Key:
                     String keyValue = m.group(vString);
                     if(!keyValue.isEmpty()){
-                        builder.getTarget().set(fieldValue,keyValue);
+                        chain(builder.getTarget(),fieldName).set(fieldValue,keyValue);
                     }
                     break;
                 case BooleanKey:
-                    builder.getTarget().set(fieldName,true);
+                    chain(builder.getTarget(),fieldName).set(lastKey(fieldName),true);
                     break;
                 case BooleanValue:
-                    builder.getTarget().set(fieldValue,true);
+                    chain(builder.getTarget(),fieldName).set(fieldValue,true);
                     break;
                 case Position:
-                    builder.getTarget().set(fieldName,m.start());
+                    chain(builder.getTarget(),fieldName).set(lastKey(fieldName),m.start());
                     break;
                 case String:
-                    builder.getTarget().set(fieldName,builder.getTarget().getString(fieldName,"")+fieldValue);
+                    chain(builder.getTarget(),fieldName).set(lastKey(fieldName),chain(builder.getTarget(),fieldName).getString(lastKey(fieldName),"")+fieldValue);
                     break;
                 case List:
                 defaut:
                     if(Pattern.matches("\\d+",fieldValue)){//long
                         Long value = Long.parseLong(fieldValue);
-                        builder.getTarget().add(fieldName,value);
+                        chain(builder.getTarget(),fieldName).add(lastKey(fieldName),value);
                     }else if (Pattern.matches("\\d+\\.\\d+",fieldValue)){//double
                         Double value = Double.parseDouble(fieldValue);
-                        builder.getTarget().add(fieldName,value);
+                        chain(builder.getTarget(),fieldName).add(lastKey(fieldName),value);
                     }else{
-                        builder.getTarget().add(fieldName,fieldValue);
+                        chain(builder.getTarget(),fieldName).add(lastKey(fieldName),fieldValue);
                     }
-
                     break;
             }
         }
@@ -618,6 +657,11 @@ public class Exp {
     public boolean test(CharSequence input){
         matcher.reset(input);
         return matcher.find();
+    }
+    public Json apply(String line){
+        JsonBuilder builder = new JsonBuilder();
+        apply(new CheatChars(line),builder,null);
+        return builder.getRoot();
     }
     public boolean apply(CheatChars line, JsonBuilder builder, Parser parser){
         boolean result = applyWithStart(line,builder,parser,new AtomicInteger(0));

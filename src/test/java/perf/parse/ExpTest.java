@@ -6,15 +6,27 @@ import perf.parse.internal.CheatChars;
 import perf.parse.internal.JsonBuilder;
 import perf.yaup.json.Json;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Map;
+
+import static org.junit.Assert.*;
 
 /**
  *
  */
 public class ExpTest {
 
+    @Test
+    public void testKeySplit(){
+        Exp exp = new Exp("keySplit","(?<foo.bar>.*)");
 
+        Json result = exp.apply("biz");
+
+        assertTrue(result.has("foo"));
+        assertTrue(result.getJson("foo").has("bar"));
+        assertEquals("biz",result.getJson("foo").getString("bar"));
+    }
 
     @Test
     public void valueFrom(){
