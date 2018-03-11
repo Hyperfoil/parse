@@ -35,20 +35,20 @@ public class OpenJdkGcFactory {
     }
 
     public Exp jdk9gcCpu(){
-        return new Exp("gcCpu","User=(?<user:Number>\\d+\\.\\d{3})s Sys=(?<sys:Number>\\d+\\.\\d{3})s Real=(?<real:Number>\\d+\\.\\d{3})s").group("gcCpu").eat(Eat.Line);
+        return new Exp("gcCpu","User=(?<user>\\d+\\.\\d{3})s Sys=(?<sys>\\d+\\.\\d{3})s Real=(?<real>\\d+\\.\\d{3})s").group("gcCpu").eat(Eat.Line);
     }
     public Exp jdk9gcClassHistoEnd(){
-        return new Exp("gcClassHistoEnd","Class Histogram \\((?<phase>\\S+) full gc\\) (?<ms:Number>\\d+\\.\\d{3})ms")
+        return new Exp("gcClassHistoEnd","Class Histogram \\((?<phase>\\S+) full gc\\) (?<ms>\\d+\\.\\d{3})ms")
                 .set(Merge.NewStart);
 
     }
     public Exp jdk9safepointStopTime(){
-        return new Exp("safepointStop","\\[safepoint\\s*\\] Total time for which application threads were stopped: (?<totalSeconds:Number>\\d+\\.\\d+) seconds, Stopping threads took: (?<threadSeconds:Number>\\d+\\.\\d+) seconds")
+        return new Exp("safepointStop","\\[safepoint\\s*\\] Total time for which application threads were stopped: (?<totalSeconds>\\d+\\.\\d+) seconds, Stopping threads took: (?<threadSeconds>\\d+\\.\\d+) seconds")
                 .group("safepoint")
                 .group("stop");
     }
     public Exp jdk9safepointAppTime(){
-        return new Exp("safepointApplication","\\[safepoint\\s*\\] Application time: (?<seconds:Number>\\d+\\.\\d+) seconds")
+        return new Exp("safepointApplication","\\[safepoint\\s*\\] Application time: (?<seconds>\\d+\\.\\d+) seconds")
                 .group("safepoint")
                 .group("application");
     }
@@ -58,10 +58,10 @@ public class OpenJdkGcFactory {
                 .set(Merge.NewStart);
     }
     public Exp jdk9gcClassHistoEntry(){
-        return new Exp("gcClassHistoEntry","(?<num:Number>\\d+):\\s+(?<count:Number>\\d+):\\s+(?<bytes:Number>\\d+)\\s+(?<name>.*)").group("histo").set(Merge.Entry);
+        return new Exp("gcClassHistoEntry","(?<num>\\d+):\\s+(?<count>\\d+):\\s+(?<bytes>\\d+)\\s+(?<name>.*)").group("histo").set(Merge.Entry);
     }
     public Exp jdk9gcClassHistoTotal(){
-        return new Exp("gcClassHistoTotal","Total\\s+(?<count:Number>\\d+)\\s+(?<bytes:Number>").group("total");
+        return new Exp("gcClassHistoTotal","Total\\s+(?<count>\\d+)\\s+(?<bytes>").group("total");
     }
 
     public Exp jdk9GcTarget(){
@@ -131,7 +131,6 @@ public class OpenJdkGcFactory {
                 .requires("heapSummary")
                 .group("space")
                 .set("size",Value.KMG)
-                .set("usedPercentage",Value.Number)
                 ;
     }
     public Exp newHeapMetaspacePattern(){
@@ -165,7 +164,6 @@ public class OpenJdkGcFactory {
     }
     public Exp newElapsedPattern(){
         return new Exp("elapsed","^(?<elapsed>\\d+\\.\\d{3}): ")
-            .set("elapsed", Value.Number)
             .set(Merge.NewStart)
             .eat(Eat.Match);
     }
@@ -197,7 +195,7 @@ public class OpenJdkGcFactory {
     }
     public Exp newGCTimePattern(){
         return new Exp("gctime",", (?<gctime>\\d+\\.\\d+) secs\\] ")
-                .set("gctime",Value.Number);
+                ;
     }
     public Exp newHeapSizePattern(){
         return new Exp("heapsize","(?<pregc>\\d+[KMG]?)->(?<postgc>\\d+[KMG]?)\\((?<size>\\d+[KMG]?)\\)")
@@ -233,14 +231,9 @@ public class OpenJdkGcFactory {
             " slow: (?<slowSize>\\d+[KMG]?B)" +
             " fast: (?<fastSize>\\d+[KMG]?B)"
         )
-            .set("id",Value.Number)
             .set("desiredSize",Value.KMG)
-            .set("slowAllocs",Value.Number)
             .set("wasteSize",Value.KMG)
-            .set("alloc",Value.Number)
             .set("allocSize",Value.KMG)
-            .set("refills",Value.Number)
-            .set("wastePercentage",Value.Number)
             .set("gcSize",Value.KMG)
             .set("slowSize",Value.KMG)
             .set("fastSize",Value.KMG)
@@ -255,12 +248,6 @@ public class OpenJdkGcFactory {
                 " gc: (?<gcSize>\\d+[KMG]?B) max: (?<maxGcSize>\\d+[KMG]?B)" +
                 " slow: (?<slowSize>\\d+[KMG]?B) max: (?<maxSlowSize>\\d+[KMG]?B)" +
                 " fast: (?<fastSize>\\d+[KMG]?B) max: (?<maxFastSize>\\d+[KMG]?B)")
-                .set("threads",Value.Number)
-                .set("refills",Value.Number)
-                .set("maxRefills",Value.Number)
-                .set("slowAllocs",Value.Number)
-                .set("maxSlowAllocs",Value.Number)
-                .set("wastePercentage",Value.Number)
                 .set("gcSize",Value.KMG)
                 .set("maxGcSize",Value.KMG)
                 .set("gcSize",Value.KMG)
@@ -275,7 +262,6 @@ public class OpenJdkGcFactory {
     }
     public Exp newApplicationConcurrentTime() {
         return new Exp("applicationConcurrent","Application time: (?<applicationConcurrentTime>\\d+\\.\\d+) seconds")
-                .set("applicationConcurrentTime",Value.Number)
                 .set(Merge.NewStart);
     }
     public Parser newGcParser(){

@@ -31,7 +31,6 @@ public class ExpTest {
     @Test
     public void valueFrom(){
         assertEquals("Default value should be Key", Value.Key, Value.from("fooooooo"));
-        assertEquals("Failed to identify Value.Number", Value.Number, Value.from(Value.Number.getId()));
     }
     @Test
     public void eatFrom(){
@@ -62,11 +61,11 @@ public class ExpTest {
     }
     @Test
     public void valueInPattern(){
-        Exp p = new Exp("valueInpattern","(?<id:targetId>\\w+) (?<nest:nestLength>\\w+) (?<key:key>\\w+) (?<num:number>\\d+) (?<size:kmg>\\w+) ");
+        Exp p = new Exp("valueInpattern","(?<id:targetId>\\w+) (?<nest:nestLength>\\w+) (?<key:key>\\w+)(?<size:kmg>\\w+) ");
         assertEquals("id should use targetId value",Value.TargetId,p.get("id"));
         assertEquals("nest should use key value",Value.NestLength,p.get("nest"));
         assertEquals("key should use key value",Value.Key,p.get("key"));
-        assertEquals("num should use number value",Value.Number,p.get("num"));
+
         assertEquals("size should use kmg value",Value.KMG,p.get("size"));
     }
 
@@ -239,15 +238,10 @@ public class ExpTest {
         assertTrue("root should have two name values but was: "+b.getRoot(),b.getRoot().getJson("name").size()==2);
 
     }
-
-
-
-
-
     @Test
-    public void valueNumber(){
+    public void autoNumber(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").set("value", Value.Number);
+        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)");
         p.apply(new CheatChars("age=23"),b,null);
 
         assertEquals(23,b.getRoot().getLong("value"));
@@ -499,7 +493,7 @@ public class ExpTest {
     @Test
     public void mergeNewStart(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("num","(?<num>\\d+)").set(Merge.NewStart).set("num",Value.Number);
+        Exp p = new Exp("num","(?<num>\\d+)").set(Merge.NewStart);
         p.apply(new CheatChars(" 1 "),b,null);
         p.apply(new CheatChars(" 2 "), b, null);
 

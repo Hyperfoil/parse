@@ -387,7 +387,6 @@ public class Exp {
                     rtrn.set(id,new Json());
                 }
                 if( !(rtrn.get(id) instanceof Json) ){//this should never happen for our use case
-                    System.out.println("chain("+key+") exisiting "+id+" in "+json);
                     Object existing = rtrn.get(id);
                     rtrn.set(id,new Json());
                     rtrn.getJson(id).add(existing);
@@ -598,10 +597,6 @@ public class Exp {
                         System.out.println("    contexts\n      "+builder.debugContextString(true).replaceAll("\n","\n      "));
                     }
 
-                    break;
-                case Number:
-                    double number = Double.parseDouble(fieldValue);
-                    chain(builder.getTarget(),fieldName).add(lastKey(fieldName),number);
                     break;
                 case KMG:
                     long kmg = parseKMG(fieldValue);

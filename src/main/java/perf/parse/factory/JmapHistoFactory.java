@@ -26,9 +26,7 @@ public class JmapHistoFactory {
     public Exp classEntryPattern(){
         return new Exp("class","\\s*(?<num>\\d+):\\s+(?<instances>\\d+)\\s+(?<bytes>\\d+)\\s+(?<className>.+)")
             .set(Merge.NewStart)
-            .set("num", Value.Number)
-            .set("instances",Value.Number)
-            .set("bytes",Value.Number);
+            ;
     }
 
     public Parser newParser(){

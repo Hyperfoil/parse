@@ -38,10 +38,11 @@ public class ServerLogFactory {
                     .set("nativeMethod", Value.BooleanKey))
             .add(new Exp("lineNumber","\\((?<file>[^:]+):(?<line>[^\\)]+)\\)")
                     .eat(Eat.Line)
-                    .set("line",Value.Number))
+                )
             .add(new Exp("unknownSource","\\((?<unknownSource>Unknown Source)\\)")
                     .eat(Eat.Line)
-                    .set("unknownSource", Value.BooleanKey));
+                    .set("unknownSource", Value.BooleanKey)
+                );
     }
     public Exp newCausedByExp(){
         return new Exp("causedBy","Caused by: (?<exception>[^:]+): (?<message>.+\n?)")
@@ -51,7 +52,7 @@ public class ServerLogFactory {
     }
     public Exp newStackRemainderExp(){
         return new Exp("more","\\s+\\.\\.\\. (?<stackRemainder>\\d+) more")
-                .set("stackRemainder",Value.Number)
+
                 .eat(Eat.Line);
     }
     public Exp newMessageExp(){

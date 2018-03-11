@@ -22,10 +22,6 @@ public enum Value {
      */
     NestPeerless("_nestpeerless_"),
     /**
-     * Convert the value to a number rather than leaving it as a String
-     */
-    Number("_number_"),
-    /**
      * Parse the suffix and convert the value into bytes
      * k = 1024 bytes
      * m = 1024^2 bytes
