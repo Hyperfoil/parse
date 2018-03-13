@@ -13,12 +13,12 @@ import java.util.ArrayList;
  */
 public class XanFactory {
 
-    private MatchAction emptyMatch = (match, pattern, parser) -> {
+    private MatchAction emptyMatch = (line, match, pattern, parser) -> {
         if( parser != null ){
             int removedIndex = parser.remove("row");
         }
     };
-    private MatchAction headerMatch = (match, pattern, parser) -> {
+    private MatchAction headerMatch = (line, match, pattern, parser) -> {
 
         Json arry = match.getJson("header");
 

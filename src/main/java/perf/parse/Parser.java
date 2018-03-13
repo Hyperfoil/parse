@@ -4,10 +4,7 @@ import perf.parse.internal.CheatChars;
 import perf.parse.internal.JsonBuilder;
 import perf.yaup.json.Json;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  *
@@ -16,13 +13,13 @@ public class Parser {
 
 
     private List<JsonConsumer> consumers;
-    private LinkedList<Exp> patterns;
+    private ArrayList<Exp> patterns;
     private HashMap<String,Boolean> states;
     private JsonBuilder builder;
 
     public Parser(){
         consumers = new LinkedList<JsonConsumer>();
-        patterns = new LinkedList<Exp>();
+        patterns = new ArrayList<>();
         builder = new JsonBuilder();
         states = new HashMap<>();
     }
@@ -91,13 +88,14 @@ public class Parser {
     public Json onLine(CheatChars line){
         boolean matched = false;
 
-        for(Exp pattern : patterns){
-            matched = pattern.apply(line,builder,this) && matched;
-            //TODO BUG what about parsers that use empty lines?
-            //check if line is empty to begin with then do 1 itteration before break?
-            //why do we stop when line is empty?
-            if(line.isEmpty()){
-                break;
+        int size = patterns.size();
+        for(int i=0; i<size; i++){
+            Exp exp = patterns.get(i);
+            matched = exp.apply(line,builder,this) && matched;
+            int newSize = patterns.size();
+            if(newSize!=size){
+                int diff = newSize-size;
+                i+=diff;
             }
         }
         return emit();

@@ -16,9 +16,7 @@ public class TextLineReader extends AReader {
 
     @Override protected void processInputStream(InputStream stream) {
         BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
-
         String line = null;
-        Iterator<Parser> iter = null;
         try {
             while((line = reader.readLine())!=null){
                 onLine(line);

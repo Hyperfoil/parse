@@ -6,9 +6,11 @@ package perf.parse.internal;
  */
 public class CheatChars implements CharSequence {
 
+    private String originalLine;
     private String line;
 
     public CheatChars(String line){
+        this.originalLine = line;
         this.line = line;
     }
 
@@ -35,6 +37,7 @@ public class CheatChars implements CharSequence {
     }
     @Override
     public String toString(){ return line; }
+    public String getOriginalLine(){return originalLine;}
     @Override
     public boolean equals(Object obj){ return line.equals(obj); }
     @Override

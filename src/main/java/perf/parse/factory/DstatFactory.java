@@ -13,6 +13,9 @@ import perf.parse.reader.TextLineReader;
 import perf.yaup.AsciiArt;
 import perf.yaup.json.Json;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.function.Consumer;
@@ -28,7 +31,7 @@ public class DstatFactory {
 
     private final ArrayList<String> headers = new ArrayList<String>();
 
-    private MatchAction headerMatch = (match, pattern, parser) -> {
+    private MatchAction headerMatch = (line, match, pattern, parser) -> {
         Json arry = match.getJson("header");
         for(int i=0; i<arry.size(); i++){
             String header = arry.getString(i);
@@ -52,10 +55,10 @@ public class DstatFactory {
 
         }
     };
-    private MatchAction logMatch = (match, pattern, parser) -> {
+    private MatchAction logMatch = (line, match, pattern, parser) -> {
 
     };
-    private MatchAction columnMatch = (match, pattern, parser) -> {
+    private MatchAction columnMatch = (line, match, pattern, parser) -> {
         Json arry = match.getJson("column");
         StringBuilder sb = new StringBuilder();
         sb.append("\\s*");
@@ -68,9 +71,9 @@ public class DstatFactory {
                 String header = headers.get(h);
                 sb.append("(?<");
                 sb.append(header.replaceAll("[_\\-/]", ""));
-                sb.append(".");
+                sb.append("\\.");
                 sb.append(column.replaceAll("[_\\-/]", ""));
-                sb.append(">");
+                sb.append(":KMG>");
                 if ("time".equals(column)) {
                     sb.append("\\d{1,2}\\-\\d{1,2} \\d{2}:\\d{2}:\\d{2}");
                 } else {
@@ -84,12 +87,6 @@ public class DstatFactory {
             entryExp.execute(logMatch);
             entryExp.set(Merge.NewStart);
             entryExp.eat(Eat.Line);
-        entryExp.forEachField(new Consumer<String>() {
-            @Override
-            public void accept(String s) {
-                entryExp.set(s, Value.KMG);
-            }
-        });
         parser.addAhead(entryExp);
     };
 
@@ -122,51 +119,18 @@ public class DstatFactory {
     }
 
     public static void main(String[] args) {
-        LinkedHashMap<String,String> rEntrantDstatPaths = new LinkedHashMap<>();
-        rEntrantDstatPaths.put("server4","/home/wreicher/perfWork/amq/jdbc/00259/dstat.log");
+        String filePath = "/home/wreicher/perfWork/meltdown/after/2010/365J/archive/run/benchclient3.perf.lab.eng.rdu.redhat.com/dstat.log";
 
-        for(String fKey : rEntrantDstatPaths.keySet()){
-            String fPath = rEntrantDstatPaths.get(fKey);
+        Parser p =  new DstatFactory().newParser();
+        p.add((object -> {
+            System.out.println(object.toString());
+        }));
 
-            TextLineReader r = new TextLineReader();
-            DstatFactory f = new DstatFactory();
-            final Parser p = new Parser();
-
-            int w = 13;
-            StringBuilder v = new StringBuilder();
-            StringBuilder h = new StringBuilder();
-
-            p.add(f.defaultMessageExp());
-            p.add(f.headerGroupExp());
-            p.add(f.columnGroupExp());
-
-
-            p.add(new JsonConsumer() {
-                @Override
-                public void start() {}
-
-                @Override
-                public void consume(Json object) {
-                    if(object.has("totalCpuUsage.idl")){
-                        int val = (int)object.getLong("totalCpuUsage.idl");
-                        v.append("┃"+ AsciiArt.vert(100-val,100,w,true)+"│");
-                        v.append("\n");
-                        h.append(AsciiArt.horiz(100-val,100));
-                    }
-                }
-                @Override
-                public void close() {}
-            });
-
-            r.addParser(p);
-            r.read(fPath);
-            System.out.printf("%10s.cpu │%s│\n",fKey,h.toString());
-            //System.out.println(v.toString());
-
-
+        try {
+            Files.lines(new File(filePath).toPath()).forEach(p::onLine);
+            p.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-
-
-
     }
 }

@@ -17,8 +17,11 @@ public class RegexMatcher implements IMatcher {
     private static final String FIELD_PATTERN = "\\(\\?<([^>]+)>";
 
     private Matcher matcher;
+    ThreadLocal<Matcher> cachedMatcher;
     private final Matcher fieldMatcher = java.util.regex.Pattern.compile(FIELD_PATTERN).matcher("");
     private LinkedHashMap<String,String> renames;
+    private String pattern;
+    private String safePattern;
 
 
     public static List<String> getAllNames(String pattern){
@@ -45,27 +48,57 @@ public class RegexMatcher implements IMatcher {
             renames.put(realName,compName);
         }
 
+        this.pattern = pattern;
+        safePattern = newPattern;
+        cachedMatcher = new ThreadLocal<>();
         matcher = Pattern.compile(newPattern).matcher("");
     }
 
 
     public void reset(CharSequence input){
+
+        if(cachedMatcher.get()==null){
+            cachedMatcher.set(Pattern.compile(safePattern).matcher(""));
+        }
+        cachedMatcher.get().reset(input);
         matcher.reset(input);
     }
     public boolean find(){
-        return matcher.find();
+        if(cachedMatcher.get()!=null){
+            return cachedMatcher.get().find();
+        }else {
+            System.out.println("find missing cachedMatcher on "+Thread.currentThread().getName());
+            return matcher.find();
+        }
     }
     public void region(int start,int end){
-        matcher.region(start, end);
+        if(cachedMatcher.get()!=null) {
+            cachedMatcher.get().region(start, end);
+        }else {
+            System.out.println("region missing cachedMatcher on "+Thread.currentThread().getName());
+            matcher.region(start, end);
+        }
     }
     public int start(){
-        return matcher.start();
+        if(cachedMatcher.get()!=null) {
+            return cachedMatcher.get().start();
+        }else {
+            return matcher.start();
+        }
     }
     public int end(){
-        return matcher.end();
+        if(cachedMatcher.get()!=null) {
+            return cachedMatcher.get().end();
+        }else {
+            return matcher.end();
+        }
     }
     public String group(String name){
         String newName = renames.containsKey(name) ? renames.get(name) : name;
-        return matcher.group( newName );
+        if(cachedMatcher.get()!=null) {
+            return cachedMatcher.get().group( newName );
+        }else {
+            return matcher.group(newName);
+        }
     }
 }

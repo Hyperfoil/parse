@@ -370,7 +370,7 @@ public class Exp {
     }
     private String lastKey(String key){
         List<String> ids = chain(key);
-        return ids.get(ids.size()-1);
+        return ids.get(ids.size()-1).replaceAll("\\\\\\.",".");
     }
     private Json chain(Json json,String key){
         return chain(json,key,true);
@@ -443,7 +443,7 @@ public class Exp {
                 case NestPeerless:
                 case NestLength:
 
-                    //TODO use another context variable to identify the nest array versus nest entry
+
                     int length = fieldValue.length();
                     if( builder.hasContext(fieldName,true) ) { // the current context is already part of the tree
                         if(isDebug()){
@@ -584,7 +584,7 @@ public class Exp {
                     }
 
                     builder.setContext(fieldName,length);
-                    //TODO only set NEST_VALUE if not already set
+
                     if(changedTarget && !builder.hasContext(fieldName+NEST_VALUE,false)){
                         if(isDebug()){
                             System.out.println("    set NEST_VALUE=||"+fieldValue+"||");
@@ -912,7 +912,7 @@ public class Exp {
                 int mEnd = matcher.end();
                 int currentStart = start.get();
                 switch(toEat){
-                    case ToMatch://TODO test works and impact on repeat and child matches
+                    case ToMatch:
                         int mToMatchStop = matcher.end();
                         line.drop(0,mToMatchStop);
 
@@ -933,7 +933,7 @@ public class Exp {
                         matcher.region(mStart,line.length());
                         mEnd = 0;
                         break;
-                    case Line:
+                    case Line://Do nothing until after all children matches
                     case Match:
                         int mStop = matcher.end();
                         line.drop(mStart,mStop);
@@ -990,7 +990,7 @@ public class Exp {
                 boolean childMatched = false;
                 //TODO line needs to decrease in size with each match or we infinite loop
 
-                //BUG if child eats then mEnd may be wrong (if child is LineStart
+                //TODO BUG if child eats then mEnd may be wrong (if child is LineStart
                 do {
                     childMatched=false;
                     AtomicInteger childStart = new AtomicInteger(mEnd);
@@ -1010,10 +1010,6 @@ public class Exp {
                             }else{
 
                             }
-//                            System.out.println("child "+child.getName()+" changed start from "+childStartBefore+" to "+childStart.get());
-//                            System.out.print("  "+line);
-//                            System.out.println(String.format("  %"+(childStart.get()-1)+"s%s","","^"));
-
                         }
                         childMatched = thisChildMatched || childMatched;
                     }
@@ -1025,7 +1021,7 @@ public class Exp {
                 //only notify the callbacks for the last occurrence of a match
                 if(!is(Rule.Repeat)) {
                     for (MatchAction action : callbacks) {
-                        action.onMatch(target, this, parser);
+                        action.onMatch(line.toString(), target, this, parser);
                     }
                 }
 
@@ -1034,7 +1030,7 @@ public class Exp {
             //only notify the callbacks for the last occurrence of a match
             if( is(Rule.Repeat) && rtrn){
                 for (MatchAction action : callbacks) {
-                    action.onMatch(target, this, parser);
+                    action.onMatch(line.getOriginalLine(), target, this, parser);
                 }
             }
 
