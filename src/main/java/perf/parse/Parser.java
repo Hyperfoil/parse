@@ -54,12 +54,24 @@ public class Parser {
         patterns.add(pattern);
     }
     public void add(JsonConsumer consumer){
-        consumers.add(consumer);
+        if(consumer!=null) {
+            consumers.add(consumer);
+        }
     }
     public List<Exp> exps(){return Collections.unmodifiableList(patterns);}
+    public Exp get(String patternName){
+        Exp rtrn = null;
+        for(int i=0; i<patterns.size() && rtrn==null; i++){
+            Exp exp = patterns.get(i);
+            if(exp.getName().endsWith(patternName)){
+                rtrn = exp;
+            }
+        }
+        return rtrn;
+    }
     public int remove(String patternName) {
         int index = -1;
-        for(int i=0; i<patterns.size(); i++){
+        for(int i=0; i<patterns.size() && index==-1; i++){
             Exp exp = patterns.get(i);
             if(exp.getName().equals(patternName)){
                 index = i;
@@ -119,6 +131,7 @@ public class Parser {
         Json toEmit = builder.takeClosedRoot();
         if(toEmit != null) {
             for (JsonConsumer consumer : consumers) {
+
                 consumer.consume(toEmit);
             }
         }
