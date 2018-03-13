@@ -101,13 +101,14 @@ public class Parser {
         boolean matched = false;
 
         int size = patterns.size();
-        for(int i=0; i<size; i++){
+        for(int i=0; i<size; i++){ //to get around concurrent mod from exp matching
             Exp exp = patterns.get(i);
             matched = exp.apply(line,builder,this) && matched;
             int newSize = patterns.size();
-            if(newSize!=size){
+            if(newSize!=size){ // deal with mod after executing exp
                 int diff = newSize-size;
                 i+=diff;
+                size+=diff;
             }
         }
         return emit();
