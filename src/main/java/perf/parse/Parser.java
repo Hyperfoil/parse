@@ -5,20 +5,26 @@ import perf.parse.internal.JsonBuilder;
 import perf.yaup.json.Json;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  *
  */
 public class Parser {
 
+    public static interface UnparsedConsumer {
+        void accept(String remainder,String original,int lineNumber);
+    }
 
     private List<JsonConsumer> consumers;
     private ArrayList<Exp> patterns;
     private HashMap<String,Boolean> states;
     private JsonBuilder builder;
+    private List<UnparsedConsumer> unparsedConsumers;
 
     public Parser(){
-        consumers = new LinkedList<JsonConsumer>();
+        consumers = new LinkedList<>();
+        unparsedConsumers = new LinkedList<>();
         patterns = new ArrayList<>();
         builder = new JsonBuilder();
         states = new HashMap<>();
@@ -43,6 +49,15 @@ public class Parser {
     }
     public JsonBuilder getBuilder(){return builder;}
 
+    public void addUnparsedConsumer(UnparsedConsumer consumer){
+        unparsedConsumers.add(consumer);
+    }
+    public void removeUnparsedConsumer(UnparsedConsumer consumer){
+        unparsedConsumers.remove(consumer);
+    }
+    public void clearUnparsedConsumers(){
+        unparsedConsumers.clear();
+    }
 
     public void addAhead(Exp pattern){
         patterns.add(0,pattern);
@@ -63,7 +78,7 @@ public class Parser {
         Exp rtrn = null;
         for(int i=0; i<patterns.size() && rtrn==null; i++){
             Exp exp = patterns.get(i);
-            if(exp.getName().endsWith(patternName)){
+            if(exp.getName().equals(patternName)){
                 rtrn = exp;
             }
         }
@@ -95,9 +110,12 @@ public class Parser {
         return false;
     }
     public Json onLine(String str){
-        return onLine(new CheatChars(str));
+        return onLine(new CheatChars(str),0);
     }
-    public Json onLine(CheatChars line){
+    public Json onLine(String str,int lineNumber){
+        return onLine(new CheatChars(str),lineNumber);
+    }
+    public Json onLine(CheatChars line,int lineNumber){
         boolean matched = false;
 
         int size = patterns.size();
@@ -111,6 +129,11 @@ public class Parser {
                 size+=diff;
             }
         }
+
+        if(!line.isEmpty() && !line.toString().trim().isEmpty() && !unparsedConsumers.isEmpty()){
+            unparsedConsumers.forEach(consumer -> consumer.accept(line.toString(),line.getOriginalLine(),lineNumber));
+        }
+
         return emit();
     }
 
@@ -132,7 +155,6 @@ public class Parser {
         Json toEmit = builder.takeClosedRoot();
         if(toEmit != null) {
             for (JsonConsumer consumer : consumers) {
-
                 consumer.consume(toEmit);
             }
         }

@@ -12,10 +12,10 @@ import perf.parse.Value;
  * Created by wreicher
  */
 public class JStackFactory {
-    public Exp newThreadDump(){
+    public Exp threadDumpHeader(){
         return new Exp("start", "Full thread dump (?<vm>[^\\(]+)\\((?<version>[^\\(]+)\\)").set(Merge.NewStart);
     }
-    public Exp newTidPattern(){
+    public Exp threadInfo(){
         return new Exp("tid", " tid=(?<tid>0x[0-9a-f]+) nid=(?<nid>0x[0-9a-f]+)")
                 .set(Merge.NewStart)
                 .add(new Exp("os_prio", " os_prio=(?<osprio>\\d+)")
@@ -36,32 +36,31 @@ public class JStackFactory {
                 .add(new Exp("status", " (?<status>[^\\[\n]+) ")
                 );
     }
-    public Exp newThreadStatePattern(){
+    public Exp threadState(){
         return new Exp("ThreadState","\\s+java\\.lang\\.Thread\\.State: (?<state>.*)");
     }
-    public Exp newStackFramePattern(){
+    public Exp stackFrame(){
         return new Exp("stack", "\\s+at (?<frame>[^\\(]+)").group("stack").set(Merge.Entry)
             .add(new Exp("nativeMethod", "\\((?<nativeMethod>Native Method)\\)").set("nativeMethod", Value.BooleanKey))
             .add(new Exp("lineNumber", "\\((?<file>[^:]+):(?<line>\\d+)\\)"));
     }
-    public Exp newLockPattern(){
+    public Exp locked(){
         return new Exp("stack","\\s+- locked <(?<id>0x[0-9a-f]+)> \\(a (?<class>[^\\)]+)\\)").extend("stack").group("lock").set(Merge.Entry);
     }
-    public Exp newWaitPattern(){
+    public Exp waiting(){
         return new Exp("stack","\\s+- waiting on <(?<id>0x[0-9a-f]+)> \\(a (?<class>[^\\)]+)\\)").extend("stack").group("wait").set(Merge.Entry);
     }
-    public Parser newFileStartParser(){
+    public Parser newParser(){
         Parser p = new Parser();
-        p.add(newThreadDump());
+        addToParser(p);
         return p;
     }
-    public Parser newThreadParser(){
-        Parser p = new Parser();
-        p.add(newTidPattern());
-        p.add(newThreadStatePattern());
-        p.add(newStackFramePattern());
-        p.add(newLockPattern());
-        p.add(newWaitPattern());
-        return p;
+    public void addToParser(Parser p){
+        p.add(threadDumpHeader());
+        p.add(threadInfo());
+        p.add(threadState());
+        p.add(stackFrame());
+        p.add(locked());
+        p.add(waiting());
     }
 }

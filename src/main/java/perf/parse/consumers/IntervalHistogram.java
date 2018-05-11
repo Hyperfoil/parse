@@ -1,10 +1,6 @@
 package perf.parse.consumers;
 
 import perf.parse.JsonConsumer;
-import perf.parse.Parser;
-import perf.parse.factory.OpenJdkGcFactory;
-import perf.parse.reader.TextLineReader;
-import perf.yaup.AsciiArt;
 import perf.yaup.json.Json;
 
 import java.util.function.Function;
@@ -13,7 +9,6 @@ import java.util.function.Function;
  * Created by wreicher
  */
 public class IntervalHistogram implements JsonConsumer {
-
 
     private static class JsonAccessorFunction implements Function<Json, Double> {
 
@@ -83,45 +78,4 @@ public class IntervalHistogram implements JsonConsumer {
     public int getBucketSize(){return bucketSize;}
     public long[] getBuckets(){return buckets;}
 
-    public static void main(String[] args) {
-
-        TextLineReader r = new TextLineReader();
-        OpenJdkGcFactory f = new OpenJdkGcFactory();
-        Parser p = f.newGcParser();
-
-        JsonKeyMapConsumer keyMap = new JsonKeyMapConsumer();
-        IntervalHistogram ih = new IntervalHistogram("elapsed",50,1,0);
-
-        p.add(keyMap);
-        p.add(ih);
-
-        r.addParser(p);
-        r.read("/home/wreicher/specWork/server.256Q.gclog");
-
-        System.out.println("Time between GC:");
-        long countA = ih.getCount();
-        long histoA[] = ih.getBuckets();
-        ih.reset();
-        r.read("/home/wreicher/specWork/server.258A.gclog");
-        long countB = ih.getCount();
-        long histoB[] = ih.getBuckets();
-        ih.reset();
-
-        String aColor = AsciiArt.ANSI_YELLOW;
-        String bColor = AsciiArt.ANSI_CYAN;
-
-        StringBuilder sb = new StringBuilder();
-        for(int i=0; i<ih.getBucketCount(); i++){
-            sb.append(aColor);
-            char a = AsciiArt.horiz(1.0*histoA[i]/countA,1.0);
-            sb.append(a);
-            sb.append(bColor);
-            char b = AsciiArt.horiz(1.0*histoB[i]/countB,1.0);
-            sb.append(b);
-        }
-        sb.append(AsciiArt.ANSI_RESET);
-        System.out.println(aColor+"256Q - "+countA+AsciiArt.ANSI_RESET+" "+bColor+"258A - "+countB+AsciiArt.ANSI_RESET);
-        System.out.println(sb.toString());
-
-    }
 }

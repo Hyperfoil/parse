@@ -5,7 +5,6 @@ import perf.parse.internal.IMatcher;
 import perf.parse.internal.JsonBuilder;
 import perf.parse.internal.RegexMatcher;
 import perf.yaup.HashedLists;
-import perf.yaup.StringUtil;
 import perf.yaup.json.Json;
 
 import java.util.*;
@@ -13,6 +12,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static perf.parse.Rule.ChildrenLookBehind;
 
 /**
  * Created by wreicher
@@ -156,7 +158,7 @@ public class Exp {
     }
 
     public static long parseKMG(String kmg){
-        Matcher m = java.util.regex.Pattern.compile("(?<number>\\d+\\.?\\d*)(?<kmg>[kmgtpezyKMGTPEZY]*)(?<bB>[bB]*)").matcher(kmg);
+        Matcher m = java.util.regex.Pattern.compile("(?<number>\\d+\\.?\\d*)\\s?(?<kmg>[kmgtpezyKMGTPEZY]*)(?<bB>[bB]*)").matcher(kmg);
         if(m.matches()){
 
             double mult = 1;
@@ -258,7 +260,6 @@ public class Exp {
         eat = width;
         return this;
     }
-
     /**
      * Defines how much of the input CheatChars should be removed if this Exp matches. The default is Eat.Match.
      * Eat.Line takes effect after all child iterations and self iterations while Eat.Match or custom width take effect
@@ -428,21 +429,29 @@ public class Exp {
             String fieldValue = m.group(fieldName);
 
             switch(v){
-                case TargetId:
-                    if( !builder.getTarget().has(fieldName)) {//add event info, assume it belongs to the same event
-                        builder.getTarget().set(fieldName,fieldValue);
+                case TargetId: {
+                    Object value = fieldValue;
+                    if (Pattern.matches("\\d+", fieldValue)) {//long
+                        value = Long.parseLong(fieldValue);
+                    } else if (Pattern.matches("\\d+\\.\\d+", fieldValue)) {//double
+                        value = Double.parseDouble(fieldValue);
+                    } else {
+                    }
 
-                    } else if (fieldValue.equals(builder.getTarget().get(fieldName)) ){//same event
+                    if (!builder.getTarget().has(fieldName)) {//add event info, assume it belongs to the same event
+                        builder.getTarget().set(fieldName, value);
 
-                    }else{
+                    } else if (value.equals(builder.getTarget().get(fieldName))) {//same event
+
+                    } else {
                         builder.close();
-                        builder.getTarget().set(fieldName,fieldValue);
+                        builder.getTarget().set(fieldName, value);
                         changedTarget = true;
                     }
                     break;
+                }
                 case NestPeerless:
                 case NestLength:
-
 
                     int length = fieldValue.length();
                     if( builder.hasContext(fieldName,true) ) { // the current context is already part of the tree
@@ -475,6 +484,7 @@ public class Exp {
                                 System.out.println("  ELDER");
                             }
 
+
                             while(length < builder.getContextInteger(fieldName,true) || builder.getContextBoolean(fieldName+NEST_ARRAY,false)) {
                                 if(isDebug()){
                                     System.out.println("    needPop: "+length+" < "+builder.getContextInteger(fieldName,true) +"|| NEST_ARRAY ? "+ builder.getContextBoolean(fieldName+NEST_ARRAY,false));
@@ -487,7 +497,10 @@ public class Exp {
                                 changedTarget = true;
 
                             }
+                            //at this point should it be pointing at the sibling
 
+
+                            //System.out.println(m.group("category"));
                             //
                             if(isDebug()){
                                 System.out.println("    ElderTarget=\n"+builder.debugTargetString(true));
@@ -511,14 +524,31 @@ public class Exp {
                                 }
 
                             }else{
-                                builder.popTarget();
+
+                                builder.popTarget();//points at array
+
+
                                 if(isDebug()){
                                     System.out.println("    NestLength, add entry to elder");
                                     System.out.println("    target ="+builder.getTarget());
                                     System.out.println("    context = "+builder.debugContextString(false));
                                 }
                                 Json newEntry = new Json(false);
-                                builder.getTarget().add(fieldName,newEntry);
+                                //builder.getTarget().add(fieldName,newEntry);
+
+                                //if pointed at the nest-array
+                                if(builder.getContextBoolean(fieldName+NEST_ARRAY,false)){
+                                    builder.getTarget().add(newEntry);//change to add to array to avoid having to pop the NEST_ARRAY
+                                }else{
+                                    //likely an indent less than the initial indent that started the array, tree as new tree
+                                    builder.getTarget().add(fieldName,newEntry);
+
+                                    builder.pushTarget(builder.getTarget().getJson(fieldName));
+                                    builder.setContext(fieldName+NEST_ARRAY,true);
+                                    builder.pushTarget(newEntry);
+
+                                }
+
                                 builder.pushTarget(newEntry);
                             }
                             //pop the previous entry (sibling of this new entry)
@@ -556,6 +586,7 @@ public class Exp {
                                 }
                                 //don't need to create the array because it muse exist for this to be a peer
                                 Json newJSON = new Json(false);
+
                                 builder.getTarget().add(newJSON);//adding to to existing fieldName NEST_ARRAY
                                 builder.pushTarget(newJSON);
                                 //target = newJSON;
@@ -600,6 +631,7 @@ public class Exp {
                     break;
                 case KMG:
                     long kmg = parseKMG(fieldValue);
+                    //String kmg = fieldValue;
                     chain(builder.getTarget(),fieldName).set(lastKey(fieldName),kmg);
                     break;
                 case Count:
@@ -609,12 +641,20 @@ public class Exp {
                     double sum = Double.parseDouble(fieldValue);
                     chain(builder.getTarget(),fieldName).set(lastKey(fieldName),chain(builder.getTarget(),fieldName).getDouble(lastKey(fieldName),0)+sum);
                     break;
-                case Key:
+                case Key: {
                     String keyValue = m.group(vString);
-                    if(!keyValue.isEmpty()){
-                        chain(builder.getTarget(),fieldName).set(fieldValue,keyValue);
+                    Object toSet = keyValue;
+                    if (Pattern.matches("\\d+", keyValue)) {//long
+                        toSet = Long.parseLong(keyValue);
+                    } else if (Pattern.matches("\\d+\\.\\d+", keyValue)) {//double
+                        toSet = Double.parseDouble(keyValue);
+                    } else {
+                    }
+                    if (!keyValue.isEmpty()) {
+                        chain(builder.getTarget(), fieldName).set(fieldValue, toSet);
                     }
                     break;
+                }
                 case BooleanKey:
                     chain(builder.getTarget(),fieldName).set(lastKey(fieldName),true);
                     break;
@@ -627,17 +667,74 @@ public class Exp {
                 case String:
                     chain(builder.getTarget(),fieldName).set(lastKey(fieldName),chain(builder.getTarget(),fieldName).getString(lastKey(fieldName),"")+fieldValue);
                     break;
-                case List:
-                defaut:
-                    if(Pattern.matches("\\d+",fieldValue)){//long
-                        Long value = Long.parseLong(fieldValue);
-                        chain(builder.getTarget(),fieldName).add(lastKey(fieldName),value);
-                    }else if (Pattern.matches("\\d+\\.\\d+",fieldValue)){//double
-                        Double value = Double.parseDouble(fieldValue);
-                        chain(builder.getTarget(),fieldName).add(lastKey(fieldName),value);
-                    }else{
-                        chain(builder.getTarget(),fieldName).add(lastKey(fieldName),fieldValue);
+                case First: {
+                    Object firstValue = fieldValue;
+                    if (Pattern.matches("\\d+", fieldValue)) {//long
+                        firstValue = Long.parseLong(fieldValue);
+                    } else if (Pattern.matches("\\d+\\.\\d+", fieldValue)) {//double
+                        firstValue = Double.parseDouble(fieldValue);
+                    } else {
                     }
+                    Json chained = chain(builder.getTarget(), fieldName);
+                    if (!chained.has(lastKey(fieldName))) {
+                        chained.set(lastKey(fieldName), firstValue);
+                    }
+                    break;
+                }
+                case Last:
+                    Object lastValue = fieldValue;
+                    if(Pattern.matches("\\d+",fieldValue)){//long
+                        lastValue = Long.parseLong(fieldValue);
+                    }else if (Pattern.matches("\\d+\\.\\d+",fieldValue)){//double
+                        lastValue = Double.parseDouble(fieldValue);
+                    }else{}
+                    chain(builder.getTarget(),fieldName).set(lastKey(fieldName),lastValue);
+                    break;
+                case Set:
+
+                    Object value = fieldValue;
+                    if(Pattern.matches("\\d+",fieldValue)){//long
+                        value = Long.parseLong(fieldValue);
+                    }else if (Pattern.matches("\\d+\\.\\d+",fieldValue)){//double
+                        value = Double.parseDouble(fieldValue);
+                    }else{}
+                    Json chained = chain(builder.getTarget(),fieldName);
+                    String lastKey = lastKey(fieldName);
+
+                    if(chained.has(lastKey)){
+                        if(! (chained.get(lastKey) instanceof Json)){
+                            Object existing = chained.get(lastKey);
+                            if(!existing.equals(value)){
+                                Json set = new Json();
+                                set.add(existing);
+                                set.add(value);
+                                chained.set(lastKey,set);
+                            }
+                        }else{
+                            Json existingSet = chained.getJson(lastKey);
+                            //check if existingSet already contains value
+                            final Object refValue = value;
+                            List<Object> found = existingSet.values().stream().filter((k)-> refValue.equals(k)).collect(Collectors.toList());
+                            if(found.isEmpty()){
+                                existingSet.add(value);
+                            }
+                        }
+                    }else{
+                        Json set = new Json();
+                        set.add(value);
+                        chained.set(lastKey,set);
+                    }
+
+                    break;
+                case List:
+                default:
+                    Object newObj = fieldValue;
+                    if(Pattern.matches("\\d+",fieldValue)){//long
+                        newObj = Long.parseLong(fieldValue);
+                    }else if (Pattern.matches("\\d+\\.\\d+",fieldValue)){//double
+                        newObj = Double.parseDouble(fieldValue);
+                    }else{}
+                    chain(builder.getTarget(),fieldName).add(lastKey(fieldName),newObj);
                     break;
             }
         }
@@ -678,23 +775,21 @@ public class Exp {
 
     //changed to atomic integer so pattern can change start offset if it eats before start
     private boolean applyWithStart(CheatChars line, JsonBuilder builder, Parser parser, AtomicInteger start){
-
         if(isDebug()){
             System.out.println(this.getName()+" > applyWithStart @ "+start+": line=||"+line+"||");
             System.out.println("  line@start=||"+line.subSequence(start.get(),line.length())+"||");
         }
 
-        if(!this.requires.isEmpty()){
+        if(!this.requires.isEmpty() && parser!=null){
             boolean satisfyRequired = true;
             for(String required : requires){
-                satisfyRequired = satisfyRequired & parser.getState(required);
+                boolean hasState = parser.getState(required);
+                satisfyRequired = satisfyRequired & hasState;
+                if(isDebug() && !hasState ){
+                    System.out.println("  "+getName()+" missing "+required);
+                }
             }
             if( !satisfyRequired ){
-
-                if(isDebug()){
-                    System.out.println("  missing required");
-                }
-
                 return false;
             }
         }
@@ -708,6 +803,9 @@ public class Exp {
         matcher.region( startPoint,line.length() );
 
         if(matcher.find()){
+
+            //System.out.println(getName()+" "+line.subSequence(matcher.start(),matcher.end()));
+
             if(isDebug()){
                 System.out.println("  MATCHED ||"+line.subSequence(matcher.start(),matcher.end())+"||");
                 System.out.println("    targets\n      "+builder.debugTargetString(true).replaceAll("\n","\n      "));
@@ -723,18 +821,26 @@ public class Exp {
                 }
 
                 builder.close();
-            }else if( is(Rule.AvoidTarget) ) {
+            }else if( is(Rule.PrePopTarget) ) {
 
-                if(isDebug()){System.out.println("    AvoidTarget");}
+                if(isDebug()){System.out.println("    PrePopTarget");}
 
                 builder.popTarget();
+            }else if ( is(Rule.PreClearTarget)){
+                if(isDebug()) {
+                    System.out.println("    PreClearTarget");
+                }
+                builder.clearTargets();
             }
 
             Json startTarget = builder.getTarget();
             Json target = startTarget;
             boolean needPop = false;
+            int popIndex=-1;
 
             do {
+                //TODO probably broken if a rule is grouped and repeated? worry it will repeatedly push targets
+
                 target = startTarget;
                 Json grouped = target;
                 if(grouping.isEmpty()){
@@ -800,6 +906,7 @@ public class Exp {
                     }
                 }
                 for(Iterator<String> groupIter = grouping.keySet().iterator(); groupIter.hasNext();){
+                    //TODO handle case where groupName should be an integer key?
                     String groupName = groupIter.next();
                     GroupType groupType = grouping.get(groupName);
                     boolean extend = false;
@@ -849,6 +956,9 @@ public class Exp {
 
                         } else if ( is(Merge.Collection) ) {
                             if( grouped.has(groupName) ) {
+                                if( !(grouped.get(groupName) instanceof Json) ){
+                                    System.out.println("groupName "+groupName+" not a group");
+                                }
                                 grouped = grouped.getJson(groupName);
                             } else {
                                 Json newJSON = new Json(false);
@@ -896,11 +1006,14 @@ public class Exp {
 
                 if(target != grouped){
                     target = grouped; // will only change target if there was a grouping
-                    builder.pushTarget(target);
-                    needPop = true;
+                    popIndex = builder.pushTarget(target);
+                    needPop = true; //removed because it breaks child.PushTarget
+
                 }
 
+                builder.setTargetRoot(is(Rule.OnRootTarget));
                 boolean changedContext = populate(matcher,builder);
+                builder.setTargetRoot(false);
 
                 if( changedContext ){//NestLength or TargetId
                     Json cc = builder.getTarget();
@@ -908,20 +1021,29 @@ public class Exp {
                 }
 
                 Eat toEat = Eat.from(this.eat);
+
+
                 int mStart = matcher.start();
                 int mEnd = matcher.end();
                 int currentStart = start.get();
+
+                CheatChars childLine = line;
+                AtomicInteger childStart = new AtomicInteger(mEnd);
+
+                if(is(ChildrenLookBehind)){
+                    childLine = line.subSequence(0,mStart);
+                    childStart.set(0);
+                }
                 switch(toEat){
                     case ToMatch:
-                        int mToMatchStop = matcher.end();
-                        line.drop(0,mToMatchStop);
 
-                        if(start.get() > mToMatchStop){
+                        line.drop(0,mEnd);
+
+                        if(start.get() > mEnd){
                             if(isDebug()){
-                                System.out.println(getName()+"    set start = "+(start.get()-mToMatchStop));
+                                System.out.println(getName()+"    set start = "+(start.get()-mEnd));
                             }
-
-                            start.set(start.get()-mToMatchStop);
+                            start.set(start.get()-mEnd);
                         }else{
                             if(isDebug()){
                                 System.out.println(getName()+"    set start = 0");
@@ -980,23 +1102,55 @@ public class Exp {
                         mEnd = mStart;
                         break;
                 }
+
                 if(isDebug() && currentStart != start.get()){
                     System.out.println(this.getName()+" changed start from "+currentStart+" to "+start.get());
                     System.out.println("  line@oldStart=||"+line.subSequence(currentStart,line.length())+"||");
                     System.out.println("  line@newStart=||"+line.subSequence(start.get(),line.length())+"||");
                 }
 
+                //moved before children to preserve target order
+                if( is(Rule.PushTarget) ) {
+                    if(isDebug()){
+                        System.out.println("Rule.PushTarget="+target);
+                    }
+                    builder.pushTarget(target);
+                    if(isDebug()){
+                        System.out.println("Targets:\n"+builder.debugTargetString(true));
+                    }
+                }
+
+
+
+                //moved enable disable to before child
+                //update the parser states after looping
+                if(!disables.isEmpty() && parser!=null){
+                    if(isDebug()){System.out.println(this.getName()+" disables "+disables);}
+                    disables.forEach((disable)->parser.setState(disable, false));
+                }
+                if(!enables.isEmpty() && parser!=null){
+                    if(isDebug()){System.out.println(this.getName()+" enables "+enables);}
+                    enables.forEach(((enable)->parser.setState(enable,true)));
+                }
                 //call each child
+                int lineLength = line.length();
                 boolean childMatched = false;
                 //TODO line needs to decrease in size with each match or we infinite loop
-
                 //TODO BUG if child eats then mEnd may be wrong (if child is LineStart
                 do {
+                    if(!is(ChildrenLookBehind)){
+                        childStart.set(mEnd);
+                    }
+
                     childMatched=false;
-                    AtomicInteger childStart = new AtomicInteger(mEnd);
                     for (Exp child : children) {
                         int childStartBefore = childStart.get();
-                        boolean thisChildMatched = child.applyWithStart(line, builder, parser, childStart);
+                        boolean thisChildMatched = child.applyWithStart(childLine, builder, parser, childStart);
+                        if(thisChildMatched){
+                            if (isDebug() && !builder.getTarget().equals(target) ){
+                                System.out.println("child changed target");
+                            }
+                        }
                         if(thisChildMatched && childStartBefore != childStart.get()){
                             if(isDebug()){
                                 System.out.println(child.getName()+" changed childStart, need to update "+this.getName());
@@ -1015,8 +1169,18 @@ public class Exp {
                     }
                 }while(childMatched && is(Rule.RepeatChildren));
 
-                if(needPop && !changedContext) {
-                    builder.popTarget();//pop target
+                //if the children modified the line the matcher needs to reset
+                if(lineLength != line.length()){
+                    matcher.reset(line);
+                }
+                //trying to pop the auto target for group / nest / key is breaking jdk9 heap parsing6td
+                if( needPop && !changedContext) {
+//                    System.out.println(getName()+" popTarget "+popIndex+" size="+builder.depth());
+//                    System.out.println(builder.debugParallel(true));
+                    Json poped = builder.popTargetIndex(popIndex);//pop target
+//                    System.out.println("  postPop");
+//                    System.out.println(builder.debugParallel(true));
+                    //System.out.println(poped.toString(0));
                 }
                 //only notify the callbacks for the last occurrence of a match
                 if(!is(Rule.Repeat)) {
@@ -1027,6 +1191,8 @@ public class Exp {
 
             }while( is(Rule.Repeat) && matcher.find() );
 
+
+
             //only notify the callbacks for the last occurrence of a match
             if( is(Rule.Repeat) && rtrn){
                 for (MatchAction action : callbacks) {
@@ -1034,21 +1200,14 @@ public class Exp {
                 }
             }
 
-            //update the parser states after looping
-            if(!disables.isEmpty()){
-                disables.forEach((disable)->parser.setState(disable,false));
-            }
-            if(!enables.isEmpty()){
-                enables.forEach(((enable)->parser.setState(enable,true)));
-            }
 
-            if( is(Rule.PopTarget) ) {
+            if( is(Rule.PostPopTarget) ) {
                 if(isDebug()){
-                    System.out.println(">> Rule.PopTarget");
+                    System.out.println(">> Rule.PostPopTarget");
                     System.out.println(builder.debugParallel(true));
 
                 }
-                int count = count(Rule.PopTarget);
+                int count = count(Rule.PostPopTarget);
                 if(isDebug()){
                     System.out.println("   count = "+count);
                 }
@@ -1056,21 +1215,12 @@ public class Exp {
                     builder.popTarget();
                 }
                 if(isDebug()){
-                    System.out.println("<< Rule.PopTarget");
+                    System.out.println("<< Rule.PostPopTarget");
                     System.out.println(builder.debugParallel(true));
                 }
             }
-            if( is(Rule.ClearTarget) ) {
+            if( is(Rule.PostClearTarget) ) {
                 builder.clearTargets();
-            }
-            if( is(Rule.PushTarget) ) {
-                if(isDebug()){
-                    System.out.println("Rule.PushTarget="+target);
-                }
-                builder.pushTarget(target);
-                if(isDebug()){
-                    System.out.println("Targets:\n"+builder.debugTargetString(true));
-                }
             }
 
             if(Eat.from(this.eat) == Eat.Line){ // eat the line after applying children and repeating

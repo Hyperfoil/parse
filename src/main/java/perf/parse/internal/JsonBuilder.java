@@ -2,14 +2,18 @@ package perf.parse.internal;
 
 import perf.yaup.json.Json;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.OptionalInt;
-import java.util.Stack;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
  * Created by wreicher
+ */
+
+/**
+ * Needs a re-design
+ * The idea is to track target json and info about that target
+ * right now we use a stack for targets, should we be able to close entries in the middle?
+ * maybe add exp name to the info and be able to close by name?
  */
 public class JsonBuilder {
 
@@ -23,6 +27,25 @@ public class JsonBuilder {
             parent = null;
         }
 
+
+        public Context popContextIndex(int index){
+            ArrayList<Context> contexts = new ArrayList<>();
+            Context target = this;
+            while(target!=null){
+                contexts.add(target);
+                target = target.getParent();
+            }
+            Collections.reverse(contexts);
+            if(contexts.size()>index) {
+                Context toRemove = contexts.get(index);
+                if(contexts.size()>index+1){
+                    Context next = contexts.get(index+1);
+                    next.parent = toRemove.parent;
+                }
+                contexts.remove(index);
+            }
+            return contexts.get(contexts.size()-1);
+        }
         public Context popContext(){
             return parent==null ? this : parent;
         }
@@ -120,17 +143,29 @@ public class JsonBuilder {
             context = new Context();
             reset();
         }
-        public void pushTarget(Json target) {
+        public int pushTarget(Json target) {
+            int rtrn = -1;
             synchronized (this) {
+                rtrn = targetStack.size();
                 targetStack.push(target);
                 context = context.pushContext();
             }
+            return rtrn;
         }
         public Json popTarget(){
             synchronized (this){
                 if(targetStack.size()>1){
                     context = context.popContext();
                     return targetStack.pop();
+                }
+            }
+            return null;
+        }
+        public Json popTargetIndex(int index){
+            synchronized (this){
+                if(targetStack.size()>index){
+                    context = context.popContextIndex(index);
+                    return targetStack.remove(index);
                 }
             }
             return null;
@@ -218,21 +253,19 @@ public class JsonBuilder {
             return targetStack.size()==1 && root.size()==0;
         }
         public int depth(){
-            return targetStack.size()-1;
+            return targetStack.size();
         }
 
     }
 
     private Instance current;
     private Instance previous;
+    private boolean targetRoot;
 
     public JsonBuilder(){
-        this(new Json());
-    }
-    public JsonBuilder(Json json){
-
         current = new Instance();
         previous = new Instance();
+        targetRoot = false;
     }
 
     public boolean close(){
@@ -243,6 +276,11 @@ public class JsonBuilder {
             return true;
         }
         return false;
+    }
+
+    public boolean isTargetRoot(){return targetRoot;}
+    public void setTargetRoot(boolean targetRoot){
+        this.targetRoot = targetRoot;
     }
 
     public boolean wasClosed(){
@@ -266,13 +304,24 @@ public class JsonBuilder {
     public Json peekTarget(int ahead){return current.peekTarget(ahead);}
 
     public Json getTarget(){
-        return current.getTarget();
+        return isTargetRoot()?current.getRoot():current.getTarget();
     }
-    public void pushTarget(Json json){
-        current.pushTarget(json);
+    public int pushTarget(Json json){
+        return current.pushTarget(json);
     }
-    public void popTarget(){
-        popTarget(1);
+    public Json popTargetIndex(int index){
+        return current.popTargetIndex(index);
+    }
+    public Json popTarget(){
+        Json rtrn = popTarget(1);
+        return rtrn;
+    }
+    public Json popTarget(int count){
+        Json rtrn = null;
+        for(int i=0; i<count; i++){
+            rtrn = current.popTarget();
+        }
+        return rtrn;
     }
 
     public String debugParallel(boolean recursive){
@@ -283,11 +332,6 @@ public class JsonBuilder {
     }
     public String debugTargetString(boolean recursive){
         return current.debugTargetString(recursive);
-    }
-    public void popTarget(int count){
-        for(int i=0; i<count; i++){
-            current.popTarget();
-        }
     }
     public void clearTargets(){
         current.clearTargets();

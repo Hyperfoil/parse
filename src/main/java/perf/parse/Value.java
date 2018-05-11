@@ -64,7 +64,19 @@ public enum Value {
     /**
      * Treat the value as a list of all matched values
      */
-    List("_list_");
+    List("_list_"),
+    /**
+     * Only save the last value
+     */
+    Last("_last_"),
+    /**
+     * Only save the first occurrence
+     */
+    First("_first_"),
+    /**
+     * Only add unique entries
+     */
+    Set("_set_");
 
     private static final Map<String,Value> idMap = new HashMap<>();
     static {

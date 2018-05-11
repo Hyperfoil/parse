@@ -22,7 +22,8 @@ public class RegexMatcher implements IMatcher {
     private LinkedHashMap<String,String> renames;
     private String pattern;
     private String safePattern;
-
+    private int regionStart=-1;
+    private int regionStop=-1;
 
     public static List<String> getAllNames(String pattern){
         List<String> rtrn = new ArrayList<>();
@@ -51,12 +52,12 @@ public class RegexMatcher implements IMatcher {
         this.pattern = pattern;
         safePattern = newPattern;
         cachedMatcher = new ThreadLocal<>();
+        cachedMatcher.set(Pattern.compile(newPattern).matcher(""));
         matcher = Pattern.compile(newPattern).matcher("");
     }
 
 
     public void reset(CharSequence input){
-
         if(cachedMatcher.get()==null){
             cachedMatcher.set(Pattern.compile(safePattern).matcher(""));
         }
@@ -67,15 +68,15 @@ public class RegexMatcher implements IMatcher {
         if(cachedMatcher.get()!=null){
             return cachedMatcher.get().find();
         }else {
-            System.out.println("find missing cachedMatcher on "+Thread.currentThread().getName());
             return matcher.find();
         }
     }
     public void region(int start,int end){
+        this.regionStart=start;
+        this.regionStop=end;
         if(cachedMatcher.get()!=null) {
             cachedMatcher.get().region(start, end);
         }else {
-            System.out.println("region missing cachedMatcher on "+Thread.currentThread().getName());
             matcher.region(start, end);
         }
     }

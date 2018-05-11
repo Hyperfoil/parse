@@ -17,20 +17,34 @@ public enum Rule {
      */
     RepeatChildren,
     /**
+     * The children Exp will be applied to the characters that precede the match region this Exp
+     */
+    ChildrenLookBehind,
+    /**
      * Push the current target (grouping / extending) to the target stack
      */
     PushTarget,
     /**
-     *
+     * Remove the current target from the stack (if it isn't root) before populating the match
      */
-    AvoidTarget,
+    PrePopTarget,
     /**
-     * Remove the current target from the stack (if it isn't root)
+     * Remove the current target from the stack (if it isn't root) after populating the match
      */
-    PopTarget,
+    PostPopTarget,
     /**
-     *
+     * Clear all the targets back to the root before populating the match
      */
-    ClearTarget
+    PreClearTarget,
+    /**
+     * Clear all the targets from the stack (go back to root) after populating the match
+     */
+    PostClearTarget,
+    /**
+     * Populate the matches on the Root target only.
+     * TODO If the Exp has a group or key then grouping starts from the Root target.
+     */
+    OnRootTarget
+
 }
 

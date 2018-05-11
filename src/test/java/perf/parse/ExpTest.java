@@ -6,10 +6,6 @@ import perf.parse.internal.CheatChars;
 import perf.parse.internal.JsonBuilder;
 import perf.yaup.json.Json;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Map;
-
 import static org.junit.Assert.*;
 
 /**
@@ -116,7 +112,7 @@ public class ExpTest {
 
         Exp norm = new Exp("kv","\\s*(?<key>\\S+)\\s*:\\s*(?<value>.*)")
                 //.group("child")
-//                .set(Rule.AvoidTarget)
+//                .set(Rule.PrePopTarget)
                 .set(Merge.Entry)
                 .eat(Eat.Match);
         Exp nest = new Exp("nest","(?<child:nestLength>[\\s-]*-\\s*)")
@@ -135,6 +131,8 @@ public class ExpTest {
 
         Json root = p.getBuilder().getRoot();
 
+        System.out.println(root.toString(2));
+
         Json expected = Json.fromString("{\"key\":\"foo\",\"value\":\"bar\",\"child\":[[{\"key\":\"a\",\"value\":\"Alpha\"},{\"key\":\"b\",\"value\":\"Bravo\"}],[{\"key\":\"y\",\"value\":\"Yankee\"},{\"key\":\"z\",\"value\":\"Zulu\"}]]}\n");
 
         assertEquals("root should have 2 children each with 2 entries",expected,root);
@@ -151,7 +149,7 @@ public class ExpTest {
 //                .add(
 //                    new Exp("kv","\\s*(?<key>\\S+)\\s*:\\s*(?<value>.*)")
 //                        //.group("child")
-//                        //.set(Rule.AvoidTarget)
+//                        //.set(Rule.PrePopTarget)
 //                        //.set(Merge.Entry)
 //                        .eat(Eat.Match)
 //                )
@@ -159,12 +157,12 @@ public class ExpTest {
 
         Exp kv = new Exp("kv","\\s*(?<key>\\S+)\\s*:\\s*(?<value>.*)")
                 //.group("child")
-                //.set(Rule.AvoidTarget)
+                //.set(Rule.PrePopTarget)
                 .set(Merge.Entry)
                 .eat(Eat.Match);
         Exp kv2 = new Exp("kv2","^\\s*(?<key>[^:\\s]+)")
                 //.group("child")
-                //.set(Rule.AvoidTarget)
+                //.set(Rule.PrePopTarget)
                 .set(Merge.Entry)
                 .eat(Eat.Line)
                 .add(
@@ -214,11 +212,11 @@ public class ExpTest {
         p.apply(new CheatChars("  aaa"),b,null);
         p.apply(new CheatChars("b"),b,null);
 
-        assertTrue("tree should use nest as the child key",b.getRoot().has("nest"));
+        assertTrue("tree should use nest as the child key",b.getRoot().has("nest") && b.getRoot().getJson("nest").isArray());
         assertTrue("expect only one key on root json",b.getRoot().size()==1);
         assertTrue("expect root o have 2 children",b.getRoot().getJson("nest").size()==2);
-        assertTrue("expect a to have one child",b.getRoot().getJson("nest").getJson(0).getJson("nest").size()==1);
-        assertTrue("expect a.aa to have one child",b.getRoot().getJson("nest").getJson(0).getJson("nest").getJson(0).getJson("nest").size()==1);
+        assertTrue("expect a to have one child",b.getRoot().getJson("nest").getJson(0).getJson("nest").isArray() && b.getRoot().getJson("nest").getJson(0).getJson("nest").size()==1);
+        assertTrue("expect a.aa to have one child",b.getRoot().getJson("nest").getJson(0).getJson("nest").getJson(0).getJson("nest").isArray() && b.getRoot().getJson("nest").getJson(0).getJson("nest").getJson(0).getJson("nest").size()==1);
 
     }
 
@@ -380,8 +378,8 @@ public class ExpTest {
         Exp value = new Exp("value","^\\s*(?<value>[^,\\}\\{]*[^\\s,\\}\\{])").eat(Eat.Match);
         Exp close = new Exp("close","^\\s*\\}")
                 .eat(Eat.Match)
-                .set(Rule.PopTarget)
-                .set(Rule.PopTarget)
+                .set(Rule.PostPopTarget)
+                .set(Rule.PostPopTarget)
                 ;
         Parser p = new Parser();
         p.add(open.clone().set(Rule.RepeatChildren)
@@ -416,8 +414,8 @@ public class ExpTest {
         Exp entry = new Exp("entry","^\\s*(?<key>[^:\\s,\\]]+)\\s*").eat(Eat.Match).set(Merge.Entry);
         Exp close = new Exp("close","^\\s*]")
                 .eat(Eat.Match)
-                .set(Rule.PopTarget)
-                .set(Rule.PopTarget);
+                .set(Rule.PostPopTarget)
+                .set(Rule.PostPopTarget);
 
         Parser p = new Parser();
         p.add(open.clone().set(Rule.RepeatChildren)
@@ -457,7 +455,7 @@ public class ExpTest {
         Json lost = new Json();
         lost.set("lost","lost");
         b.pushTarget(lost);
-        Exp p = new Exp("num","(?<num>\\d+)").group("pushed").set(Rule.PopTarget);
+        Exp p = new Exp("num","(?<num>\\d+)").group("pushed").set(Rule.PostPopTarget);
         p.apply(new CheatChars(" 1 "),b,null);
 
         assertTrue("context should not equal starting context", lost != b.getTarget());
@@ -469,7 +467,7 @@ public class ExpTest {
         Json lost = new Json();
         lost.set("lost","lost");
         b.pushTarget(lost);
-        Exp p = new Exp("num","(?<num>\\d+)").group("pushed").set(Rule.AvoidTarget);
+        Exp p = new Exp("num","(?<num>\\d+)").group("pushed").set(Rule.PrePopTarget);
         p.apply(new CheatChars(" 1 "), b, null);
 
         assertTrue("context should not equal starting context",lost!=b.getTarget());
@@ -484,7 +482,7 @@ public class ExpTest {
         second.set("ctx","second");
         b.pushTarget(first);
         b.pushTarget(second);
-        Exp p = new Exp("num","(?<num>\\d+)").group("pushed").set(Rule.ClearTarget);
+        Exp p = new Exp("num","(?<num>\\d+)").group("pushed").set(Rule.PostClearTarget);
         p.apply(new CheatChars(" 1 "),b,null);
         assertTrue("context should not equal starting context",b.getRoot()==b.getTarget());
         assertTrue("fields should be applied to context before pop", second.has("pushed"));

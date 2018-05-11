@@ -30,18 +30,25 @@ public class CheatChars implements CharSequence {
     @Override
     public int length() { return line.length(); }
     @Override
-    public char charAt(int index) { return line.charAt(index); }
+    public char charAt(int index) {
+        try {
+            return line.charAt(index);
+        }catch(StringIndexOutOfBoundsException e){
+            System.out.println(index+" > "+line.length()+" line=||"+line+"||");
+            throw e;
+        }
+    }
     @Override
-    public CharSequence subSequence(int start, int end) {
-        return line.subSequence(start,end);
+    public CheatChars subSequence(int start, int end) {
+        return new CheatChars(line.subSequence(start,end).toString());
     }
     @Override
     public String toString(){ return line; }
     public String getOriginalLine(){return originalLine;}
     @Override
-    public boolean equals(Object obj){ return line.equals(obj); }
+    public boolean equals(Object obj){ return originalLine.equals(obj); }
     @Override
-    public int hashCode(){ return line.hashCode(); }
+    public int hashCode(){ return originalLine.hashCode(); }
 
 }
 

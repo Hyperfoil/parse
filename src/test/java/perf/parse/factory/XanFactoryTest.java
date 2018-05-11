@@ -1,6 +1,5 @@
 package perf.parse.factory;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -25,32 +24,32 @@ public class XanFactoryTest {
     public void reset(){}
 
     @Test
-    public void headerExp(){
-        JsonBuilder b = new JsonBuilder();
+    public void header(){
         Exp p = f.headerExp();
-        p.apply(new CheatChars("Name     Value"),b,null);
+        Json root;
+        root = p.apply("Name     Value");
 
-        assertEquals("expect 2 headers",2,b.getRoot().getJson("header").size());
+        assertEquals("expect 2 headers",2,root.getJson("header").size());
 
-        b.reset();
-        p.apply(new CheatChars("Time (s)  CreateVehicleEJB  CreateVehicleWS"),b,null);
-        assertEquals("expect 3 headers",3,b.getRoot().getJson("header").size());
+
+        root = p.apply("Time (s)  CreateVehicleEJB  CreateVehicleWS");
+        assertEquals("expect 3 headers",3,root.getJson("header").size());
 
     }
 
     @Test
-    public void titleExp(){
+    public void title(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = f.titleExp();
+        Exp p = f.title();
         p.apply(new CheatChars("Title: SPECjEnterprise2010 Detailed Results"),b,null);
         assertTrue("root should include title",b.getRoot().has("title"));
         assertEquals("title","SPECjEnterprise2010 Detailed Results",b.getRoot().getString("title"));
     }
 
     @Test
-    public void sectionExp(){
+    public void section(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = f.sectionExp();
+        Exp p = f.section();
         p.apply(new CheatChars("Section: Benchmark Information"),b,null);
         assertTrue("root should include section",b.getRoot().has("section"));
         assertEquals("section","Benchmark Information",b.getRoot().getString("section"));

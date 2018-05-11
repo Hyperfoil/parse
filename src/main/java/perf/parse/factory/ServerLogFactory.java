@@ -13,7 +13,19 @@ import perf.parse.reader.TextLineReader;
  */
 public class ServerLogFactory {
 
-    private Parser parser;
+    public Parser newParser(){
+        Parser p = new Parser();
+        addToParser(p);
+        return p;
+    }
+    public void addToParser(Parser p){
+        p.add(newStartEntryExp());
+        p.add(newFrameExp());
+        p.add(newCausedByExp());
+        p.add(newStackRemainderExp());
+        p.add(newMessageExp());
+    }
+
 
     public Exp newStartEntryExp(){
         return new Exp("timestamp","(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3})")
@@ -58,47 +70,4 @@ public class ServerLogFactory {
     public Exp newMessageExp(){
         return new Exp("message","(?<message>.+\n?)").set("message", Value.String);
     }
-    public Parser newLogEntryParser(){
-        Parser p = new Parser();
-            p.add(newStartEntryExp());
-            p.add(newFrameExp());
-            p.add(newCausedByExp());
-            p.add(newStackRemainderExp());
-            p.add(newMessageExp());
-        return p;
-    }
-
-    public static void main(String[] args) {
-
-        String filePath = null;
-        filePath = "/home/wreicher/specWork/reentrant/reentrant-aio-196/log/server.log";
-        filePath = "/home/wreicher/specWork/server.246Y.log";
-        filePath = "/home/wreicher/runtime/wildfly-10.0.0.Final-invm/standalone/log/server.log";
-        ServerLogFactory f = new ServerLogFactory();
-        Parser p = f.newLogEntryParser();
-        TextLineReader r = new TextLineReader();
-        r.addParser(p);
-
-        System.out.println("☐\n☑\n☒\n✓\n✔\n✕\n✖\n✗\n✘\n⒛\n");
-        System.out.println(p.getNames().toString(2));
-
-        p.add(json->{
-            if(json.toString().contains("LEAK")){
-                String message[] = json.getString("message").split("\n");
-
-                for(int i=message.length-1; i>=0; i--){
-                    System.out.println(i+":"+message[i]);
-                    if(message[i].startsWith("\t")){
-                        System.out.println("tabbbbb");
-                    }
-                }
-            }
-        });
-
-        System.out.println(System.currentTimeMillis());
-        r.read(filePath);
-        System.out.println(System.currentTimeMillis());
-
-    }
-
 }

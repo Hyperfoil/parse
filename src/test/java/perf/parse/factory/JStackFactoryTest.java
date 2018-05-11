@@ -30,7 +30,7 @@ public class JStackFactoryTest {
     @Test
     public void tidPattern(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = f.newTidPattern();
+        Exp p = f.threadInfo();
         Json o = null;
 
         p.apply(new CheatChars("\"Name with \" and '\" prio=10 tid=0x00007fe444377000 nid=0x1036 in Object.wait() [0x00007fe42eef5000]"),b,null);
@@ -73,8 +73,8 @@ public class JStackFactoryTest {
     @Test
     public void stack(){
         JsonBuilder b = new JsonBuilder();
-        Exp frame = f.newStackFramePattern();
-        Exp lock = f.newLockPattern();
+        Exp frame = f.stackFrame();
+        Exp lock = f.locked();
 
         frame.apply(new CheatChars("\tat sun.nio.ch.EPollArrayWrapper.epollWait(Native Method)\n"),b,null);
         frame.apply(new CheatChars("\tat sun.nio.ch.SelectorImpl.lockAndDoSelect(SelectorImpl.java:86)\n"),b,null);
