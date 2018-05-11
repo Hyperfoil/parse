@@ -126,10 +126,10 @@ public class Jep271Factory {
 
     public Exp gcTags(){
         return new Exp("tags","\\[(?<tags:set>[^\\s,\\]]+)")
-                .set(Rule.OnRootTarget)
+                .set(Rule.TargetRoot)
                 .add(new Exp("otherTags","^,(?<tags:set>[^\\s,\\]]+)")
                         .set(Rule.Repeat)
-                        .set(Rule.OnRootTarget)
+                        .set(Rule.TargetRoot)
                 )
                 .add(new Exp("tagsEnd","\\s*\\]")
                 )
@@ -142,7 +142,7 @@ public class Jep271Factory {
     public Exp gcLevel(){//"[info ]"
         return new Exp("level","\\[(?<level:last>error|warning|info|debug|trace|develop)\\s*\\]")
                 .enables("jep271")
-                .set(Rule.OnRootTarget)
+                .set(Rule.TargetRoot)
                 .eat(Eat.ToMatch);
     }
 
@@ -308,7 +308,7 @@ public class Jep271Factory {
     }
     public Exp gcId(){//"GC(27)"
         return new Exp("gcId","GC\\((?<gcId>\\d+)\\)")
-                .set(Rule.OnRootTarget)
+                .set(Rule.TargetRoot)
                 .set("gcId",Value.TargetId)
                 ;
     }
@@ -317,37 +317,37 @@ public class Jep271Factory {
     //
     public Exp time(){ //[2018-04-12T09:24:30.397-0500]
         return new Exp("time","\\[(?<time:first>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}-\\d{4})\\]")
-                .set(Rule.OnRootTarget)
+                .set(Rule.TargetRoot)
                 ;
     }
     public Exp utcTime(){ //[2018-04-12T14:24:30.397+0000]
         return new Exp("utcTime","\\[(?<utcTime:first>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\+\\d{4})\\]")
-                .set(Rule.OnRootTarget)
+                .set(Rule.TargetRoot)
                 ;
     }
     public Exp uptime(){ //[0.179s]
         return new Exp("uptime","\\[(?<uptime:first>\\d+\\.\\d{3})s\\]")
-                .set(Rule.OnRootTarget)
+                .set(Rule.TargetRoot)
                 ;
     }
     public Exp timeMillis(){ //[1523543070397ms]
         return new Exp("timeMillis","\\[(?<timeMillis:first>\\d{13})ms\\]")
-                .set(Rule.OnRootTarget)
+                .set(Rule.TargetRoot)
                 ;
     }
     public Exp uptimeMillis(){ //[15ms]
         return new Exp("uptimeMillis","\\[(?<uptimeMillis:first>\\d{1,12})ms\\]")
-                .set(Rule.OnRootTarget)
+                .set(Rule.TargetRoot)
                 ;
     }
     public Exp timeNanos(){ //[6267442276019ns]
         return new Exp("timeNanos","\\[(?<timeNanos:first>\\d{13,})ns\\]")
-                .set(Rule.OnRootTarget)
+                .set(Rule.TargetRoot)
                 ;
     }
     public Exp uptimeNanos(){ //[10192976ns]
         return new Exp("uptimeNanos","\\[(?<uptimeNanos:first>\\d{1,12})ns\\]")
-                .set(Rule.OnRootTarget)
+                .set(Rule.TargetRoot)
                 ;
     }
     //TODO hostname,pid,tid,

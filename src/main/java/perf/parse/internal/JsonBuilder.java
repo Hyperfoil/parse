@@ -4,6 +4,7 @@ import perf.yaup.json.Json;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -90,7 +91,6 @@ public class JsonBuilder {
             targetInfo.push(infoMap);
         }
         return rtrn;
-
     }
     public Json popTargetIndex(int index){
         synchronized (this){
@@ -105,6 +105,7 @@ public class JsonBuilder {
     public Json popTarget(){
         return popTarget(1);
     }
+
     public Json popTarget(String name){
         int index = namedTargetIndex(name);
         Json rtrn = null;
@@ -119,7 +120,7 @@ public class JsonBuilder {
         do {
             String indexName = (String)targetInfo.get(index).get(NAME_KEY);
             found = name.equals(indexName);
-        }while(!found && index-- >= 0);
+        }while(!found && --index >= 0);
 
         return index;
     }
@@ -160,6 +161,21 @@ public class JsonBuilder {
                 targets.pop();
                 targetInfo.pop();
             }
+        }
+    }
+    /*
+     * Clear targets up to and including name if name is present
+     */
+    public void clearTargets(String name){
+        int index = namedTargetIndex(name);
+        int size = size();
+
+        if(index >= 0){//no op, cannot remove what we didn't find
+            while (size()-1>=index){
+                popTarget();
+            }
+        }else{
+            //do we care to alert that it wasn't found
         }
     }
     public void reset(){

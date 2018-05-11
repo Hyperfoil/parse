@@ -84,17 +84,17 @@ public class PrintGcFactory {
     }
     public void addToParser(Parser p) {
         p.add(gcMemoryLine()
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
         );
         p.add(gcCommandLine()
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
         );
 
         p.add(gcTenuringDistribution()
-            .set(Rule.OnRootTarget)
+            .set(Rule.TargetRoot)
         );
         p.add(gcTenuringAgeDetails()
-            .set(Rule.OnRootTarget)
+            .set(Rule.TargetRoot)
             .group("tenuring")
             .set(Merge.Entry)
             //.key("age")
@@ -140,17 +140,17 @@ public class PrintGcFactory {
             .group("cset")
         );
         p.add(gcShenandoahTimedPhase()
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
         );
         p.add(gcShenandoahResizePhase()
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
         );
 
         p.add(gcShenandoahDetailsInlineTotalGarbage()
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
         );
         p.add(gcShenandoahDetailsInlineAdaptiveCset()
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
         );
 
         p.add(gcShenandoahDetailsPeriodicTrigger());
@@ -172,7 +172,7 @@ public class PrintGcFactory {
         p.add(gcShenandoahDetailsSoloTime());
 
         p.add(gcShenandoahStatisticsHeader()
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
         );
         p.add(gcShenandoahStatisticsEntry());
         p.add(gcShenandoahAFStats());
@@ -213,11 +213,11 @@ public class PrintGcFactory {
         //moved before GC line matching because of (full) matching a reason
         p.add(gcHeapAtGcHeader()//before gcDetailsHeap to match before "Heap" matches
             .enables("printGc-heap")
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
         );
         p.add(gcDetailsHeap()
             .enables("printGc-heap")
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
         );
 
         p.add(gcDetailsHeapRegion()
@@ -301,7 +301,7 @@ public class PrintGcFactory {
         p.add(gcType()
             .disables("printGc-heap")
             .disables("printGc-heap-shenandoah")
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
             .add(gcReason())
             .add(gcG1TimedStep()
                 .group("steps")
@@ -319,24 +319,30 @@ public class PrintGcFactory {
 
 
         //This would normally go under gcType to be on same line but PrintTenuringDistribution,PrintAdaptiveSizePolicy can break it to multiple lines
+        //needs to be bofore gcDetailsRegionName to prevent gcDetailsRegionName from matching "[Times:'
         p.add(gcDetailsTimes()
             .group("times")
+            .set(Rule.TargetRoot)//in case we are in a gcDetailsRegionName that split into multiple lines
         );
         p.add(gcDetailsRegionName()
             .group("region")
             .set(Merge.Entry)
-            .set(Rule.PrePopTarget)
-            .set(Rule.PushTarget)
+            .set(Rule.PreClearTarget,"gcDetailsRegionName")
+            .set(Rule.PushTarget,"gcDetailsRegionName")
             .set(Rule.Repeat)
             .add(gcDetailsRegionWarning())//for (promotion failed)
             .add(gcResize()
                 .add(gcDetailsRegionClose()
-                    .set(Rule.PostClearTarget)
+                    .set(Rule.PostClearTarget,"gcDetailsRegionName")
+                    //hack closing GROUP_NAME, should ROOT and GROUP really have separate names?
+                    //both auto-close but then other patterns cannot interact with them...
+                    //closing GROUP_NAME fixes newParser_serial_gcDetails_prefixed which was putting seconds with Metadata rather than root
+                    .set(Rule.PostClearTarget,"gcDetailsRegionName"+Exp.GROUPED_NAME)
                 )//hack, one pop should be fine but it appears we need 2? not sure why
             )
             .add(gcCmsUsed()
                 .add(gcCmsUsedCloser()
-                    .set(Rule.PostClearTarget)
+                    .set(Rule.PostClearTarget,"gcDetailsRegionName")
                 )//hack to close targets, something is double pushing targets, maybe nest isn't poping correctly?
             )
             .add(gcCmsTimed()
@@ -344,35 +350,54 @@ public class PrintGcFactory {
                 .set(Merge.Entry)
                 .set(Rule.Repeat)
             )
-            .add(gcSecs()
-                    .set(Rule.PostPopTarget)
+            .add( new Exp("gcSecs-2","\\s*, (?<seconds>\\d+\\.\\d{7}) secs\\]")
+                    .set(Rule.PostPopTarget,"gcDetailsRegionName")//not sure if named is required here
                 )
         );
-        p.add(gcResize()
-            .set(Rule.OnRootTarget)
-        );//hacked on root target because not closing Region in parallel+gcDetails
-        p.add(gcCmsUsed());
-        p.add(gcSecs());
+        p.add(
+            new Exp("grouping-resize+size","")
+                .set(Rule.RepeatChildren)
+                .add(gcResize())
+                .add(gcCmsUsed())
+                .add(gcSecs()
+                    .set(Rule.PostClearTarget,"gcDetailsRegionName")//remove gcDetailsRegionName if still in it
+                )
+
+        );
+
+        //commented out because TenuringDistribution puts resize+secs from region onto new line
+        //so we need this group to repeat at least once if it matches
+//        p.add(gcResize());//hacked on root target because not closing Region in parallel+gcDetails
+//        p.add(gcCmsUsed());
+//        p.add(gcSecs()
+//            .set(Rule.PostClearTarget,"gcDetailsRegionName")//remove gcDetailsRegionName if still in it
+//        );
+
+
         //end of what would normally be on same line as gcType
 
-        //application timing, before gc line decorators to include decorators in NewStart
+        //application timing, before gc line decorators to include decorators in PreClose
         p.add(gcApplicationConcurrent()
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
         );
         p.add(gcApplicationStopped()
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
         );
 
         //gc line start decorators (that also get strewn throughout the Serial collector gc but we only want the first one
         p.add(gcDateStamps()
+            .set(Rule.TargetRoot)//in case we are in a gcDetailsRegionName that split into multiple lines
             .set(Rule.LineStart)
         );
-        p.add(gcTimeStamps()
+        p.add(gcTimestamp()
             .set(Rule.LineStart)
+            .set(Rule.TargetRoot)//in case we are in a gcDetailsRegionName that split into multiple lines
         );//after the other parser to avoid picking out incorrect #.###:
         p.add(gcId()
             .set(Rule.LineStart)
+            .set(Rule.TargetRoot)//in case we are in a gcDetailsRegionName that split into multiple lines
         );
+
     }
 
     //-XX:+UseShenandoahGC
@@ -537,7 +562,7 @@ public class PrintGcFactory {
     public Exp gcShenandoahDetailsHeapVirtualRange(){
         //" - [low_b, high_b]: [0x0000000340000000, 0x00000007c0000000]"
         return new Exp("gcShenandoahDetailsHeapVirtualRange",
-            "- \\[(?<first>[^,]+), (?<second>[^\\]]+)\\]:\\s+\\[(?<start>0x[0-9a-f]+), (?<end>0x[0-9a-f]+)\\]")
+            "- \\[(?<first>[^,]+), (?<second>[^\\]]+)\\]:\\s*\\[(?<start>0x[0-9a-f]+), (?<end>0x[0-9a-f]+)\\]")
             .set("first","start")
             .set("second","end");
     }
@@ -608,8 +633,8 @@ public class PrintGcFactory {
     }
 
     //PrintGCTimeStamps
-    public Exp gcTimeStamps(){//0.071:
-        return new Exp("gcTimeStamps","(?<timestamp:first>\\d+\\.\\d{3}):\\s*");
+    public Exp gcTimestamp(){//0.071:
+        return new Exp("gcTimestamp","(?<timestamp:first>\\d+\\.\\d{3}):\\s*");
     }
     //PrintGCID
     public Exp gcId(){//#1

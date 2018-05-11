@@ -6,7 +6,6 @@ import perf.parse.Merge;
 import perf.parse.Parser;
 import perf.parse.Rule;
 import perf.parse.Value;
-import perf.parse.reader.TextLineReader;
 
 /**
  * Created by wreicher
@@ -30,7 +29,7 @@ public class ServerLogFactory {
     public Exp newStartEntryExp(){
         return new Exp("timestamp","(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3})")
             .eat(Eat.Match)
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
             .add(new Exp("level", " (?<level>[A-Z]+)\\s+")
                     .eat(Eat.Match))
             .add(new Exp("component","\\[(?<component>[^\\]]+)\\]\\s+")

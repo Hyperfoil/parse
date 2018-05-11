@@ -3,6 +3,7 @@ package perf.parse.factory;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import perf.parse.Exp;
 import perf.parse.Parser;
 import perf.parse.Rule;
 import perf.yaup.Sets;
@@ -34,7 +35,29 @@ public class PrintGcFactoryTest {
         p.onLine("- age   1:   14050056 bytes,   14050056 total");
         p.onLine(": 6710912K->13897K(7549760K), 0.0369830 secs] 6710912K->13897K(32715584K), 0.0371120 secs] [Times: user=0.51 sys=0.02, real=0.04 secs]");
         Json root = p.getBuilder().getRoot();
-        System.out.println(root.toString(2));
+
+        assertTrue("root.times",root.has("times") && root.get("times") instanceof Json);
+
+        assertEquals("root.reason","Allocation Failure",root.getString("reason"));
+        assertEquals("root.datestamp","2018-05-10T04:51:23.342+0000",root.getString("datestamp"));
+        assertEquals("root.timestamp",1.085,root.getDouble("timestamp"),0.00000001);
+        assertEquals("root.gcId",0,root.getLong("gcId"));
+        assertEquals("root.before",Exp.parseKMG("6710912K"),root.getLong("before"));
+        assertEquals("root.after",Exp.parseKMG("13897K"),root.getLong("after"));
+        assertEquals("root.capacity", Exp.parseKMG("32715584K"),root.getLong("capacity"));
+        assertTrue("root has region",root.has("region") && root.get("region") instanceof Json);
+        Json region = root.getJson("region");
+        assertEquals("region.size",1,region.size());
+
+        Json region0 = region.getJson(0);
+        assertEquals("region[0].before",Exp.parseKMG("6710912K"),region0.getLong("before"));
+        assertEquals("region[0].after",Exp.parseKMG("13897K"),region0.getLong("after"));
+        assertEquals("region[0].capacity", Exp.parseKMG("7549760K"),region0.getLong("capacity"));
+
+        assertTrue("root.tenuring",root.has("tenuring") && root.get("tenuring") instanceof Json);
+
+        Json tenuring = root.getJson("tenuring");
+
 
 
     }
@@ -606,8 +629,9 @@ public class PrintGcFactoryTest {
     public void gcShenandoahDetailsHeapVirtualRange(){
         Json root = f.gcShenandoahDetailsHeapVirtualRange()
             .apply(" - [low_b, high_b]: [0x0000000340000000, 0x00000007c0000000]");
-        System.out.println(root.toString(2));
         assertFalse("root should not be empty",root.isEmpty());
+        assertEquals("root.low_b","0x0000000340000000",root.getString("low_b"));
+        assertEquals("root.high_b","0x00000007c0000000",root.getString("high_b"));
 
     }
     @Test
@@ -700,7 +724,7 @@ public class PrintGcFactoryTest {
     @Test
     public void gcTimeStamps(){
         Parser p = new Parser();
-        Json root = f.gcTimeStamps().apply("2018-04-17T10:42:28.747-0500: 0.076: #0: [GC (Allocation Failure)  61852K->15323K(247488K), 0.0066592 secs]");
+        Json root = f.gcTimestamp().apply("2018-04-17T10:42:28.747-0500: 0.076: #0: [GC (Allocation Failure)  61852K->15323K(247488K), 0.0066592 secs]");
         assertTrue("has timestamp:"+root.toString(),root.has("timestamp"));
         assertEquals(0.076,root.getDouble("timestamp"),0.0001);
     }

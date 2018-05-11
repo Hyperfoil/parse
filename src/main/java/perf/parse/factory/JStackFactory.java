@@ -13,11 +13,11 @@ import perf.parse.Value;
  */
 public class JStackFactory {
     public Exp threadDumpHeader(){
-        return new Exp("start", "Full thread dump (?<vm>[^\\(]+)\\((?<version>[^\\(]+)\\)").set(Merge.NewStart);
+        return new Exp("start", "Full thread dump (?<vm>[^\\(]+)\\((?<version>[^\\(]+)\\)").set(Merge.PreClose);
     }
     public Exp threadInfo(){
         return new Exp("tid", " tid=(?<tid>0x[0-9a-f]+) nid=(?<nid>0x[0-9a-f]+)")
-                .set(Merge.NewStart)
+                .set(Merge.PreClose)
                 .add(new Exp("os_prio", " os_prio=(?<osprio>\\d+)")
                     .set(Rule.LineStart))
                 .add(new Exp("prio", " prio=(?<prio>\\d+)")

@@ -46,12 +46,12 @@ public class XanFactory {
         p.add(
             title()
             .eat(Eat.Line)
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
         );
         p.add(
             section()
             .eat(Eat.Line)
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
         );
         p.add(
             display()

@@ -9,6 +9,21 @@ import static org.junit.Assert.assertTrue;
 
 public class JsonBuilderTest {
 
+    @Test
+    public void clearTargets_name(){
+        JsonBuilder builder = new JsonBuilder();
+        builder.getTarget().set("name","one");
+        builder.pushTarget(new Json(),"two");
+        builder.getTarget().set("name","two");
+        builder.setContext("mark",true);
+        builder.pushTarget(new Json(),"three");
+        builder.getTarget().set("name","three");
+
+        builder.clearTargets("two");
+
+        assertEquals("size",1,builder.size());
+        assertFalse("no mark in context",builder.hasContext("mark",true));
+    }
 
     @Test
     public void popTarget_name(){

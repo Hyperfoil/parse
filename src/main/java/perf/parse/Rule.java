@@ -29,22 +29,23 @@ public enum Rule {
      */
     PrePopTarget,
     /**
-     * Remove the current target from the stack (if it isn't root) after populating the match
+     * Remove the current or named target from the stack (if it isn't root) after populating the match
      */
     PostPopTarget,
     /**
-     * Clear all the targets back to the root before populating the match
+     * Clear all the targets back to the root or up to and including the named target before populating the match
      */
     PreClearTarget,
     /**
-     * Clear all the targets from the stack (go back to root) after populating the match
+     * Clear all the targets from the stack (go back to root) or up to and include the named target after populating the match
      */
     PostClearTarget,
     /**
-     * Populate the matches on the Root target only.
-     * TODO If the Exp has a group or key then grouping starts from the Root target.
+     * Populate the matches on/from the Root target.
+     *
      */
-    OnRootTarget
+    TargetRoot
+
 
 }
 

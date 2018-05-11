@@ -100,7 +100,7 @@ public class Parser {
 
     public boolean test(CharSequence line){
         for(Exp pattern : patterns){
-            if(pattern.is(Merge.NewStart)){
+            if(pattern.is(Merge.PreClose)){
                 if(pattern.test(line)){
                     return true;
                 }

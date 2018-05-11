@@ -13,6 +13,63 @@ import static org.junit.Assert.*;
  */
 public class ExpTest {
 
+
+    @Test
+    public void pushTarget_named(){
+        Exp push = new Exp("push","(?<a>a)").set(Rule.PushTarget,"a");
+
+        JsonBuilder b = new JsonBuilder();
+        push.apply(new CheatChars("a"),b,null);
+
+        System.out.println(b.debug(true));
+        assertEquals("target name","a",b.getContextString(JsonBuilder.NAME_KEY,false));
+    }
+    @Test
+    public void prePopTarget_named(){
+        Exp a = new Exp("a","(?<a>a)").set(Rule.PrePopTarget,"popMe");
+
+        JsonBuilder b = new JsonBuilder();
+        b.getTarget().set("name",0);
+        b.pushTarget(new Json(),"popMe");
+        b.getTarget().set("name",1);
+        b.pushTarget(new Json());
+        b.getTarget().set("name",2);
+        a.apply(new CheatChars("a"),b,null);
+
+        assertFalse("no named target",b.hasContext(JsonBuilder.NAME_KEY,true));
+    }
+
+    @Test
+    public void rootTarget(){
+        Exp group = new Exp("group","(?<a>a)").group("one").group("two");
+        Exp root = new Exp("root","(?<b>b)").set(Rule.TargetRoot);
+        Exp close = new Exp("close","c").set(Merge.PreClose);
+        Parser p = new Parser();
+        p.add(group);
+        p.add(root);
+        p.add(close);
+
+        Json json = p.onLine("abc");
+        assertTrue("json.b",json.has("b"));
+    }
+    @Test
+    public void rootTarget_group(){
+        Exp group = new Exp("group","(?<a>a)").group("one").group("two");
+        Exp root = new Exp("root","(?<b>b)").group("uno").group("dos").set(Rule.TargetRoot);
+        Exp close = new Exp("close","c").set(Merge.PreClose);
+        Parser p = new Parser();
+        p.add(group);
+        p.add(root);
+        p.add(close);
+
+        Json json = p.onLine("abc");
+        assertFalse("json.b",json.has("b"));
+        assertTrue("json.uno",json.has("uno"));
+        System.out.println(json.toString(2));
+
+    }
+
+
     @Test
     public void keySplit(){
         Exp exp = new Exp("keySplit","(?<foo.bar>.*)");
@@ -66,7 +123,7 @@ public class ExpTest {
     }
 
     @Test
-    public void keyGroup(){
+    public void key(){
         JsonBuilder b = new JsonBuilder();
         Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)")
                 .key("key");
@@ -89,12 +146,7 @@ public class ExpTest {
 
 
     @Test
-    public void cloneTest(){
-
-    }
-
-    @Test
-    public void extendGroup(){
+    public void extend_group(){
         JsonBuilder b = new JsonBuilder();
         Json status = new Json(false);
         b.getRoot().set("status",status);
@@ -108,7 +160,7 @@ public class ExpTest {
     }
 
     @Test
-    public void nestWithEntry(){
+    public void nest_entry(){
 
         Exp norm = new Exp("kv","\\s*(?<key>\\S+)\\s*:\\s*(?<value>.*)")
             .set(Merge.Entry)
@@ -452,7 +504,7 @@ public class ExpTest {
     @Test
     public void newStart(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("num","(?<num>\\d+)").set(Merge.NewStart);
+        Exp p = new Exp("num","(?<num>\\d+)").set(Merge.PreClose);
         p.apply(new CheatChars(" 1 "),b,null);
         p.apply(new CheatChars(" 2 "), b, null);
 

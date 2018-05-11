@@ -7,6 +7,7 @@ import perf.parse.internal.RegexMatcher;
 import perf.yaup.HashedLists;
 import perf.yaup.json.Json;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -14,8 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static perf.parse.Rule.ChildrenLookBehind;
-import static perf.parse.Rule.OnRootTarget;
+import static perf.parse.Rule.*;
 
 /**
  * Created by wreicher
@@ -26,6 +26,8 @@ public class Exp {
     private static final String NEST_VALUE = "_value";
 
     private static final String CHAIN_SEPARATOR = ".";
+    public static final String ROOT_TARGET_NAME = "_ROOT";
+    public static final String GROUPED_NAME = "_GROUPED";
 
     private final Matcher fieldMatcher = java.util.regex.Pattern.compile("\\(\\?<([^>]+)>").matcher("");
 
@@ -36,7 +38,7 @@ public class Exp {
     private IMatcher matcher;
     private LinkedHashMap<String,String> fieldValues; //Map<Name,Value|name of value for KeyValue pair>
 
-    private HashedLists<Rule,Rule> rules;
+    private HashedLists<Rule,Object> rules;
 
     private LinkedHashSet<String> enables;
     private LinkedHashSet<String> disables;
@@ -321,8 +323,13 @@ public class Exp {
         return this;
     }
 
+    public Exp set(Rule rule,Object object){
+        rules.put(rule,object);
+        return this;
+    }
+
     /**
-     * Set how the matching name value groups should be merged into the result of previous / subsequent perf.parse.Exp matches
+     * Set how the matching name value groups should be merged into the result of previous / subsequent Exp matches
      * @param merge
      * @return
      */
@@ -331,15 +338,24 @@ public class Exp {
         return this;
     }
 
-    //Check status methods
+    //if the Exp will eat the given amount
     public boolean is(Eat e){
         return Eat.from(this.eat).equals(e);
     }
+
+    //if the Exp has the rule
     public boolean is(Rule r){
         return rules.containsKey(r);
     }
+
+    //the number of times Rule was set on this Exp
     public int count(Rule r){
         return rules.containsKey(r) ? rules.get(r).size() : 0;
+    }
+
+    // returns the role info form calls to #set(Rule,Object)
+    public List<Object> getRuleInfo(Rule r){
+        return rules.containsKey(r) ? rules.get(r).stream().filter(x->!(x instanceof Rule)).collect(Collectors.toList()) : Collections.emptyList();
     }
     public boolean is(Merge m){
         return this.merge == m;
@@ -582,7 +598,7 @@ public class Exp {
                                     System.out.println("    NestLength");
                                 }
                                 //current context is somewhere above the NEST_ARRY, need to pop until we are aimed at the array?
-                                while (!builder.getContextBoolean(fieldName + NEST_ARRAY, false)) {
+                                while (builder.size()>1 && !builder.getContextBoolean(fieldName + NEST_ARRAY, false)) {
                                     if (isDebug()) {
                                         System.out.println("    NEST_ARRAY ? " + builder.getContextBoolean(fieldName + NEST_ARRAY, false));
                                     }
@@ -811,7 +827,7 @@ public class Exp {
 
         if(matcher.find()){
 
-            //System.out.println(getName()+" "+line.subSequence(matcher.start(),matcher.end()));
+            //System.out.println("  "+getName()+" "+line.subSequence(matcher.start(),matcher.end())+" ||"+line.subSequence(startPoint,line.length())+"||");
 
             if(isDebug()){
                 System.out.println("  MATCHED ||"+line.subSequence(matcher.start(),matcher.end())+"||");
@@ -819,34 +835,48 @@ public class Exp {
             }
 
             rtrn = true;
-            if ( is(Merge.NewStart) ) {
+            if ( is(Merge.PreClose) ) {
 
                 if(isDebug()){
-                    System.out.println("    NewStart");
+                    System.out.println("    PreClose");
                 }
 
                 builder.close();
             }else if( is(Rule.PrePopTarget) ) {
+                List<Object> ruleInfo = getRuleInfo(PrePopTarget);
+                if(ruleInfo.isEmpty()) {
+                    if (isDebug()) {
+                        System.out.println("    PrePopTarget");
+                    }
 
-                if(isDebug()){System.out.println("    PrePopTarget");}
-
-                builder.popTarget();
-            }else if ( is(Rule.PreClearTarget)){
-                if(isDebug()) {
-                    System.out.println("    PreClearTarget");
+                    builder.popTarget();
+                }else{
+                    ruleInfo.forEach(object-> builder.popTarget(object.toString()));
                 }
-                builder.clearTargets();
+            }else if ( is(Rule.PreClearTarget)){
+                List<Object> ruleInfo = getRuleInfo(PreClearTarget);
+                if(ruleInfo.isEmpty()){
+                    if(isDebug()) {
+                        System.out.println("    PreClearTarget");
+                    }
+                    builder.clearTargets();
+                }else{
+                    if(isDebug()){
+                        System.out.println("PreClearTarget(s)::"+ruleInfo);
+                    }
+                    ruleInfo.forEach(object-> builder.clearTargets(object.toString()));
+                }
+
+            }
+
+            if(is(TargetRoot)){
+                builder.pushTarget(builder.getRoot(),getName()+ROOT_TARGET_NAME);
             }
 
             Json startTarget = builder.getTarget();
 
-            if(is(OnRootTarget)){
-                startTarget = builder.getRoot();
-            }
-
             Json target = startTarget;
             boolean needPop = false;
-            int popIndex=-1;
 
             do {
                 //TODO probably broken if a rule is grouped and repeated? worry it will repeatedly push targets
@@ -1014,15 +1044,17 @@ public class Exp {
 
                 if(target != grouped){
                     target = grouped; // will only change target if there was a grouping
-                    popIndex = builder.pushTarget(target);
+                    builder.pushTarget(target,getName()+GROUPED_NAME);
                     needPop = true; //removed because it breaks child.PushTarget
 
                 }
 
-                //builder.setTargetRoot(is(Rule.OnRootTarget));
+                //builder.setTargetRoot(is(Rule.TargetRoot));
                 //TODO need to push root earlier
                 boolean changedContext = populate(matcher,builder);
-
+                if(is(TargetRoot)){
+                    builder.popTarget(getName()+ROOT_TARGET_NAME);
+                }
 
                 //builder.setTargetRoot(false);
 
@@ -1121,12 +1153,18 @@ public class Exp {
 
                 //moved before children to preserve target order
                 if( is(Rule.PushTarget) ) {
-                    if(isDebug()){
-                        System.out.println("Rule.PushTarget="+target);
-                    }
-                    builder.pushTarget(target);
-                    if(isDebug()){
-                        System.out.println("Builder:\n"+builder.debug(true));
+                    List<Object> ruleInfo = getRuleInfo(PushTarget);
+                    if(ruleInfo.isEmpty()) {
+                        if (isDebug()) {
+                            System.out.println("Rule.PushTarget=" + target);
+                        }
+                        builder.pushTarget(target);
+                        if (isDebug()) {
+                            System.out.println("Builder:\n" + builder.debug(true));
+                        }
+                    }else{
+                        final Json ruleTarget = target;//ugh, lambdas
+                        ruleInfo.forEach(object->builder.pushTarget(ruleTarget,object.toString()));
                     }
                 }
 
@@ -1187,9 +1225,9 @@ public class Exp {
                 if( needPop && !changedContext) {
 //                    System.out.println(getName()+" popTarget "+popIndex+" size="+builder.depth());
 //                    System.out.println(builder.debug(true));
-                    Json poped = builder.popTargetIndex(popIndex);//pop target
-//                    System.out.println("  postPop");
-//                    System.out.println(builder.debug(true));
+                    Json poped = builder.popTarget(getName()+GROUPED_NAME);//pop the group target for this Exp (preserves child targets)
+//                    System.out.println("  postPop: "+getName()+GROUPED_NAME);
+//                    System.out.println("  "+builder.debug(true).replaceAll("\n","\n  "));
                     //System.out.println(poped.toString(0));
                 }
                 //only notify the callbacks for the last occurrence of a match
@@ -1210,27 +1248,45 @@ public class Exp {
                 }
             }
 
-
+            if ( is(Merge.PostClose) ) {
+                if (isDebug()) {
+                    System.out.println("    PostClose");
+                }
+                builder.close();
+            }
             if( is(Rule.PostPopTarget) ) {
                 if(isDebug()){
                     System.out.println(">> Rule.PostPopTarget");
                     System.out.println(builder.debug(true));
 
                 }
-                int count = count(Rule.PostPopTarget);
-                if(isDebug()){
-                    System.out.println("   count = "+count);
-                }
-                for(int i=0; i<count; i++){
-                    builder.popTarget();
-                }
-                if(isDebug()){
-                    System.out.println("<< Rule.PostPopTarget");
-                    System.out.println(builder.debug(true));
+                List<Object> ruleInfo = getRuleInfo(PostPopTarget);
+                if(ruleInfo.isEmpty()){
+                    int count = count(Rule.PostPopTarget);
+                    if(isDebug()){
+                        System.out.println("   count = "+count);
+                    }
+                    builder.popTarget(count);
+                    if(isDebug()){
+                        System.out.println("<< Rule.PostPopTarget");
+                        System.out.println(builder.debug(true));
+                    }
+                }else{//pop specific targets
+                    ruleInfo.forEach(object->{
+                        builder.popTarget(object.toString());
+                    });
                 }
             }
             if( is(Rule.PostClearTarget) ) {
-                builder.clearTargets();
+                List<Object> ruleInfo = getRuleInfo(Rule.PostClearTarget);
+                if(ruleInfo.isEmpty()) {
+                    builder.clearTargets();
+                }else{
+                    //System.out.println(getName()+" PostClearing "+ruleInfo);
+                    ruleInfo.forEach(object-> builder.clearTargets(object.toString()));
+//                    System.out.println("PostCleared");
+//                    System.out.println(builder.debug(true));
+                }
             }
 
             if(Eat.from(this.eat) == Eat.Line){ // eat the line after applying children and repeating

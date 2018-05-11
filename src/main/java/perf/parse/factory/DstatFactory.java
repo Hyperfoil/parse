@@ -2,7 +2,6 @@ package perf.parse.factory;
 
 import perf.parse.Eat;
 import perf.parse.Exp;
-import perf.parse.MatchAction;
 import perf.parse.Merge;
 import perf.parse.Parser;
 import perf.parse.Rule;
@@ -37,12 +36,12 @@ public class DstatFactory {
         final ArrayList<String> headers = new ArrayList<>();
         p.add(
             defaultMessage()
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
             .eat(Eat.Line)
         );
         p.add(
             headerGroup()
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
             .set(Rule.Repeat)
             .eat(Eat.Line)
             .execute((line, match, pattern, parser) -> {
@@ -72,7 +71,7 @@ public class DstatFactory {
         );
         p.add(
             columnGroup()
-            .set(Merge.NewStart)
+            .set(Merge.PreClose)
             .set(Rule.Repeat)
             .eat(Eat.Line)
             .execute((line, match, pattern, parser) -> {
@@ -108,7 +107,7 @@ public class DstatFactory {
                     sb.append("\\s*");
                 }
                 Exp entryExp = new Exp("dstat",sb.toString());
-                entryExp.set(Merge.NewStart);
+                entryExp.set(Merge.PreClose);
                 entryExp.eat(Eat.Line);
                 parser.addAhead(entryExp);
             })
