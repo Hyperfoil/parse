@@ -44,7 +44,7 @@ public class JStackFactoryTest {
         assertEquals("status","in Object.wait()",o.getString("status"));
         assertEquals("hex","0x00007fe42eef5000",o.getString("hex"));
 
-        b.close();b.takeClosedRoot();
+        b.close();b.takeClosed();
 
         p.apply(new CheatChars("\"GC task thread#0 (ParallelGC)\" os_prio=0 tid=0x00007f9b4c023000 nid=0x4d0c runnable "),b,null);
 
@@ -55,7 +55,7 @@ public class JStackFactoryTest {
         assertEquals("nid","0x4d0c",o.getString("nid"));
         assertEquals("status","runnable",o.getString("status"));
 
-        b.close();b.takeClosedRoot();
+        b.close();b.takeClosed();
 
         p.apply(new CheatChars("\"C1 CompilerThread2\" #7 daemon prio=9 os_prio=0 tid=0x00007f9b4c0b4800 nid=0x4d16 waiting on condition [0x0000000000000000]\n"),b,null);
 

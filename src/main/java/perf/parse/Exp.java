@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static perf.parse.Rule.ChildrenLookBehind;
+import static perf.parse.Rule.OnRootTarget;
 
 /**
  * Created by wreicher
@@ -376,7 +377,7 @@ public class Exp {
     private Json chain(Json json,String key){
         return chain(json,key,true);
     }
-    private Json chain(Json json,String key,boolean dropLast){
+    private Json chain(Json json,String key,boolean dropLast) {
         Json rtrn = json;
         if(key.contains(CHAIN_SEPARATOR)){
             List<String> ids = chain(key);
@@ -416,8 +417,7 @@ public class Exp {
 
         if(isDebug()){
             System.out.println(getName()+" > populate ");
-            System.out.println("  targets\n    "+builder.debugTargetString(true).replaceAll("\n","\n    "));
-            System.out.println("  contexts\n    "+builder.debugContextString(true).replaceAll("\n","\n    "));
+            System.out.println("    "+builder.debug(true).replaceAll("\n","\n    "));
         }
 
 
@@ -455,6 +455,8 @@ public class Exp {
 
                     int length = fieldValue.length();
                     if( builder.hasContext(fieldName,true) ) { // the current context is already part of the tree
+
+                        int contextLength = builder.getContextInteger(fieldName,true);
                         if(isDebug()){
                             System.out.println(getName()+"  has "+fieldName+" above in "+builder.getTarget());
                             System.out.println("  length="+length+" context."+fieldName+"="+builder.getContextInteger(fieldName,true));
@@ -471,7 +473,6 @@ public class Exp {
                             childAry.add(newChild);
                             builder.getTarget().add(fieldName,childAry);
 
-
                             builder.pushTarget(childAry);
                             builder.setContext(fieldName+NEST_ARRAY,true);
                             builder.pushTarget(newChild);
@@ -482,20 +483,26 @@ public class Exp {
 
                             if(isDebug()){
                                 System.out.println("  ELDER");
+                                System.out.println("    "+builder.debug(true).replaceAll("\n","\n    "));
                             }
 
-
-                            while(length < builder.getContextInteger(fieldName,true) || builder.getContextBoolean(fieldName+NEST_ARRAY,false)) {
+                            while(length < builder.getContextInteger(fieldName,true) ||
+                                    builder.getContextBoolean(fieldName+NEST_ARRAY,false)) {
                                 if(isDebug()){
-                                    System.out.println("    needPop: "+length+" < "+builder.getContextInteger(fieldName,true) +"|| NEST_ARRAY ? "+ builder.getContextBoolean(fieldName+NEST_ARRAY,false));
+                                    System.out.println("    needPop: "+length+" < "+
+                                        builder.getContextInteger(fieldName,true) +
+                                        "|| NEST_ARRAY ? "+
+                                        builder.getContextBoolean(fieldName+NEST_ARRAY,false)+
+                                        " builder.size="+builder.size()
+                                    );
+                                    System.out.println("      "+builder.debug(true).replaceAll("\n","\n      "));
                                 }
                                 builder.popTarget();
                                 if(isDebug()){
-                                    System.out.println("    target ="+builder.getTarget());
-                                    System.out.println("    context = "+builder.debugContextString(false));
+                                    System.out.println("    postPop:");
+                                    System.out.println("      "+builder.debug(false));
                                 }
                                 changedTarget = true;
-
                             }
                             //at this point should it be pointing at the sibling
 
@@ -503,8 +510,8 @@ public class Exp {
                             //System.out.println(m.group("category"));
                             //
                             if(isDebug()){
-                                System.out.println("    ElderTarget=\n"+builder.debugTargetString(true));
-                                System.out.println("    ElderContext\n"+builder.debugContextString(true));
+                                System.out.println("    ElderTarget");
+                                System.out.println("      "+builder.debug(false).replaceAll("\n","\n    "));
                             }
 
                             if(isDebug()){
@@ -520,18 +527,19 @@ public class Exp {
                                 Json lastEntry = builder.getTarget().getJson(builder.getTarget().size()-1);
                                 if( isDebug() ){
                                     System.out.println("      lastEntry = "+lastEntry);
-                                    System.out.println("      context   = "+builder.debugContextString(false));
+                                    System.out.println("      context\n"+builder.debug(false));
                                 }
 
                             }else{
 
-                                builder.popTarget();//points at array
-
+                                //isn't pointed at array for PrintGcFactoryTest.newParser_g1gc_details_nest
+                                //TODO pops root for PrintGcFactoryTest.newParser_g1gc_details_nest
+                                builder.popTarget();//points at array??
 
                                 if(isDebug()){
                                     System.out.println("    NestLength, add entry to elder");
                                     System.out.println("    target ="+builder.getTarget());
-                                    System.out.println("    context = "+builder.debugContextString(false));
+                                    System.out.println("    context = "+builder.debug(false));
                                 }
                                 Json newEntry = new Json(false);
                                 //builder.getTarget().add(fieldName,newEntry);
@@ -581,7 +589,7 @@ public class Exp {
                                     builder.popTarget();//
                                     if (isDebug()) {
                                         System.out.println("      target =" + builder.getTarget());
-                                        System.out.println("      context = " + builder.debugContextString(false));
+                                        System.out.println("      context = " + builder.debug(false));
                                     }
                                 }
                                 //don't need to create the array because it muse exist for this to be a peer
@@ -624,8 +632,7 @@ public class Exp {
                     }
                     if(isDebug()){
                         System.out.println("  POST-NEST:");
-                        System.out.println("    targets\n      "+builder.debugTargetString(true).replaceAll("\n","\n      "));
-                        System.out.println("    contexts\n      "+builder.debugContextString(true).replaceAll("\n","\n      "));
+                        System.out.println("      "+builder.debug(true).replaceAll("\n","\n      "));
                     }
 
                     break;
@@ -808,9 +815,7 @@ public class Exp {
 
             if(isDebug()){
                 System.out.println("  MATCHED ||"+line.subSequence(matcher.start(),matcher.end())+"||");
-                System.out.println("    targets\n      "+builder.debugTargetString(true).replaceAll("\n","\n      "));
-                System.out.println("    contexts\n      "+builder.debugContextString(true).replaceAll("\n","\n      "));
-
+                System.out.println("      "+builder.debug(true).replaceAll("\n","\n      "));
             }
 
             rtrn = true;
@@ -834,6 +839,11 @@ public class Exp {
             }
 
             Json startTarget = builder.getTarget();
+
+            if(is(OnRootTarget)){
+                startTarget = builder.getRoot();
+            }
+
             Json target = startTarget;
             boolean needPop = false;
             int popIndex=-1;
@@ -847,9 +857,7 @@ public class Exp {
                     if( is(Merge.Entry) ){
                         if( isDebug() ){
                             System.out.println("  > Entry w/o grouping");
-                            System.out.println("    targets\n      "+builder.debugTargetString(true).replaceAll("\n","\n      "));
-                            System.out.println("    contexts\n      "+builder.debugContextString(true).replaceAll("\n","\n      "));
-
+                            System.out.println("      "+builder.debug(true).replaceAll("\n","\n      "));
                         }
                         if(target == builder.getRoot()){
                             if(isDebug()){
@@ -872,6 +880,7 @@ public class Exp {
                                 System.out.println("    target is not an array, find an array");
                                 System.out.println("      target "+target);
                                 System.out.println("      peekT  "+builder.peekTarget(1));
+                                System.out.println("      "+builder.debug(true).replaceAll("\n","\n      "));
 
                             }
 
@@ -899,8 +908,7 @@ public class Exp {
 
                         if( isDebug() ){
                             System.out.println("  < Entry w/o grouping");
-                            System.out.println("    targets\n      "+builder.debugTargetString(true).replaceAll("\n","\n      "));
-                            System.out.println("    contexts\n      "+builder.debugContextString(true).replaceAll("\n","\n      "));
+                            System.out.println("      "+builder.debug(true).replaceAll("\n","\n      "));
 
                         }
                     }
@@ -1011,9 +1019,12 @@ public class Exp {
 
                 }
 
-                builder.setTargetRoot(is(Rule.OnRootTarget));
+                //builder.setTargetRoot(is(Rule.OnRootTarget));
+                //TODO need to push root earlier
                 boolean changedContext = populate(matcher,builder);
-                builder.setTargetRoot(false);
+
+
+                //builder.setTargetRoot(false);
 
                 if( changedContext ){//NestLength or TargetId
                     Json cc = builder.getTarget();
@@ -1038,7 +1049,6 @@ public class Exp {
                     case ToMatch:
 
                         line.drop(0,mEnd);
-
                         if(start.get() > mEnd){
                             if(isDebug()){
                                 System.out.println(getName()+"    set start = "+(start.get()-mEnd));
@@ -1116,7 +1126,7 @@ public class Exp {
                     }
                     builder.pushTarget(target);
                     if(isDebug()){
-                        System.out.println("Targets:\n"+builder.debugTargetString(true));
+                        System.out.println("Builder:\n"+builder.debug(true));
                     }
                 }
 
@@ -1176,10 +1186,10 @@ public class Exp {
                 //trying to pop the auto target for group / nest / key is breaking jdk9 heap parsing6td
                 if( needPop && !changedContext) {
 //                    System.out.println(getName()+" popTarget "+popIndex+" size="+builder.depth());
-//                    System.out.println(builder.debugParallel(true));
+//                    System.out.println(builder.debug(true));
                     Json poped = builder.popTargetIndex(popIndex);//pop target
 //                    System.out.println("  postPop");
-//                    System.out.println(builder.debugParallel(true));
+//                    System.out.println(builder.debug(true));
                     //System.out.println(poped.toString(0));
                 }
                 //only notify the callbacks for the last occurrence of a match
@@ -1204,7 +1214,7 @@ public class Exp {
             if( is(Rule.PostPopTarget) ) {
                 if(isDebug()){
                     System.out.println(">> Rule.PostPopTarget");
-                    System.out.println(builder.debugParallel(true));
+                    System.out.println(builder.debug(true));
 
                 }
                 int count = count(Rule.PostPopTarget);
@@ -1216,7 +1226,7 @@ public class Exp {
                 }
                 if(isDebug()){
                     System.out.println("<< Rule.PostPopTarget");
-                    System.out.println(builder.debugParallel(true));
+                    System.out.println(builder.debug(true));
                 }
             }
             if( is(Rule.PostClearTarget) ) {

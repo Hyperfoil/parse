@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
 public class ExpTest {
 
     @Test
-    public void testKeySplit(){
+    public void keySplit(){
         Exp exp = new Exp("keySplit","(?<foo.bar>.*)");
 
         Json result = exp.apply("biz");
@@ -111,13 +111,11 @@ public class ExpTest {
     public void nestWithEntry(){
 
         Exp norm = new Exp("kv","\\s*(?<key>\\S+)\\s*:\\s*(?<value>.*)")
-                //.group("child")
-//                .set(Rule.PrePopTarget)
-                .set(Merge.Entry)
-                .eat(Eat.Match);
+            .set(Merge.Entry)
+            .eat(Eat.Match);
         Exp nest = new Exp("nest","(?<child:nestLength>[\\s-]*-\\s*)")
-                .eat(Eat.Match)
-                .add(norm);
+            .eat(Eat.Match)
+            .add(norm);
 
         Parser p = new Parser();
         p.add(nest);
@@ -131,76 +129,12 @@ public class ExpTest {
 
         Json root = p.getBuilder().getRoot();
 
-        System.out.println(root.toString(2));
-
         Json expected = Json.fromString("{\"key\":\"foo\",\"value\":\"bar\",\"child\":[[{\"key\":\"a\",\"value\":\"Alpha\"},{\"key\":\"b\",\"value\":\"Bravo\"}],[{\"key\":\"y\",\"value\":\"Yankee\"},{\"key\":\"z\",\"value\":\"Zulu\"}]]}\n");
-
         assertEquals("root should have 2 children each with 2 entries",expected,root);
     }
 
-    @Test @Ignore
-    public void testNightmare(){
-        Parser p = new Parser();
-//        p.add(new Exp("list","\\s*-[\\s-]*(?=\\w)")
-//                .group("child")
-//
-//                .set(Merge.Extend)
-//
-//                .add(
-//                    new Exp("kv","\\s*(?<key>\\S+)\\s*:\\s*(?<value>.*)")
-//                        //.group("child")
-//                        //.set(Rule.PrePopTarget)
-//                        //.set(Merge.Entry)
-//                        .eat(Eat.Match)
-//                )
-//        );
-
-        Exp kv = new Exp("kv","\\s*(?<key>\\S+)\\s*:\\s*(?<value>.*)")
-                //.group("child")
-                //.set(Rule.PrePopTarget)
-                .set(Merge.Entry)
-                .eat(Eat.Match);
-        Exp kv2 = new Exp("kv2","^\\s*(?<key>[^:\\s]+)")
-                //.group("child")
-                //.set(Rule.PrePopTarget)
-                .set(Merge.Entry)
-                .eat(Eat.Line)
-                .add(
-                    new Exp("separator","^\\s*:\\s*").eat(Eat.Match)
-                        .add(new Exp("value","\\s*(?<value>[^#]+)").eat(Eat.Match)
-                        )
-                );
-        p.add(new Exp("peer","^(?<child:nestpeerless>[\\s]*)(?=[\\w\"])")
-                .eat(Eat.Match)
-
-                .add(kv2)
-        );
-        p.add(new Exp("nest","^(?<child:nestlength>[\\s-]*)(?=[\\w\"])")
-                .eat(Eat.Match)
-
-                .add(kv2)
-        );
-
-
-        p.onLine("foo : foo");
-        p.onLine("foo : bar");
-        p.onLine("  foo.foo : biz");
-        p.onLine("  foo.foo : buz");
-        p.onLine("    - foo.bar.a : Alpha");
-        p.onLine("        foo.bar.a.a : Able");
-        p.onLine("        foo.bar.a.b : Bill");
-        p.onLine("      foo.bar.b : Bravo");
-        p.onLine("    - foo.bar.y : Yankee");
-        p.onLine("      foo.bar.z : Zulu");
-
-        Json root = p.getBuilder().getRoot();
-
-
-    }
-
-
     @Test
-    public void valueNestLength(){
+    public void value_nestLength(){
 
         JsonBuilder b = new JsonBuilder();
         Exp p = new Exp("tree","(?<nest>\\s*)(?<name>\\w+)");
@@ -212,13 +146,40 @@ public class ExpTest {
         p.apply(new CheatChars("  aaa"),b,null);
         p.apply(new CheatChars("b"),b,null);
 
-        assertTrue("tree should use nest as the child key",b.getRoot().has("nest") && b.getRoot().getJson("nest").isArray());
-        assertTrue("expect only one key on root json",b.getRoot().size()==1);
-        assertTrue("expect root o have 2 children",b.getRoot().getJson("nest").size()==2);
+        assertTrue("tree should use nest as the child key:\n"+b.getRoot().toString(2),b.getRoot().has("nest") && b.getRoot().getJson("nest").isArray());
+        assertTrue("expect only one key on root json:\n"+b.getRoot().toString(2),b.getRoot().size()==1);
+        assertTrue("expect nest to have 2 children:\n"+b.getRoot().getJson("nest").toString(2),b.getRoot().getJson("nest").size()==2);
         assertTrue("expect a to have one child",b.getRoot().getJson("nest").getJson(0).getJson("nest").isArray() && b.getRoot().getJson("nest").getJson(0).getJson("nest").size()==1);
         assertTrue("expect a.aa to have one child",b.getRoot().getJson("nest").getJson(0).getJson("nest").getJson(0).getJson("nest").isArray() && b.getRoot().getJson("nest").getJson(0).getJson("nest").getJson(0).getJson("nest").size()==1);
 
     }
+    @Test
+    public void value_nestLength_multi(){
+
+        JsonBuilder b = new JsonBuilder();
+        Exp p = new Exp("tree","(?<nest>\\s*)(?<name>\\w+)");
+        p.set("nest", Value.NestLength);
+        //b.getRoot().add("name","root");
+
+        p.apply(new CheatChars("a"),b,null);
+        p.apply(new CheatChars("  aa"),b,null);
+        p.apply(new CheatChars("    aaa"),b,null);
+        p.apply(new CheatChars("    aab"),b,null);
+        p.apply(new CheatChars("      aaba"),b,null);
+        p.apply(new CheatChars("    aac"),b,null);
+        p.apply(new CheatChars("b"),b,null);
+
+        System.out.println(b.getRoot().toString(2));
+
+        Json root = b.getRoot();
+        assertTrue("root has nest:",root.has("nest") && root.get("nest") instanceof Json);
+        Json nest = root.getJson("nest");
+        assertEquals("nest has 2 children",2,nest.size());
+        assertEquals("nest[0].name","a",nest.getJson(0).getString("name"));
+        assertEquals("nest[0].name","b",nest.getJson(1).getString("name"));
+
+    }
+
 
     @Test
     public void valueTargetId(){
@@ -450,7 +411,7 @@ public class ExpTest {
         assertTrue("context should not equal root",b.getRoot()!=b.getTarget());
     }
     @Test
-    public void popTarget(){
+    public void postPopTarget(){
         JsonBuilder b = new JsonBuilder();
         Json lost = new Json();
         lost.set("lost","lost");
@@ -462,7 +423,7 @@ public class ExpTest {
         assertTrue("fields should be applied to context before pop",lost.has("pushed"));
     }
     @Test
-    public void avoidTarget(){
+    public void prePopTarget(){
         JsonBuilder b = new JsonBuilder();
         Json lost = new Json();
         lost.set("lost","lost");
@@ -474,7 +435,7 @@ public class ExpTest {
         assertTrue("fields should be applied to context before pop", b.getTarget().has("pushed"));
     }
     @Test
-    public void clearTarget(){
+    public void postClearTarget(){
         JsonBuilder b = new JsonBuilder();
         Json first = new Json();
         first.set("ctx", "lost");
@@ -489,7 +450,7 @@ public class ExpTest {
     }
 
     @Test
-    public void mergeNewStart(){
+    public void newStart(){
         JsonBuilder b = new JsonBuilder();
         Exp p = new Exp("num","(?<num>\\d+)").set(Merge.NewStart);
         p.apply(new CheatChars(" 1 "),b,null);
@@ -501,7 +462,7 @@ public class ExpTest {
 
     // I don't see a difference between extend and group
     @Test
-    public void extendEntry(){
+    public void extend_entry(){
         JsonBuilder b = new JsonBuilder();
         Exp p = new Exp("num","(?<num>\\d+)").extend("nums").set(Merge.Entry);
         p.apply(new CheatChars(" 1 "),b,null);
@@ -510,7 +471,7 @@ public class ExpTest {
         assertEquals("nums should have 2 entries",2,b.getRoot().getJson("nums").size());
     }
     @Test
-    public void groupEntry(){
+    public void group_entry(){
         JsonBuilder b = new JsonBuilder();
         Exp p = new Exp("num","(?<num>\\d+)").group("nums").set(Merge.Entry);
         p.apply(new CheatChars(" 1 "),b,null);
@@ -520,7 +481,7 @@ public class ExpTest {
 
     }
     @Test
-    public void mergeExtend(){
+    public void group_extend(){
         JsonBuilder b = new JsonBuilder();
         Exp p = new Exp("kv", "(?<key>\\w+)=(?<value>\\w+)").set("key","value").group("kv").set(Merge.Extend);
         p.apply(new CheatChars(" age=23 "),b,null);
@@ -529,7 +490,7 @@ public class ExpTest {
 
     }
     @Test
-    public void mergeCollection(){
+    public void collection(){
         JsonBuilder b = new JsonBuilder();
         Exp p = new Exp("kv", "(?<key>\\w+)=(?<value>\\w+)").set("key","value").group("kv").set(Merge.Collection);
         p.apply(new CheatChars(" age=23 "),b,null);

@@ -3,10 +3,12 @@ package perf.parse.internal;
 import perf.yaup.json.Json;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 /**
  * Created by wreicher
+ *
  */
 
 /**
@@ -17,344 +19,194 @@ import java.util.stream.Stream;
  */
 public class JsonBuilder {
 
-    private class Context {
-
-        private Map<String,Object> data;
-        private Context parent;
-
-        public Context(){
-            data = new LinkedHashMap<>();
-            parent = null;
-        }
+    public static final String NAME_KEY = "_TARGET_NAME_"+System.currentTimeMillis();
 
 
-        public Context popContextIndex(int index){
-            ArrayList<Context> contexts = new ArrayList<>();
-            Context target = this;
-            while(target!=null){
-                contexts.add(target);
-                target = target.getParent();
-            }
-            Collections.reverse(contexts);
-            if(contexts.size()>index) {
-                Context toRemove = contexts.get(index);
-                if(contexts.size()>index+1){
-                    Context next = contexts.get(index+1);
-                    next.parent = toRemove.parent;
-                }
-                contexts.remove(index);
-            }
-            return contexts.get(contexts.size()-1);
-        }
-        public Context popContext(){
-            return parent==null ? this : parent;
-        }
-        public Context pushContext(){
-            Context rtrn = new Context();
-            rtrn.parent = this;
-            return rtrn;
-        }
 
-        public void set(String key,Object value){
-            data.put(key,value);
-        }
-        public boolean has(String key,boolean recursive){
-            Context target = this.parent;
-            boolean rtrn = data.containsKey(key);
-            while(recursive && !rtrn && target!=null){
-                rtrn = target.data.containsKey(key);
-                target = target.parent;
-            }
-            return rtrn;
-        }
-        public Object get(String key,boolean recursive){
-            Context target = this.parent;
-            Object rtrn = data.get(key);
-            while(recursive && rtrn==null && target!=null){
-                rtrn = target.data.get(key);
-                target = target.parent;
-            }
-            return rtrn;
-        }
-        public int getInteger(String key,boolean recursive,int defaultValue){
-            Object val = get(key,recursive);
-            int rtrn = defaultValue;
-            if(val !=null && val instanceof Integer){
-                rtrn = (Integer)val;
-            }
-            return rtrn;
-        }
-        public String getString(String key,boolean recursive,String defaultValue){
-            Object val = get(key,recursive);
-            String rtrn = defaultValue;
-            if(val !=null && val instanceof String){
-                rtrn = (String)val;
-            }
-            return rtrn;
-        }
-
-        public boolean hasParent() {
-            return parent!=null;
-        }
-        public Context getParent(){return parent;}
-
-        public boolean getBoolean(String key, boolean recursive, boolean defaultValue) {
-            Object val = get(key,recursive);
-            Boolean rtrn = defaultValue;
-            if(val !=null && val instanceof Boolean){
-                rtrn = (Boolean)val;
-            }
-            return rtrn;
-
-        }
-        @Override
-        public String toString(){
-            return toString(false);
-        }
-
-        public String toString(boolean recursive){
-            StringBuilder sb = new StringBuilder();
-            if(!recursive){
-                sb.append(data.toString());
-            }else{
-                int index = 0;
-                Context target = this;
-                while(target!=null){
-                    if(sb.length()>0){
-                        sb.append(System.lineSeparator());
-                    }
-                    sb.append("["+index+"]=");
-                    sb.append(target.data.toString());
-                    index++;
-                    target = target.parent;
-                }
-            }
-            return sb.toString();
-        }
-    }
-
-    private class Instance {
-        private Json root;
-        private Stack<Json> targetStack;
-        private Context context;
-
-        public Instance() {
-            targetStack = new Stack<>();
-            context = new Context();
-            reset();
-        }
-        public int pushTarget(Json target) {
-            int rtrn = -1;
-            synchronized (this) {
-                rtrn = targetStack.size();
-                targetStack.push(target);
-                context = context.pushContext();
-            }
-            return rtrn;
-        }
-        public Json popTarget(){
-            synchronized (this){
-                if(targetStack.size()>1){
-                    context = context.popContext();
-                    return targetStack.pop();
-                }
-            }
-            return null;
-        }
-        public Json popTargetIndex(int index){
-            synchronized (this){
-                if(targetStack.size()>index){
-                    context = context.popContextIndex(index);
-                    return targetStack.remove(index);
-                }
-            }
-            return null;
-        }
-        public boolean hasPrevious(){
-            return targetStack.size()>2;
-        }
-        public Json peekTarget(int ahead){
-            if(targetStack.size()>ahead+1){
-                return targetStack.elementAt(targetStack.size()-(ahead+1));
-            }
-            return null;
-        }
-        public Json peekTarget(){
-            return targetStack.peek();
-        }
-        public Json getRoot(){return root;}
-        public Json getTarget(){return targetStack.peek();}
-
-        public void setContext(String key,Object value){
-            context.set(key,value);
-        }
-        public boolean hasContext(String key,boolean recursvive){
-            return context.has(key,recursvive);
-        }
-        public boolean getContextBoolean(String key,boolean recursive) {
-            return context.getBoolean(key,recursive,false);
-        }
-        public int getContextInteger(String key,boolean recursive){
-            return context.getInteger(key,recursive,0);
-        }
-        public String getContextString(String key,boolean recursive){
-            return context.getString(key,recursive,"");
-        }
-
-        public void reset(){
-            root = new Json();
-            targetStack.clear();
-            targetStack.push(root);
-            context = new Context();
-        }
-        public void clearTargets(){
-            while(targetStack.size()>1){
-                popTarget();
-            }
-            while(context.hasParent()){
-                context = context.popContext();
-            }
-        }
-
-        public String debugParallel(boolean recursive){
-            if(!recursive){
-                return context.toString()+" : "+getTarget().toString();
-            }else{
-                StringBuilder sb = new StringBuilder();
-                String contextStr[] = debugContextString(true).split("\n");
-                String targetStr[] = debugTargetString(true).split("\n");
-                OptionalInt width = Stream.of(contextStr).mapToInt(String::length).max();
-                width.ifPresent((w)->{
-                    for(int i=0; i<contextStr.length; i++){
-                        sb.append(String.format("%"+w+"s : %s%n",contextStr[i],targetStr[i]));
-                    }
-                });
-                return sb.toString();
-            }
-        }
-        public String debugContextString(boolean recursive){return context.toString(recursive);}
-        public String debugTargetString(boolean recursive){
-            if(!recursive){
-                return current.getTarget().toString();
-            }else{
-                StringBuilder sb = new StringBuilder();
-
-                for(int i=0; i<targetStack.size();i++){
-                    if(sb.length()>0){
-                        sb.append(System.lineSeparator());
-                    }
-                    sb.append("["+i+"]=");
-                    sb.append(targetStack.elementAt(targetStack.size()-(1+i)));
-                }
-                return sb.toString();
-            }
-        }
-        public boolean isEmpty(){
-            return targetStack.size()==1 && root.size()==0;
-        }
-        public int depth(){
-            return targetStack.size();
-        }
-
-    }
-
-    private Instance current;
-    private Instance previous;
-    private boolean targetRoot;
+    private Stack<Json> targets;
+    private Stack<Map<String,Object>> targetInfo;
+    private Json closedJson;
 
     public JsonBuilder(){
-        current = new Instance();
-        previous = new Instance();
-        targetRoot = false;
+        targets = new Stack<>();
+        targetInfo = new Stack<>();
+        closedJson = null;
+        pushTarget(new Json());
     }
 
     public boolean close(){
-        if(previous.isEmpty()){
-            Instance tmp = previous;
-            previous = current;
-            current = tmp;
+        if(!wasClosed() && !getRoot().isEmpty()){
+            closedJson = getRoot();
+            targets.clear();
+            pushTarget(new Json());
             return true;
         }
         return false;
     }
 
-    public boolean isTargetRoot(){return targetRoot;}
-    public void setTargetRoot(boolean targetRoot){
-        this.targetRoot = targetRoot;
-    }
-
     public boolean wasClosed(){
-        return !previous.isEmpty();
+        return closedJson!=null;
     }
-    public Json takeClosedRoot(){
-        if(!wasClosed())
+    public Json takeClosed(){
+        if(!wasClosed()) {
             return null;
-
-        Json rtrn = previous.getRoot();
-        if(rtrn.size()==0){
-            rtrn = null;
         }
-        previous.reset();
+        Json rtrn = closedJson;
+        closedJson = null;
         return rtrn;
     }
-    public int depth(){return current.depth();}
-    public boolean hasTargets(){return !current.isEmpty();}
-    public Json getRoot(){return current.getRoot();}
+    public Json getRoot(){return targets.get(0);}
 
-    public Json peekTarget(int ahead){return current.peekTarget(ahead);}
+    public Json peekTarget(int ahead){
+        if(ahead > targets.size()-2){
+            return null;
+        }
+        return targets.get(targets.size()-1-ahead);
+    }
 
     public Json getTarget(){
-        return isTargetRoot()?current.getRoot():current.getTarget();
+        return targets.peek();
     }
-    public int pushTarget(Json json){
-        return current.pushTarget(json);
-    }
-    public Json popTargetIndex(int index){
-        return current.popTargetIndex(index);
-    }
-    public Json popTarget(){
-        Json rtrn = popTarget(1);
+    public Json getTarget(String name){
+        Json rtrn = null;
+        int index = namedTargetIndex(name);
+        if(index>=0){
+            rtrn = targets.get(index);
+        }
         return rtrn;
     }
-    public Json popTarget(int count){
+    public int pushTarget(Json json){
+        return pushTarget(json,null);
+    }
+    public int pushTarget(Json json,String name){
+        int rtrn = -1;
+        synchronized (this) {
+            Map<String,Object> infoMap = new ConcurrentHashMap<>();
+            if(name!=null && !name.isEmpty()) {
+                infoMap.put(NAME_KEY, name);
+            }
+            rtrn = targets.size();
+            targets.push(json);
+            targetInfo.push(infoMap);
+        }
+        return rtrn;
+
+    }
+    public Json popTargetIndex(int index){
+        synchronized (this){
+            if(targets.size()>index && index > 0){
+                Json rtrn = targets.remove(index);
+                targetInfo.remove(index);
+                return rtrn;
+            }
+        }
+        return null;
+    }
+    public Json popTarget(){
+        return popTarget(1);
+    }
+    public Json popTarget(String name){
+        int index = namedTargetIndex(name);
         Json rtrn = null;
-        for(int i=0; i<count; i++){
-            rtrn = current.popTarget();
+        if(index >= 0){
+            rtrn = popTargetIndex(index);
+        }
+        return rtrn;
+    }
+    public int namedTargetIndex(String name){
+        int index = targetInfo.size()-1;
+        boolean found = false;
+        do {
+            String indexName = (String)targetInfo.get(index).get(NAME_KEY);
+            found = name.equals(indexName);
+        }while(!found && index-- >= 0);
+
+        return index;
+    }
+    public Json popTarget(int count){
+        if(count >= targets.size()-1){//-1
+
+        }
+        Json rtrn = null;
+        synchronized (this){
+            for(int i=0; i<count; i++){
+                if(targets.size()>1) {//TODO remove size check and see why Exp is trying to pop root
+                    rtrn = targets.pop();
+                    targetInfo.pop();
+                }
+            }
         }
         return rtrn;
     }
 
-    public String debugParallel(boolean recursive){
-        return current.debugParallel(recursive);
-    }
-    public String debugContextString(boolean recursive){
-        return current.debugContextString(recursive);
-    }
-    public String debugTargetString(boolean recursive){
-        return current.debugTargetString(recursive);
+    public int size(){return targets.size();}
+
+    public String debug(boolean recursive){
+        StringBuilder sb = new StringBuilder();
+        int infoWidth = targetInfo.stream().mapToInt((s)->s.toString().length()).max().orElse(2);
+        int idxWidth = Math.max((int)Math.round(Math.ceil(Math.log10(targets.size()))),1);
+        int limit = recursive?0:targets.size()-1;
+        for(int i=targets.size()-1;i>=limit; i--){
+            if(i<targets.size()-1){
+                sb.append("\n");
+            }
+            sb.append(String.format("%-"+infoWidth+"s %"+idxWidth+"d %s",targetInfo.get(i),i,targets.get(i)));
+        }
+        return sb.toString();
     }
     public void clearTargets(){
-        current.clearTargets();
+        synchronized (this){
+            while(targets.size()>1){
+                targets.pop();
+                targetInfo.pop();
+            }
+        }
     }
     public void reset(){
-        current.reset();
-        previous.reset();
+        synchronized (this){
+            targets.clear();
+            targetInfo.clear();
+            Json root = new Json();
+            targets.push(root);
+            targetInfo.push(new ConcurrentHashMap<>());
+        }
     }
 
     public boolean hasContext(String key,boolean recursive){
-        return current.hasContext(key,recursive);
-    }
-    public String getContextString(String key,boolean recursive){
-        return current.getContextString(key,recursive);
+        int index = targetInfo.size()-1;
+        boolean rtrn;
+        do {
+            rtrn = targetInfo.get(index).containsKey(key);
+            index--;
+        }while(!rtrn && recursive && index >= 0);
+        return rtrn;
     }
     public void setContext(String key,Object value){
-        current.setContext(key,value);
+        targetInfo.peek().put(key,value);
+    }
+    private Object getContext(String key,boolean recursive,Object defaultValue){
+        int index = targets.size()-1;
+        Object rtrn = defaultValue;
+        boolean found = false;
+        do {
+            if(targetInfo.get(index).containsKey(key)){
+                found = true;
+                rtrn = targetInfo.get(index).get(key);
+            }
+            index--;
+        }while(!found && recursive && index>=0);
+        return rtrn;
+    }
+    public String getContextString(String key,boolean recursive){
+        Object rtrn = getContext(key,recursive,"");
+        return (String)rtrn;
     }
     public int getContextInteger(String key,boolean recursive){
-        return current.getContextInteger(key,recursive);
+        Object rtrn = getContext(key,recursive,0);
+        return (Integer)rtrn;
     }
-
     public boolean getContextBoolean(String key,boolean recursive){
-        return current.getContextBoolean(key,recursive);
+        Object rtrn = getContext(key,recursive,false);
+        return (Boolean)rtrn;
     }
 }

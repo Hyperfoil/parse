@@ -1,6 +1,7 @@
 package perf.parse.factory;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import perf.parse.Parser;
 import perf.parse.Rule;
@@ -43,7 +44,21 @@ public class PrintGcFactoryTest {
         Parser p = f.newParser();
         p.onLine("2018-05-09T17:15:43.215+0000: 81035.353: #6409: [GC (Allocation Failure) 2018-05-09T17:15:43.215+0000: 81035.353: #6409: [ParNew (promotion failed): 1980203K->2146944K(2146944K), 1.4796333 secs]2018-05-09T17:15:44.694+0000: 81036.833: #6410: [CMS: 20835733K->8291039K(22780352K), 32.9419816 secs] 22178277K->8291039K(24927296K), [Metaspace: 146810K->146810K(1212416K)], 34.4220682 secs] [Times: user=49.09 sys=0.17, real=34.43 secs]");
         Json root = p.getBuilder().getRoot();
-        System.out.println(root.toString(2));
+
+        assertTrue("has region",root.has("region") && root.get("region") instanceof Json);
+
+        Json region = root.getJson("region");
+        assertEquals("3 regions:\n"+region.toString(2),3,region.size());
+
+        Set<String> names = region.values().stream().map(s->((Json)s).getString("region")).collect(Collectors.toSet());
+        assertTrue("names: "+names,names.containsAll(Sets.of("ParNew","CMS","Metaspace")));
+
+        Json parNew = region.values().stream()
+            .map(s->(Json)s)
+            .filter(s->"ParNew".equals(s.getString("region")))
+            .findFirst()
+            .orElse(new Json());
+        assertEquals("parNew warning","promotion failed",parNew.getString("warning"));
     }
 
     @Test
@@ -508,7 +523,13 @@ public class PrintGcFactoryTest {
         assertTrue("g1Tag",root.has("g1Tag") && root.getJson("g1Tag").isArray());
         assertTrue("g1Tag=[young,initial-mark]",root.getJson("g1Tag").values().containsAll(Arrays.asList("young","initial-mark")));
         assertTrue("detail",root.has("detail") && root.getJson("detail").isArray());
-        assertEquals("detail count",7,root.getJson("detail").size());
+        assertEquals("detail count:\n"+root.getJson("detail").values().stream().map(v->{
+            if(v instanceof Json){
+                return ((Json)v).getString("category");
+            }else{
+                return v.toString();
+            }
+        }).collect(Collectors.joining("|,|")),7,root.getJson("detail").size());
 
         Json detail0 = root.getJson("detail").getJson(0);
 
@@ -609,14 +630,12 @@ public class PrintGcFactoryTest {
     @Test
     public void gcShenandoahDetailHeapRegionsActiveTotal(){
         Json root = f.gcShenandoahDetailHeapRegionsActiveTotal().apply(" 8192K regions, 2304 active, 2304 total");
-        System.out.println(root.toString(2));
         assertFalse("root should not be empty",root.isEmpty());
     }
     @Test
     public void gcAdaptiveSizePolicyOldGenCosts(){
         Json root = f.gcAdaptiveSizePolicyOldGenCosts()
             .apply("PSAdaptiveSizePolicy::compute_old_gen_free_space: costs minor_time: 0.567664 major_cost: 0.014526 mutator_cost: 0.417810 throughput_goal: 0.990000 live_space: 292574784 free_space: 10737418240 old_promo_size: 4294967296 desired_promo_size: 4294967296");
-        System.out.println(root.toString(2));
         assertFalse("root should not be empty",root.isEmpty());
 
     }
@@ -624,23 +643,22 @@ public class PrintGcFactoryTest {
     public void gcShenandoahDetailsHeapVirtualCommitted(){
         Json root = f.gcShenandoahDetailsHeapVirtualCommitted()
             .apply(" - committed: 19327352832");
-        System.out.println(root.toString(2));
         assertFalse("root should not be empty",root.isEmpty());
     }
 
 
-    @Test
+    @Test @Ignore
     public void gcMemoryLine(){
         Json root = f.gcMemoryLine().apply("Memory: 4k page, physical 263842984k(199299872k free), swap 4194300k(4194300k free)");
         System.out.println(root.toString(2));
     }
-    @Test
+    @Test @Ignore
     public void gcDetailsHeapSpaceG1(){
         Json root = f.gcDetailsHeapSpaceG1().apply("  region size 4096K, 30 young (122880K), 20 survivors (81920K)");
         System.out.println(root.toString(2));
     }
 
-    @Test
+    @Test @Ignore
     public void gcG1TimedStep(){
         Json root = f.gcG1TimedStep().apply("[GC ref-proc, 0.0002180 secs]");
         System.out.println(root.toString(2));
@@ -653,7 +671,7 @@ public class PrintGcFactoryTest {
         assertEquals("phase","pause",root.getString("phase"));
     }
 
-    @Test
+    @Test @Ignore
     public void gcG1DetailsNestHeapResize(){
         Json root = f.gcG1DetailsNestHeapResize().set(Rule.Repeat).apply("Eden: 1024.0K(16.0M)->0.0B(183.0M) Survivors: 1024.0K->1024.0K Heap: 3666.8M(3682.0M)->936.5M(3682.0M)]");
         System.out.println(root.toString(2));
@@ -673,7 +691,7 @@ public class PrintGcFactoryTest {
     }
 
 
-    @Test
+    @Test @Ignore
     public void gcTenuringAgeDetails(){
         Json root = f.gcTenuringAgeDetails().apply("- age   1:    4606400 bytes,    4606400 total");
         System.out.println(root.toString(2));
@@ -692,7 +710,7 @@ public class PrintGcFactoryTest {
         assertTrue("has gcId:"+root.toString(),root.has("gcId"));
         assertEquals(0,root.getLong("gcId"));
     }
-    @Test
+    @Test @Ignore
     public void gcReason_Systemgc(){
         Json root = f.gcReason().apply("(System.gc())");
         System.out.println(root.toString(2));
@@ -808,7 +826,6 @@ public class PrintGcFactoryTest {
         Json root=f.gcDetailsHeapSpace().apply("  eden space 68288K,   0% used [0x00000006c7200000, 0x00000006c7200000, 0x00000006cb4b0000)");
 
         assertEquals("space is eden","eden",root.getString("space"));
-        System.out.println(root);
     }
     @Test
     public void gcDetailsHeapMeta(){

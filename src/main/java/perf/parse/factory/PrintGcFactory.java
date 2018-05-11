@@ -323,21 +323,12 @@ public class PrintGcFactory {
             .group("times")
         );
         p.add(gcDetailsRegionName()
-            .execute((line, match, pattern, parser) -> {
-                System.out.println("line = "+line);
-                System.out.println("region = "+pattern.group("region"));
-            })
             .group("region")
             .set(Merge.Entry)
             .set(Rule.PrePopTarget)
             .set(Rule.PushTarget)
             .set(Rule.Repeat)
-            .add(
-                new Exp("","")
-                .execute((line, match, pattern, parser) -> {
-                    System.out.println("post gcDetailsRegionName = "+line);
-                })
-            )
+            .add(gcDetailsRegionWarning())//for (promotion failed)
             .add(gcResize()
                 .add(gcDetailsRegionClose()
                     .set(Rule.PostClearTarget)
@@ -719,10 +710,14 @@ public class PrintGcFactory {
 
     //PrintGCDetails
     //
-    public Exp gcDetailsRegionName(){//[DefNew:|[Tenured:|[Metaspace:|[Finalize Marking|[ParNew
-        //changed : to (?::|\z) to deal with lines broken by PrintTenuringDistribution
-        return new Exp("gcDetailsRegionName","\\[(?<region>\\w+(?:\\s[\\w-]+)*)(?::|\\z)")
+    public Exp gcDetailsRegionName(){//[DefNew:|[Tenured:|[Metaspace:|[Finalize Marking|[ParNew$|[ParNew
+        //changed : to (?::|\z) to deal with lines broken by PrintTenuringDistribution in newParser_cms_ParNew_tenuringDistribution
+        //changed (?::|\z) to (?::|\z|(?=\s\()) because of ParNew (promotion failed) in newParser_cms_promotionFailed
+        return new Exp("gcDetailsRegionName","\\[(?<region>\\w+(?:\\s[\\w-]+)*)(?::|\\z|(?=\\s\\())")
         ;
+    }
+    public Exp gcDetailsRegionWarning(){
+        return new Exp("gcDetailsRegionWarning","^\\s*\\((?<warning>[^\\)]+)\\):");
     }
     public Exp gcDetailsRegionClose(){//"\\["
         return new Exp("gcDetailsRegionClose","^\\]");

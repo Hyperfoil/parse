@@ -5,7 +5,6 @@ import perf.parse.internal.JsonBuilder;
 import perf.yaup.json.Json;
 
 import java.util.*;
-import java.util.function.Consumer;
 
 /**
  *
@@ -152,7 +151,7 @@ public class Parser {
         return rtrn;
     }
     private Json emit(){
-        Json toEmit = builder.takeClosedRoot();
+        Json toEmit = builder.takeClosed();
         if(toEmit != null) {
             for (JsonConsumer consumer : consumers) {
                 consumer.consume(toEmit);
