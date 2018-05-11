@@ -22,15 +22,24 @@ public class JsonBuilder {
 
     public static final String NAME_KEY = "_TARGET_NAME_"+System.currentTimeMillis();
 
+    private class Target {
+        Json target;
+        Map<String,Object> info;
+
+        public Target(Json target,Map<String,Object> info){
+            this.target = target;
+            this.info = info;
+        }
+    }
 
 
-    private Stack<Json> targets;
-    private Stack<Map<String,Object>> targetInfo;
+    private Stack<Target> targets;
+    //private Stack<Map<String,Object>> targetInfo;
     private Json closedJson;
 
     public JsonBuilder(){
         targets = new Stack<>();
-        targetInfo = new Stack<>();
+        //targetInfo = new Stack<>();
         closedJson = null;
         pushTarget(new Json());
     }
@@ -56,23 +65,23 @@ public class JsonBuilder {
         closedJson = null;
         return rtrn;
     }
-    public Json getRoot(){return targets.get(0);}
+    public Json getRoot(){return targets.get(0).target;}
 
     public Json peekTarget(int ahead){
         if(ahead > targets.size()-2){
             return null;
         }
-        return targets.get(targets.size()-1-ahead);
+        return targets.get(targets.size()-1-ahead).target;
     }
 
     public Json getTarget(){
-        return targets.peek();
+        return targets.peek().target;
     }
     public Json getTarget(String name){
         Json rtrn = null;
         int index = namedTargetIndex(name);
         if(index>=0){
-            rtrn = targets.get(index);
+            rtrn = targets.get(index).target;
         }
         return rtrn;
     }
@@ -82,22 +91,22 @@ public class JsonBuilder {
     public int pushTarget(Json json,String name){
         int rtrn = -1;
         synchronized (this) {
-            Map<String,Object> infoMap = new ConcurrentHashMap<>();
+            Map<String,Object> infoMap = new HashMap<>();
             if(name!=null && !name.isEmpty()) {
                 infoMap.put(NAME_KEY, name);
             }
             rtrn = targets.size();
-            targets.push(json);
-            targetInfo.push(infoMap);
+            targets.push(new Target(json,infoMap));
+            //targetInfo.push(infoMap);
         }
         return rtrn;
     }
     public Json popTargetIndex(int index){
         synchronized (this){
             if(targets.size()>index && index > 0){
-                Json rtrn = targets.remove(index);
-                targetInfo.remove(index);
-                return rtrn;
+                Target rtrn = targets.remove(index);
+                //targetInfo.remove(index);
+                return rtrn.target;
             }
         }
         return null;
@@ -115,10 +124,10 @@ public class JsonBuilder {
         return rtrn;
     }
     public int namedTargetIndex(String name){
-        int index = targetInfo.size()-1;
+        int index = targets.size()-1;
         boolean found = false;
         do {
-            String indexName = (String)targetInfo.get(index).get(NAME_KEY);
+            String indexName = (String)targets.get(index).info.get(NAME_KEY);
             found = name.equals(indexName);
         }while(!found && --index >= 0);
 
@@ -131,9 +140,9 @@ public class JsonBuilder {
         Json rtrn = null;
         synchronized (this){
             for(int i=0; i<count; i++){
-                if(targets.size()>1) {//TODO remove size check and see why Exp is trying to pop root
-                    rtrn = targets.pop();
-                    targetInfo.pop();
+                if(targets.size()>1) {//TODO see which Exp are trying to pop root
+                    rtrn = targets.pop().target;
+                    //targetInfo.pop();
                 }
             }
         }
@@ -144,14 +153,14 @@ public class JsonBuilder {
 
     public String debug(boolean recursive){
         StringBuilder sb = new StringBuilder();
-        int infoWidth = targetInfo.stream().mapToInt((s)->s.toString().length()).max().orElse(2);
+        int infoWidth = targets.stream().mapToInt((s)->s.info.toString().length()).max().orElse(2);
         int idxWidth = Math.max((int)Math.round(Math.ceil(Math.log10(targets.size()))),1);
         int limit = recursive?0:targets.size()-1;
         for(int i=targets.size()-1;i>=limit; i--){
             if(i<targets.size()-1){
                 sb.append("\n");
             }
-            sb.append(String.format("%-"+infoWidth+"s %"+idxWidth+"d %s",targetInfo.get(i),i,targets.get(i)));
+            sb.append(String.format("%-"+infoWidth+"s %"+idxWidth+"d %s",targets.get(i).info,i,targets.get(i).target));
         }
         return sb.toString();
     }
@@ -159,7 +168,6 @@ public class JsonBuilder {
         synchronized (this){
             while(targets.size()>1){
                 targets.pop();
-                targetInfo.pop();
             }
         }
     }
@@ -170,7 +178,7 @@ public class JsonBuilder {
         int index = namedTargetIndex(name);
         int size = size();
 
-        if(index >= 0){//no op, cannot remove what we didn't find
+        if(index >= 0){
             while (size()-1>=index){
                 popTarget();
             }
@@ -181,33 +189,34 @@ public class JsonBuilder {
     public void reset(){
         synchronized (this){
             targets.clear();
-            targetInfo.clear();
+//            targetInfo.clear();
             Json root = new Json();
-            targets.push(root);
-            targetInfo.push(new ConcurrentHashMap<>());
+            targets.push(new Target(root,new HashMap<>()));
+
+//            targetInfo.push(new HashMap<>());
         }
     }
 
     public boolean hasContext(String key,boolean recursive){
-        int index = targetInfo.size()-1;
+        int index = targets.size()-1;
         boolean rtrn;
         do {
-            rtrn = targetInfo.get(index).containsKey(key);
+            rtrn = targets.get(index).info.containsKey(key);
             index--;
         }while(!rtrn && recursive && index >= 0);
         return rtrn;
     }
     public void setContext(String key,Object value){
-        targetInfo.peek().put(key,value);
+        targets.peek().info.put(key,value);
     }
     private Object getContext(String key,boolean recursive,Object defaultValue){
         int index = targets.size()-1;
         Object rtrn = defaultValue;
         boolean found = false;
         do {
-            if(targetInfo.get(index).containsKey(key)){
+            if(targets.get(index).info.containsKey(key)){
                 found = true;
-                rtrn = targetInfo.get(index).get(key);
+                rtrn = targets.get(index).info.get(key);
             }
             index--;
         }while(!found && recursive && index>=0);

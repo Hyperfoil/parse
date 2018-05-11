@@ -1043,6 +1043,7 @@ public class Exp {
 
 
                 if(target != grouped){
+
                     target = grouped; // will only change target if there was a grouping
                     builder.pushTarget(target,getName()+GROUPED_NAME);
                     needPop = true; //removed because it breaks child.PushTarget
@@ -1052,9 +1053,6 @@ public class Exp {
                 //builder.setTargetRoot(is(Rule.TargetRoot));
                 //TODO need to push root earlier
                 boolean changedContext = populate(matcher,builder);
-                if(is(TargetRoot)){
-                    builder.popTarget(getName()+ROOT_TARGET_NAME);
-                }
 
                 //builder.setTargetRoot(false);
 
@@ -1221,14 +1219,15 @@ public class Exp {
                 if(lineLength != line.length()){
                     matcher.reset(line);
                 }
+
+                if(is(TargetRoot)){
+                    builder.popTarget(getName()+ROOT_TARGET_NAME);
+                }
+
+
                 //trying to pop the auto target for group / nest / key is breaking jdk9 heap parsing6td
                 if( needPop && !changedContext) {
-//                    System.out.println(getName()+" popTarget "+popIndex+" size="+builder.depth());
-//                    System.out.println(builder.debug(true));
                     Json poped = builder.popTarget(getName()+GROUPED_NAME);//pop the group target for this Exp (preserves child targets)
-//                    System.out.println("  postPop: "+getName()+GROUPED_NAME);
-//                    System.out.println("  "+builder.debug(true).replaceAll("\n","\n  "));
-                    //System.out.println(poped.toString(0));
                 }
                 //only notify the callbacks for the last occurrence of a match
                 if(!is(Rule.Repeat)) {
@@ -1282,10 +1281,7 @@ public class Exp {
                 if(ruleInfo.isEmpty()) {
                     builder.clearTargets();
                 }else{
-                    //System.out.println(getName()+" PostClearing "+ruleInfo);
                     ruleInfo.forEach(object-> builder.clearTargets(object.toString()));
-//                    System.out.println("PostCleared");
-//                    System.out.println(builder.debug(true));
                 }
             }
 

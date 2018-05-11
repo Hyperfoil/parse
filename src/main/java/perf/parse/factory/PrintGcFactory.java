@@ -324,6 +324,13 @@ public class PrintGcFactory {
             .group("times")
             .set(Rule.TargetRoot)//in case we are in a gcDetailsRegionName that split into multiple lines
         );
+        //just gcCmsUsed for "[YG occupancy: 5888335 K (7549760 K)]"
+//        p.add(new Exp("gcDetailsCmsOccupancy",
+//            "\\[(?<region>\\w+(?:\\s\\w+)): (?<size:KMG>\\d+ [bBkKmMgG]?) \\((?<capacity:KMG>\\d+ [bBkKmMgG]?)\\)\\]"
+//            )
+//            .group("region")
+//            .set(Rule.PreClearTarget,"gcDetailsRegionName")
+//        );
         p.add(gcDetailsRegionName()
             .group("region")
             .set(Merge.Entry)
@@ -343,6 +350,7 @@ public class PrintGcFactory {
             .add(gcCmsUsed()
                 .add(gcCmsUsedCloser()
                     .set(Rule.PostClearTarget,"gcDetailsRegionName")
+                    .set(Rule.PostClearTarget,"gcDetailsRegionName"+Exp.GROUPED_NAME)
                 )//hack to close targets, something is double pushing targets, maybe nest isn't poping correctly?
             )
             .add(gcCmsTimed()
@@ -670,7 +678,7 @@ public class PrintGcFactory {
 
     // UseConcMarkSweep
     public Exp gcCmsUsed(){//279891K(370368K) | 0 K (180032 K)
-        return new Exp("gcCmsUsed","\\s(?<used:KMG>\\d+\\s?[KMG])\\s?\\((?<size:KMG>\\d+\\s?[KMG])\\)");
+        return new Exp("gcCmsUsed","\\s(?<used:KMG>\\d+\\s?[KMG])\\s?\\((?<capacity:KMG>\\d+\\s?[KMG])\\)");
     }
     public Exp gcCmsUsedCloser(){
         return new Exp("gcCmsusedCloser","^\\]?");

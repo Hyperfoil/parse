@@ -41,7 +41,7 @@ public abstract class AReader {
     }
     public int parserCount(){return parsers.size();}
 
-    protected void onLine(String line){
+    public void onLine(String line){
         for(int i=0; i<parsers.size();i++){
             parsers.get(i).onLine(line);
         }

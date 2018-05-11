@@ -6,6 +6,7 @@ import org.junit.Test;
 import perf.parse.Exp;
 import perf.parse.Parser;
 import perf.parse.Rule;
+import perf.parse.reader.TextLineReader;
 import perf.yaup.Sets;
 import perf.yaup.json.Json;
 
@@ -26,15 +27,59 @@ public class PrintGcFactoryTest {
         f = new PrintGcFactory();
     }
 
+    @Test
+    public void newParser_cms_gcId_sharedLine(){
+        //TODO should two gcId on one line be split into multiple events
+        //if gcId isn't present would we split on timestamp / datestamp?
+        Parser p = f.newParser();
+        p.onLine("2018-05-10T16:05:40.790+0000: 40458.534: #1532: [GC (Allocation Failure) 2018-05-10T16:05:40.790+0000: 40458.534: #1532: [ParNew (promotion failed): 7549760K->7345445K(7549760K), 2.4428745 secs]2018-05-10T16:05:43.233+0000: 40460.977: #1533: [CMS: 21790658K->14261353K(25165824K), 43.3354939 secs] 28741107K->14261353K(32715584K), [Metaspace: 140350K->140350K(165888K)], 45.7791953 secs] [Times: user=56.91 sys=1.21, real=45.78 secs]");
+
+    }
+
+
+
+    @Test
+    public void newParser_cms_g1TagBug(){
+        Parser p = f.newParser();
+        p.onLine("2018-05-10T04:51:30.496+0000: 8.240: #1: [GC (CMS Final Remark) [YG occupancy: 5888335 K (7549760 K)]2018-05-10T04:51:30.504+0000: 8.248: #1: [Rescan (parallel) , 0.1135815 secs]2018-05-10T04:51:30.618+0000: 8.361: #1: [weak refs processing, 0.0000518 secs]2018-05-10T04:51:30.618+0000: 8.361: #1: [class unloading, 0.0114563 secs]2018-05-10T04:51:30.629+0000: 8.373: #1: [scrub symbol table, 0.0104777 secs]2018-05-10T04:51:30.640+0000: 8.383: #1: [scrub string table, 0.0011170 secs][1 CMS-remark: 0K(25165824K)] 5888335K(32715584K), 0.1463148 secs] [Times: user=3.00 sys=0.08, real=0.14 secs]");
+        Json root = p.getBuilder().getRoot();
+
+        assertFalse("root.g1Tag",root.has("g1Tag"));
+        System.out.println(root.toString(2));
+    }
+
+    @Test
+    public void newParser_cms_ParNew_tenuringDistribution_4(){
+        Parser p = f.newParser();
+        p.onLine("2018-05-10T19:38:41.521+0000: 53239.265: #1762: [GC (Allocation Failure) 2018-05-10T19:38:41.521+0000: 53239.265: #1762: [ParNew");
+        p.onLine("Desired survivor size 429490176 bytes, new threshold 6 (max 6)");
+        p.onLine("- age   1:   58663952 bytes,   58663952 total");
+        p.onLine("- age   2:   66262912 bytes,  124926864 total");
+        p.onLine("- age   3:  102218008 bytes,  227144872 total");
+        p.onLine("- age   4:   85139528 bytes,  312284400 total");
+        p.onLine("- age   5:   79381384 bytes,  391665784 total");
+        p.onLine(": 7425651K->528962K(7549760K), 0.2153945 secs] 25414567K->18609465K(32715584K), 0.2157151 secs] [Times: user=3.83 sys=0.10, real=0.22 secs]");
+        Json root = p.getBuilder().getRoot();
+        System.out.println(root.toString(2));
+    }
 
     @Test
     public void newParser_cms_ParNew_tenuringDistribution(){
-        Parser p = f.newParser();
-        p.onLine("2018-05-10T04:51:23.342+0000: 1.085: #0: [GC (Allocation Failure) 2018-05-10T04:51:23.342+0000: 1.086: #0: [ParNew");
-        p.onLine("Desired survivor size 429490176 bytes, new threshold 6 (max 6)");
-        p.onLine("- age   1:   14050056 bytes,   14050056 total");
-        p.onLine(": 6710912K->13897K(7549760K), 0.0369830 secs] 6710912K->13897K(32715584K), 0.0371120 secs] [Times: user=0.51 sys=0.02, real=0.04 secs]");
+        TextLineReader reader = new TextLineReader();
+        Parser p = new Parser();
+
+        p.add((json)->{
+            System.out.println(json.toString(2));
+        });
+
+        f.addToParser(p);
+        reader.addParser(p);
+        reader.onLine("2018-05-10T04:51:23.342+0000: 1.085: #0: [GC (Allocation Failure) 2018-05-10T04:51:23.342+0000: 1.086: #0: [ParNew");
+        reader.onLine("Desired survivor size 429490176 bytes, new threshold 6 (max 6)");
+        reader.onLine("- age   1:   14050056 bytes,   14050056 total");
+        reader.onLine(": 6710912K->13897K(7549760K), 0.0369830 secs] 6710912K->13897K(32715584K), 0.0371120 secs] [Times: user=0.51 sys=0.02, real=0.04 secs]");
         Json root = p.getBuilder().getRoot();
+        System.out.println(root.toString(2));
 
         assertTrue("root.times",root.has("times") && root.get("times") instanceof Json);
 
@@ -50,6 +95,7 @@ public class PrintGcFactoryTest {
         assertEquals("region.size",1,region.size());
 
         Json region0 = region.getJson(0);
+        assertEquals("region[0].region","ParNew",region0.getString("region"));
         assertEquals("region[0].before",Exp.parseKMG("6710912K"),region0.getLong("before"));
         assertEquals("region[0].after",Exp.parseKMG("13897K"),region0.getLong("after"));
         assertEquals("region[0].capacity", Exp.parseKMG("7549760K"),region0.getLong("capacity"));
@@ -784,13 +830,13 @@ public class PrintGcFactoryTest {
         p.onLine(" 559443K(899448K)");
         root = p.getBuilder().getRoot();
         assertTrue("has used:"+root.toString(),root.has("used"));
-        assertTrue("has size:"+root.toString(),root.has("size"));
+        assertTrue("has capacity:"+root.toString(),root.has("capacity"));
     }
     @Test
     public void gcCmsUsed_spaced(){
         Json root=f.gcCmsUsed().apply(" 0 K (180032 K)]");
         assertTrue("has used:"+root.toString(),root.has("used"));
-        assertTrue("has size:"+root.toString(),root.has("size"));
+        assertTrue("has capacity:"+root.toString(),root.has("capacity"));
     }
     @Test
     public void gcCmsTimed(){
