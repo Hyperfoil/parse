@@ -39,12 +39,15 @@ public class RegexMatcher implements IMatcher {
         String newPattern = pattern;
         renames = new LinkedHashMap<>();
 
-        fieldMatcher.reset(pattern);
+        fieldMatcher.reset(newPattern);
         while(fieldMatcher.find()){
+            int start = fieldMatcher.start(1);
+            int end = fieldMatcher.end(1);
             String realName = fieldMatcher.group(1);
-            String compName = realName.replaceAll("[\\.\\\\_]","x");
+            String compName = realName.replaceAll("[_ +.()\\[\\]\\- \\\\]","x").replaceAll(" ","");
             if(!compName.equals(realName)){
-                newPattern = newPattern.replace(realName,compName);
+                newPattern = newPattern.substring(0,start)+compName+newPattern.substring(end);
+                fieldMatcher.reset(newPattern);
             }
             renames.put(realName,compName);
         }
