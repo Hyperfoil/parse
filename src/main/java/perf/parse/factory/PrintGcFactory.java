@@ -91,6 +91,7 @@ public class PrintGcFactory {
         );
 
         p.add(gcTenuringDistribution()
+            .group("survivor")
             .set(Rule.TargetRoot)
         );
         p.add(gcTenuringAgeDetails()
@@ -690,7 +691,7 @@ public class PrintGcFactory {
 
     //PrintTenuringDistribution
     public Exp gcTenuringDistribution(){//"Desired survivor size 2097152 bytes, new threshold 7 (max 15)"
-        return new Exp("gcTenuringDistribution","Desired survivor size (?<survivorSize>\\d+) bytes, new threshold (?<threshold>\\d+) \\(max (?<maxThreshold>\\d+)\\)");
+        return new Exp("gcTenuringDistribution","Desired survivor size (?<desiredSize>\\d+) bytes, new threshold (?<threshold>\\d+) \\(max (?<max>\\d+)\\)");
     }
     public Exp gcTenuringAgeDetails(){//"- age   1:    4606400 bytes,    4606400 total"
         return new Exp("gcTenuringAgeDetails","- age\\s+(?<age>\\d+):\\s+(?<size>\\d+) bytes,\\s+(?<total>\\d+) total");

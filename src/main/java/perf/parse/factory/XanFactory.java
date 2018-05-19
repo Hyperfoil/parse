@@ -1,6 +1,7 @@
 package perf.parse.factory;
 
 import perf.parse.*;
+import perf.yaup.file.FileUtility;
 import perf.yaup.json.Json;
 
 /**
@@ -22,7 +23,7 @@ public class XanFactory {
         return new Exp("display","Display: (?<display>.*)");
     }
     public Exp dashes(){
-        return new Exp("dashes","-[ -]+");
+        return new Exp("dashes","^-[ -]+$");
     }
     public Exp header(){
         return new Exp("headers","(?<header>.{2,}?)(?:\\s{2,}|$)");
@@ -70,10 +71,6 @@ public class XanFactory {
                 StringBuilder sb = new StringBuilder();
                 for(int i=0; i<arry.size(); i++){
                     String header = arry.getString(i);
-                    if(header.indexOf(" ")>0){
-                        header = header.substring(0,header.indexOf(" "));
-                    }
-                    header = header.replaceAll("[_\\-/]", "");
                     arry.set(i,header);
                     sb.append("(?<"+header+">[^ -].*?)(?:\\s{2,}|$)");
                 }
@@ -81,6 +78,7 @@ public class XanFactory {
                         .eat(Eat.Line).set(Merge.Entry);
                 if(parser!=null) {
                     int removedIndex = parser.remove("row");
+
                     parser.addAt(rowExp,1);
                 }
             })

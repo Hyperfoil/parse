@@ -155,7 +155,6 @@ public class ExpTest {
         p.apply(new CheatChars("foo=bar"),b,null);
         p.apply(new CheatChars("fizz=fuzz"),b,null);
 
-
         assertTrue("Status should have <lock> as child object but is "+b.getRoot(), status.has("lock"));
     }
 
@@ -221,17 +220,13 @@ public class ExpTest {
         p.apply(new CheatChars("    aac"),b,null);
         p.apply(new CheatChars("b"),b,null);
 
-        System.out.println(b.getRoot().toString(2));
-
         Json root = b.getRoot();
         assertTrue("root has nest:",root.has("nest") && root.get("nest") instanceof Json);
         Json nest = root.getJson("nest");
         assertEquals("nest has 2 children",2,nest.size());
         assertEquals("nest[0].name","a",nest.getJson(0).getString("name"));
-        assertEquals("nest[0].name","b",nest.getJson(1).getString("name"));
-
+        assertEquals("nest[1].name","b",nest.getJson(1).getString("name"));
     }
-
 
     @Test
     public void valueTargetId(){
@@ -327,7 +322,6 @@ public class ExpTest {
         JsonBuilder b = new JsonBuilder();
         Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").set("value", Value.List);
         p.apply(new CheatChars("age=23"),b,null);
-
         p.apply(new CheatChars("age=23"),b,null);
 
         assertTrue("<key> should be treated as a list by default",b.getRoot().get("key") instanceof Json);
