@@ -798,6 +798,10 @@ public class Exp {
 
     //changed to atomic integer so pattern can change start offset if it eats before start
     private boolean applyWithStart(CheatChars line, JsonBuilder builder, Parser parser, AtomicInteger start){
+
+        if(line.length()==0 || start.get() > line.length()){
+            return false;
+        }
         if(isDebug()){
             System.out.println(this.getName()+" > applyWithStart @ "+start+": line=||"+line+"||");
             System.out.println("  line@start=||"+line.subSequence(start.get(),line.length())+"||");
@@ -823,7 +827,7 @@ public class Exp {
         if(isDebug() && startPoint != start.get()){
             System.out.println("  startPoint="+startPoint);
         }
-        matcher.region( startPoint,line.length() );
+        matcher.region(startPoint, line.length());
 
         if(matcher.find()){
 
@@ -995,7 +999,8 @@ public class Exp {
                         } else if ( is(Merge.Collection) ) {
                             if( grouped.has(groupName) ) {
                                 if( !(grouped.get(groupName) instanceof Json) ){
-                                    System.out.println("groupName "+groupName+" not a group");
+                                    System.out.println("groupName "+groupName+" not a group for Exp:"+getName());
+                                    System.out.println("  grouped:\n  "+grouped.toString(2).replaceAll("\n","\n  "));
                                 }
                                 grouped = grouped.getJson(groupName);
                             } else {

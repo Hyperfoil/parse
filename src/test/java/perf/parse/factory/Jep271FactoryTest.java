@@ -20,6 +20,14 @@ public class Jep271FactoryTest {
     }
 
     @Test
+    public void newPaarser_serial_tags(){
+        Parser p = f.newParser();
+        p.onLine("[2018-04-18T09:07:19.417-0500][0.186s][info][gc,cpu] GC(0) User=0.01s Sys=0.01s Real=0.01s");
+        Json root = p.getBuilder().getRoot();
+        System.out.println(root.toString(2));
+    }
+
+    @Test
     public void newParser_printGc_parallel(){
         Parser p = f.newParser();
         p.onLine("1.479: [GC (Allocation Failure)  3932160K->38671K(11927552K), 0.0364259 secs]");
@@ -489,8 +497,6 @@ public class Jep271FactoryTest {
     public void gcHeapMetaSpace(){
         Json root;
         root = f.gcHeapMetaSpace().apply("  class space    used 388K, capacity 390K, committed 512K, reserved 1048576K");
-        assertTrue("class\n"+root.toString(2),root.has("class") && root.get("class") instanceof Json);
-        root = root.getJson("class");
         assertEquals("space","class",root.getString("space"));
         assertEquals("committed",Exp.parseKMG("512K"),root.getLong("committed"));
         assertEquals("reserved",Exp.parseKMG("1048576K"),root.getLong("reserved"));
@@ -503,8 +509,6 @@ public class Jep271FactoryTest {
         Json root;
         root = f.gcHeapSpace().apply("   eden space 68288K,  93% used [0x00000006c7200000, 0x00000006cb076880, 0x00000006cb4b0000)");
 
-        assertTrue("eden\n"+root.toString(2),root.has("eden") && root.get("eden") instanceof Json);
-        root = root.getJson("eden");
         assertEquals("space","eden",root.getString("space"));
         assertEquals("size",Exp.parseKMG("68288K"),root.getLong("size"));
         assertEquals("used",93,root.getLong("used"));
