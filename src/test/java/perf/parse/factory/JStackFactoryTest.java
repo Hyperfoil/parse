@@ -37,7 +37,7 @@ public class JStackFactoryTest {
 
         o = b.getRoot();
 
-        assertEquals("name","Name with \" and '",o.getString("name"));
+        assertEquals("Name","Name with \" and '",o.getString("Name"));
         assertEquals("prio","10",o.getString("prio"));
         assertEquals("tid","0x00007fe444377000",o.getString("tid"));
         assertEquals("nid", "0x1036", o.getString("nid"));
@@ -49,7 +49,7 @@ public class JStackFactoryTest {
         p.apply(new CheatChars("\"GC task thread#0 (ParallelGC)\" os_prio=0 tid=0x00007f9b4c023000 nid=0x4d0c runnable "),b,null);
 
         o = b.getRoot();
-        assertEquals("name","GC task thread#0 (ParallelGC)",o.getString("name"));
+        assertEquals("Name","GC task thread#0 (ParallelGC)",o.getString("Name"));
         assertEquals("os_prio","0",o.getString("osprio"));
         assertEquals("tid","0x00007f9b4c023000",o.getString("tid"));
         assertEquals("nid","0x4d0c",o.getString("nid"));
@@ -60,7 +60,7 @@ public class JStackFactoryTest {
         p.apply(new CheatChars("\"C1 CompilerThread2\" #7 daemon prio=9 os_prio=0 tid=0x00007f9b4c0b4800 nid=0x4d16 waiting on condition [0x0000000000000000]\n"),b,null);
 
         o = b.getRoot();
-        assertEquals("name","C1 CompilerThread2",o.getString("name"));
+        assertEquals("Name","C1 CompilerThread2",o.getString("Name"));
         assertTrue("daemon", o.getBoolean("daemon"));
         assertEquals("prio","9",o.getString("prio"));
         assertEquals("os_prio","0",o.getString("osprio"));

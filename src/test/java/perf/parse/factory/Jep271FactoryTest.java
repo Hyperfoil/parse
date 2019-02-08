@@ -8,8 +8,9 @@ import perf.parse.Parser;
 import perf.yaup.Sets;
 import perf.yaup.json.Json;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import java.util.Arrays;
+
+import static org.junit.Assert.*;
 
 public class Jep271FactoryTest {
     private static Jep271Factory f;
@@ -20,11 +21,16 @@ public class Jep271FactoryTest {
     }
 
     @Test
-    public void newPaarser_serial_tags(){
+    public void newParser_serial_cpu_tags(){
         Parser p = f.newParser();
         p.onLine("[2018-04-18T09:07:19.417-0500][0.186s][info][gc,cpu] GC(0) User=0.01s Sys=0.01s Real=0.01s");
         Json root = p.getBuilder().getRoot();
-        System.out.println(root.toString(2));
+        assertTrue("missing expected key",root.keys().containsAll(Sets.of("time","uptime","level","tags","gcId","cpu")));
+        assertTrue("cpu should be json:"+root.get("cpu"),root.get("cpu") instanceof Json);
+        Json cpu = root.getJson("cpu");
+        assertTrue("cpu should have user,sys,real",cpu.keys().containsAll(Sets.of("user","sys","real")));
+
+
     }
 
     @Test
@@ -147,30 +153,48 @@ public class Jep271FactoryTest {
         assertEquals("phase[2].milliseconds",7.309,phases.getJson(2).getDouble("milliseconds"),0.00000001);
     }
 
-    @Test @Ignore
+    @Test
+    public void newParser_serail_gc_heap_generation_space(){
+        Parser p = f.newParser();
+
+        Arrays.asList(
+            "[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0) Heap before GC invocations=0 (full 0):",
+            "[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)  def new generation   total 76800K, used 63962K [0x00000006c7200000, 0x00000006cc550000, 0x000000071a150000)",
+            "[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)   eden space 68288K,  93% used [0x00000006c7200000, 0x00000006cb076880, 0x00000006cb4b0000)",
+            "[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)  tenured generation   total 170688K, used 0K [0x000000071a150000, 0x0000000724800000, 0x00000007c0000000)"
+        ).stream().forEach(p::onLine);
+
+        Json root = p.getBuilder().getRoot();
+        System.out.println(root.toString(2));
+
+
+    }
+
+    @Test
     public void newParser_serial_gc_heap(){
         Parser p = f.newParser();
-        p.onLine("[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0) Heap before GC invocations=0 (full 0):");
-        p.onLine("[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)  def new generation   total 76800K, used 63962K [0x00000006c7200000, 0x00000006cc550000, 0x000000071a150000)");
-        p.onLine("[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)   eden space 68288K,  93% used [0x00000006c7200000, 0x00000006cb076880, 0x00000006cb4b0000)");
-        p.onLine("[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)   from space 8512K,   0% used [0x00000006cb4b0000, 0x00000006cb4b0000, 0x00000006cbd00000)");
-        p.onLine("[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)   to   space 8512K,   0% used [0x00000006cbd00000, 0x00000006cbd00000, 0x00000006cc550000)");
-        p.onLine("[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)  tenured generation   total 170688K, used 0K [0x000000071a150000, 0x0000000724800000, 0x00000007c0000000)");
-        p.onLine("[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)    the space 170688K,   0% used [0x000000071a150000, 0x000000071a150000, 0x000000071a150200, 0x0000000724800000)");
-        p.onLine("[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)  Metaspace       used 4990K, capacity 5086K, committed 5376K, reserved 1056768K");
-        p.onLine("[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)   class space    used 428K, capacity 458K, committed 512K, reserved 1048576K");
-        p.onLine("[2018-04-18T09:07:26.370-0500][0.193s][info ][gc,heap] GC(0) DefNew: 63962K->5938K(76800K)");
-        p.onLine("[2018-04-18T09:07:26.370-0500][0.193s][info ][gc,heap] GC(0) Tenured: 0K->9983K(170688K)");
-        p.onLine("[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0) Heap after GC invocations=1 (full 0):");
-        p.onLine("[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0)  def new generation   total 76800K, used 5938K [0x00000006c7200000, 0x00000006cc550000, 0x000000071a150000)");
-        p.onLine("[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0)   eden space 68288K,   0% used [0x00000006c7200000, 0x00000006c7200000, 0x00000006cb4b0000)");
-        p.onLine("[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0)   from space 8512K,  69% used [0x00000006cbd00000, 0x00000006cc2ccbf0, 0x00000006cc550000)");
-        p.onLine("[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0)   to   space 8512K,   0% used [0x00000006cb4b0000, 0x00000006cb4b0000, 0x00000006cbd00000)");
-        p.onLine("[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0)  tenured generation   total 170688K, used 9983K [0x000000071a150000, 0x0000000724800000, 0x00000007c0000000)");
-        p.onLine("[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0)    the space 170688K,   5% used [0x000000071a150000, 0x000000071ab0ffc8, 0x000000071ab10000, 0x0000000724800000)");
-        p.onLine("[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0)  Metaspace       used 4990K, capacity 5086K, committed 5376K, reserved 1056768K");
-        p.onLine("[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0)   class space    used 428K, capacity 458K, committed 512K, reserved 1048576K");
-
+        Arrays.asList(
+                "[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0) Heap before GC invocations=0 (full 0):",
+                "[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)  def new generation   total 76800K, used 63962K [0x00000006c7200000, 0x00000006cc550000, 0x000000071a150000)",
+                "[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)   eden space 68288K,  93% used [0x00000006c7200000, 0x00000006cb076880, 0x00000006cb4b0000)",
+                "[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)   from space 8512K,   0% used [0x00000006cb4b0000, 0x00000006cb4b0000, 0x00000006cbd00000)",
+                "[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)   to   space 8512K,   0% used [0x00000006cbd00000, 0x00000006cbd00000, 0x00000006cc550000)",
+                "[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)  tenured generation   total 170688K, used 0K [0x000000071a150000, 0x0000000724800000, 0x00000007c0000000)",
+                "[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)    the space 170688K,   0% used [0x000000071a150000, 0x000000071a150000, 0x000000071a150200, 0x0000000724800000)",
+                "[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)  Metaspace       used 4990K, capacity 5086K, committed 5376K, reserved 1056768K",
+                "[2018-04-18T09:07:26.359-0500][0.181s][debug][gc,heap] GC(0)   class space    used 428K, capacity 458K, committed 512K, reserved 1048576K",
+                "[2018-04-18T09:07:26.370-0500][0.193s][info ][gc,heap] GC(0) DefNew: 63962K->5938K(76800K)",
+                "[2018-04-18T09:07:26.370-0500][0.193s][info ][gc,heap] GC(0) Tenured: 0K->9983K(170688K)",
+                "[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0) Heap after GC invocations=1 (full 0):",
+                "[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0)  def new generation   total 76800K, used 5938K [0x00000006c7200000, 0x00000006cc550000, 0x000000071a150000)",
+                "[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0)   eden space 68288K,   0% used [0x00000006c7200000, 0x00000006c7200000, 0x00000006cb4b0000)",
+                "[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0)   from space 8512K,  69% used [0x00000006cbd00000, 0x00000006cc2ccbf0, 0x00000006cc550000)",
+                "[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0)   to   space 8512K,   0% used [0x00000006cb4b0000, 0x00000006cb4b0000, 0x00000006cbd00000)",
+                "[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0)  tenured generation   total 170688K, used 9983K [0x000000071a150000, 0x0000000724800000, 0x00000007c0000000)",
+                "[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0)    the space 170688K,   5% used [0x000000071a150000, 0x000000071ab0ffc8, 0x000000071ab10000, 0x0000000724800000)",
+                "[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0)  Metaspace       used 4990K, capacity 5086K, committed 5376K, reserved 1056768K",
+                "[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0)   class space    used 428K, capacity 458K, committed 512K, reserved 1048576K"
+        ).stream().forEach(p::onLine);
         Json root = p.getBuilder().getRoot();
         System.out.println(root.toString(2));
 
@@ -180,24 +204,25 @@ public class Jep271FactoryTest {
     @Test @Ignore
     public void newParser_serial_gc_heap_oracle10_46(){
         Parser p = f.newParser();
-        p.onLine("[2018-04-18T09:09:52.803-0500][1.318s][debug][gc,heap] GC(18) Heap before GC invocations=12 (full 6): def new generation   total 360064K, used 320064K [0x00000006c7200000, 0x00000006df8b0000, 0x000000071a150000)");
-        p.onLine("[2018-04-18T09:09:52.803-0500][1.318s][debug][gc,heap] GC(18)   eden space 320064K, 100% used [0x00000006c7200000, 0x00000006daa90000, 0x00000006daa90000)");
-        p.onLine("[2018-04-18T09:09:52.803-0500][1.318s][debug][gc,heap] GC(18)   from space 40000K,   0% used [0x00000006daa90000, 0x00000006daa90000, 0x00000006dd1a0000)");
-        p.onLine("[2018-04-18T09:09:52.803-0500][1.318s][debug][gc,heap] GC(18)   to   space 40000K,   0% used [0x00000006dd1a0000, 0x00000006dd1a0000, 0x00000006df8b0000)");
-        p.onLine("[2018-04-18T09:09:52.803-0500][1.318s][debug][gc,heap] GC(18)  tenured generation   total 1439048K, used 1119017K [0x000000071a150000, 0x0000000771ea2000, 0x00000007c0000000)");
-        p.onLine("[2018-04-18T09:09:52.803-0500][1.318s][debug][gc,heap] GC(18)    the space 1439048K,  77% used [0x000000071a150000, 0x000000075e61a568, 0x000000075e61a600, 0x0000000771ea2000)");
-        p.onLine("[2018-04-18T09:09:52.803-0500][1.318s][debug][gc,heap] GC(18)  Metaspace       used 4769K, capacity 4862K, committed 5120K, reserved 1056768K");
-        p.onLine("[2018-04-18T09:09:52.803-0500][1.318s][debug][gc,heap] GC(18)   class space    used 397K, capacity 426K, committed 512K, reserved 1048576K");
-        p.onLine("[2018-04-18T09:09:52.949-0500][1.464s][info ][gc,heap] GC(18) DefNew: 320064K->0K(360064K)");
-        p.onLine("[2018-04-18T09:09:52.949-0500][1.464s][info ][gc,heap] GC(18) Tenured: 1119017K->1438505K(1439048K)");
-        p.onLine("[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18) Heap after GC invocations=13 (full 6): def new generation   total 360064K, used 0K [0x00000006c7200000, 0x00000006df8b0000, 0x000000071a150000)");
-        p.onLine("[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18)   eden space 320064K,   0% used [0x00000006c7200000, 0x00000006c7200000, 0x00000006daa90000)");
-        p.onLine("[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18)   from space 40000K,   0% used [0x00000006dd1a0000, 0x00000006dd1a0050, 0x00000006df8b0000)");
-        p.onLine("[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18)   to   space 40000K,   0% used [0x00000006daa90000, 0x00000006daa90000, 0x00000006dd1a0000)");
-        p.onLine("[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18)  tenured generation   total 1439048K, used 1438505K [0x000000071a150000, 0x0000000771ea2000, 0x00000007c0000000)");
-        p.onLine("[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18)    the space 1439048K,  99% used [0x000000071a150000, 0x0000000771e1a558, 0x0000000771e1a600, 0x0000000771ea2000)");
-        p.onLine("[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18)  Metaspace       used 4769K, capacity 4862K, committed 5120K, reserved 1056768K");
-        p.onLine("[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18)   class space    used 397K, capacity 426K, committed 512K, reserved 1048576K");
+        Arrays.asList(
+        "[2018-04-18T09:09:52.803-0500][1.318s][debug][gc,heap] GC(18) Heap before GC invocations=12 (full 6): def new generation   total 360064K, used 320064K [0x00000006c7200000, 0x00000006df8b0000, 0x000000071a150000)",
+        "[2018-04-18T09:09:52.803-0500][1.318s][debug][gc,heap] GC(18)   eden space 320064K, 100% used [0x00000006c7200000, 0x00000006daa90000, 0x00000006daa90000)",
+        "[2018-04-18T09:09:52.803-0500][1.318s][debug][gc,heap] GC(18)   from space 40000K,   0% used [0x00000006daa90000, 0x00000006daa90000, 0x00000006dd1a0000)",
+        "[2018-04-18T09:09:52.803-0500][1.318s][debug][gc,heap] GC(18)   to   space 40000K,   0% used [0x00000006dd1a0000, 0x00000006dd1a0000, 0x00000006df8b0000)",
+        "[2018-04-18T09:09:52.803-0500][1.318s][debug][gc,heap] GC(18)  tenured generation   total 1439048K, used 1119017K [0x000000071a150000, 0x0000000771ea2000, 0x00000007c0000000)",
+        "[2018-04-18T09:09:52.803-0500][1.318s][debug][gc,heap] GC(18)    the space 1439048K,  77% used [0x000000071a150000, 0x000000075e61a568, 0x000000075e61a600, 0x0000000771ea2000)",
+        "[2018-04-18T09:09:52.803-0500][1.318s][debug][gc,heap] GC(18)  Metaspace       used 4769K, capacity 4862K, committed 5120K, reserved 1056768K",
+        "[2018-04-18T09:09:52.803-0500][1.318s][debug][gc,heap] GC(18)   class space    used 397K, capacity 426K, committed 512K, reserved 1048576K",
+        "[2018-04-18T09:09:52.949-0500][1.464s][info ][gc,heap] GC(18) DefNew: 320064K->0K(360064K)",
+        "[2018-04-18T09:09:52.949-0500][1.464s][info ][gc,heap] GC(18) Tenured: 1119017K->1438505K(1439048K)",
+        "[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18) Heap after GC invocations=13 (full 6): def new generation   total 360064K, used 0K [0x00000006c7200000, 0x00000006df8b0000, 0x000000071a150000)",
+        "[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18)   eden space 320064K,   0% used [0x00000006c7200000, 0x00000006c7200000, 0x00000006daa90000)",
+        "[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18)   from space 40000K,   0% used [0x00000006dd1a0000, 0x00000006dd1a0050, 0x00000006df8b0000)",
+        "[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18)   to   space 40000K,   0% used [0x00000006daa90000, 0x00000006daa90000, 0x00000006dd1a0000)",
+        "[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18)  tenured generation   total 1439048K, used 1438505K [0x000000071a150000, 0x0000000771ea2000, 0x00000007c0000000)",
+        "[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18)    the space 1439048K,  99% used [0x000000071a150000, 0x0000000771e1a558, 0x0000000771e1a600, 0x0000000771ea2000)",
+        "[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18)  Metaspace       used 4769K, capacity 4862K, committed 5120K, reserved 1056768K",
+        "[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18)   class space    used 397K, capacity 426K, committed 512K, reserved 1048576K").stream().forEach(p::onLine);
         Json root = p.getBuilder().getRoot();
         System.out.println(root.toString(2));
     }
@@ -271,11 +296,6 @@ public class Jep271FactoryTest {
         assertEquals("trace","trace",root.getString("level"));
     }
 
-    @Test @Ignore
-    public void gcKeyValue(){
-
-    }
-
     @Test
     public void parallelSizeChanged(){
         Json root;
@@ -325,8 +345,6 @@ public class Jep271FactoryTest {
     public void gcCpu(){
         Json root;
         root = f.gcCpu().apply("User=0.02s Sys=0.01s Real=0.02s");
-        assertTrue("cpu\n"+root.toString(2),root.has("cpu") && root.get("cpu") instanceof Json);
-        root = root.getJson("cpu");
         assertEquals("user",0.02,root.getDouble("user"),0.00000001);
         assertEquals("sys",0.01,root.getDouble("sys"),0.00000001);
         assertEquals("real",0.02,root.getDouble("real"),0.00000001);
@@ -337,16 +355,13 @@ public class Jep271FactoryTest {
         Json root;
 
         root = f.gcHeapSize().apply("Maximum heap size 4173353984");
-        assertTrue("heap",root.has("heap") && root.get("heap") instanceof Json);
-        assertEquals("heap.Maximum",4173353984l,root.getJson("heap").getLong("Maximum"));
+        assertEquals("Maximum",4173353984l,root.getLong("Maximum"));
 
         root = f.gcHeapSize().apply("Initial heap size 260834624");
-        assertTrue("heap",root.has("heap") && root.get("heap") instanceof Json);
-        assertEquals("heap.Initial",260834624,root.getJson("heap").getLong("Initial"));
+        assertEquals("Initial",260834624,root.getLong("Initial"));
 
         root = f.gcHeapSize().apply("Minimum heap size 6815736");
-        assertTrue("heap",root.has("heap") && root.get("heap") instanceof Json);
-        assertEquals("heap.Minimum",6815736,root.getJson("heap").getLong("Minimum"));
+        assertEquals("Minimum",6815736,root.getLong("Minimum"));
     }
 
     @Test
@@ -354,10 +369,9 @@ public class Jep271FactoryTest {
         Json root;
 
         root = f.gcHeapRange().apply("Minimum heap 8388608  Initial heap 262144000  Maximum heap 4175429632");
-        assertTrue("heap",root.has("heap") && root.get("heap") instanceof Json);
-        assertEquals("heap.min",8388608,root.getJson("heap").getLong("min"));
-        assertEquals("heap.initial",262144000,root.getJson("heap").getLong("initial"));
-        assertEquals("heap.max",4175429632l,root.getJson("heap").getLong("max"));
+        assertEquals("heap.min",8388608,root.getLong("min"));
+        assertEquals("heap.initial",262144000,root.getLong("initial"));
+        assertEquals("heap.max",4175429632l,root.getLong("max"));
     }
 
     @Test
@@ -365,12 +379,9 @@ public class Jep271FactoryTest {
         Json root;
         root = f.gcHeapYoungRange().apply("1: Minimum young 196608  Initial young 87359488  Maximum young 1391788032");
 
-        assertTrue("heap",root.has("heap") && root.get("heap") instanceof Json);
-        root = root.getJson("heap");
-        assertTrue("young",root.has("young") && root.get("young") instanceof Json);
-        assertEquals("young.min",196608,root.getJson("young").getLong("min"));
-        assertEquals("young.initial",87359488,root.getJson("young").getLong("initial"));
-        assertEquals("young.max",1391788032,root.getJson("young").getLong("max"));
+        assertEquals("young.min",196608,root.getLong("min"));
+        assertEquals("young.initial",87359488,root.getLong("initial"));
+        assertEquals("young.max",1391788032,root.getLong("max"));
 
     }
 
@@ -379,12 +390,9 @@ public class Jep271FactoryTest {
         Json root;
         root = f.gcHeapOldRange().apply("Minimum old 65536  Initial old 174784512  Maximum old 2783641600");
 
-        assertTrue("heap",root.has("heap") && root.get("heap") instanceof Json);
-        root = root.getJson("heap");
-        assertTrue("old",root.has("old") && root.get("old") instanceof Json);
-        assertEquals("old.min",65536,root.getJson("old").getLong("min"));
-        assertEquals("old.initial",174784512,root.getJson("old").getLong("initial"));
-        assertEquals("old.max",2783641600l,root.getJson("old").getLong("max"));
+        assertEquals("old.min",65536,root.getLong("min"));
+        assertEquals("old.initial",174784512,root.getLong("initial"));
+        assertEquals("old.max",2783641600l,root.getLong("max"));
 
     }
 
@@ -393,19 +401,11 @@ public class Jep271FactoryTest {
         Json root;
 
         root = f.gcHeapHeader().apply("Heap before GC invocations=0 (full 0): ");
-        assertTrue("heap",root.has("heap") && root.get("heap") instanceof Json);
-        root = root.getJson("heap");
-        assertTrue("before",root.has("before") && root.get("before") instanceof Json);
-        root = root.getJson("before");
         assertEquals("phase","before",root.getString("phase"));
         assertEquals("invocations",0,root.getLong("invocations"));
         assertEquals("full",0,root.getLong("full"));
 
         root = f.gcHeapHeader().apply("Heap after GC invocations=1 (full 0): ");
-        assertTrue("heap",root.has("heap") && root.get("heap") instanceof Json);
-        root = root.getJson("heap");
-        assertTrue("after",root.has("after") && root.get("after") instanceof Json);
-        root = root.getJson("after");
         assertEquals("phase","after",root.getString("phase"));
         assertEquals("invocations",1,root.getLong("invocations"));
         assertEquals("full",0,root.getLong("full"));
@@ -415,12 +415,6 @@ public class Jep271FactoryTest {
     public void gcHeapRegion(){
         Json root;
         root = f.gcHeapRegion().apply(" def new generation   total 76800K, used 63648K [0x00000006c7200000, 0x00000006cc550000, 0x000000071a150000)");
-        assertTrue("region\n"+root.toString(2),root.has("region") && root.get("region") instanceof Json);
-        root = root.getJson("region");
-
-        assertTrue("region.isArray > 0\n"+root.toString(2),root.isArray() && root.size()>0);
-        root = root.getJson(0);
-
         assertEquals("name","def new generation",root.getString("name"));
         assertEquals("total",Exp.parseKMG("76800K"),root.getLong("total"));
         assertEquals("used",Exp.parseKMG("63648K"),root.getLong("used"));
@@ -429,6 +423,14 @@ public class Jep271FactoryTest {
         assertEquals("end","0x000000071a150000",root.getString("end"));
 
         root = f.gcHeapRegion().apply("garbage-first heap   total 256000K, used 110592K [0x00000006c7200000, 0x00000006c73007d0, 0x00000007c0000000)");
+
+        assertEquals("name\n"+root.toString(2),"garbage-first heap",root.getString("name"));
+        assertEquals("total",Exp.parseKMG("256000K"),root.getLong("total"));
+        assertEquals("used",Exp.parseKMG("110592K"),root.getLong("used"));
+        assertEquals("start","0x00000006c7200000",root.getString("start"));
+        assertEquals("current","0x00000006c73007d0",root.getString("current"));
+        assertEquals("end","0x00000007c0000000",root.getString("end"));
+
         //TODO verify
     }
 
@@ -446,11 +448,6 @@ public class Jep271FactoryTest {
         Json root;
 
         root = f.gcHeapMetaRegion().apply(" Metaspace       used 4769K, capacity 4862K, committed 5120K, reserved 1056768K");
-        assertTrue("region\n"+root.toString(2),root.has("region") && root.get("region") instanceof Json);
-        root = root.getJson("region");
-
-        assertTrue("region.isArray > 0\n"+root.toString(2),root.isArray() && root.size()>0);
-        root = root.getJson(0);
         assertEquals("region","Metaspace",root.getString("name"));
         assertEquals("committed",Exp.parseKMG("5120K"),root.getLong("committed"));
         assertEquals("reserved",Exp.parseKMG("1056768K"),root.getLong("reserved"));
@@ -464,8 +461,6 @@ public class Jep271FactoryTest {
         Json root;
         root = f.gcHeapRegionResize().apply("ParOldGen: 145286K->185222K(210944K)");
 
-        assertTrue("ParOldGen",root.has("ParOldGen") && root.get("ParOldGen") instanceof Json);
-        root = root.getJson("ParOldGen");
         assertEquals("region","ParOldGen",root.getString("region"));
         assertEquals("size",Exp.parseKMG("210944K"),root.getLong("size"));
         assertEquals("before",Exp.parseKMG("145286K"),root.getLong("before"));
@@ -476,8 +471,6 @@ public class Jep271FactoryTest {
     public void gcHeapRegionResizeG1(){
         Json root;
         root = f.gcHeapRegionResizeG1().apply("Eden regions: 4->0(149)");
-        assertTrue("Eden",root.has("Eden") && root.get("Eden") instanceof Json);
-        root = root.getJson("Eden");
         assertEquals("region","Eden",root.getString("region"));
         assertEquals("before",4,root.getLong("before"));
         assertEquals("after",0,root.getLong("after"));
@@ -534,8 +527,6 @@ public class Jep271FactoryTest {
     public void safepointStopTime(){
         Json root;
         root = f.safepointStopTime().apply("Total time for which application threads were stopped: 0.0019746 seconds, Stopping threads took: 0.0000102 seconds");
-        assertTrue("safepoint\n"+root.toString(2),root.has("safepoint") && root.get("safepoint") instanceof Json);
-        root = root.getJson("safepoint");
         assertEquals("stoppedSeconds",0.0019746,root.getDouble("stoppedSeconds"),0.00000001);
         assertEquals("quiesceSeconds",0.0000102,root.getDouble("quiesceSeconds"),0.00000001);
     }
@@ -544,8 +535,6 @@ public class Jep271FactoryTest {
     public void safepointAppTime(){
         Json root;
         root = f.safepointAppTime().apply("Application time: 0.0009972 seconds");
-        assertTrue("safepoint\n"+root.toString(2),root.has("safepoint") && root.get("safepoint") instanceof Json);
-        root = root.getJson("safepoint");
         assertEquals("applicationSeconds",0.0009972,root.getDouble("applicationSeconds"),0.00000001);
 
     }
@@ -562,10 +551,6 @@ public class Jep271FactoryTest {
     public void gcClassHistoEntry(){
         Json root;
         root = f.gcClassHistoEntry().apply("    1:          2709     1963112296  [B (java.base@10)");
-        assertTrue("histo\n"+root.toString(2),root.has("histo") && root.get("histo") instanceof Json);
-        root = root.getJson("histo");
-        assertTrue("isArray",root.isArray());
-        root = root.getJson(0);
         assertEquals("num",1,root.getLong("num"));
         assertEquals("count",2709,root.getLong("count"));
         assertEquals("bytes",1963112296,root.getLong("bytes"));
@@ -576,8 +561,6 @@ public class Jep271FactoryTest {
     public void gcClassHistoTotal(){
         Json root;
         root = f.gcClassHistoTotal().apply("Total         14175     1963663064");
-        assertTrue("total\n"+root.toString(2),root.has("total") && root.get("total") instanceof Json);
-        root = root.getJson("total");
         assertEquals("count",14175,root.getLong("count"));
         assertEquals("bytes",1963663064,root.getLong("bytes"));
     }
@@ -670,11 +653,6 @@ public class Jep271FactoryTest {
     @Test
     public void gcAgeTableEntry(){
         Json root = f.gcAgeTableEntry().apply("- age   1:    6081448 bytes,    6081448 total");
-
-        assertTrue("table\n"+root.toString(2),root.has("table") && root.get("table") instanceof Json);
-        root = root.getJson("table");
-        assertTrue("1\n"+root.toString(2),root.has("1") && root.get("1") instanceof Json);
-        root = root.getJson("1");
         assertEquals("age",1,root.getLong("age"));
         assertEquals("size",6081448,root.getLong("size"));
         assertEquals("total",6081448,root.getLong("total"));

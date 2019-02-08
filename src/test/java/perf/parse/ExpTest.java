@@ -22,18 +22,18 @@ public class ExpTest {
         push.apply(new CheatChars("a"),b,null);
 
         System.out.println(b.debug(true));
-        assertEquals("target name","a",b.getContextString(JsonBuilder.NAME_KEY,false));
+        assertEquals("target Name","a",b.getContextString(JsonBuilder.NAME_KEY,false));
     }
     @Test
     public void prePopTarget_named(){
         Exp a = new Exp("a","(?<a>a)").set(Rule.PrePopTarget,"popMe");
 
         JsonBuilder b = new JsonBuilder();
-        b.getTarget().set("name",0);
+        b.getTarget().set("Name",0);
         b.pushTarget(new Json(),"popMe");
-        b.getTarget().set("name",1);
+        b.getTarget().set("Name",1);
         b.pushTarget(new Json());
-        b.getTarget().set("name",2);
+        b.getTarget().set("Name",2);
         a.apply(new CheatChars("a"),b,null);
 
         assertFalse("no named target",b.hasContext(JsonBuilder.NAME_KEY,true));
@@ -188,9 +188,9 @@ public class ExpTest {
     public void value_nestLength(){
 
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("tree","(?<nest>\\s*)(?<name>\\w+)");
+        Exp p = new Exp("tree","(?<nest>\\s*)(?<Name>\\w+)");
         p.set("nest", Value.NestLength);
-        //b.getRoot().add("name","root");
+        //b.getRoot().add("Name","root");
 
         p.apply(new CheatChars("a"),b,null);
         p.apply(new CheatChars(" aa"),b,null);
@@ -208,9 +208,9 @@ public class ExpTest {
     public void value_nestLength_multi(){
 
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("tree","(?<nest>\\s*)(?<name>\\w+)");
+        Exp p = new Exp("tree","(?<nest>\\s*)(?<Name>\\w+)");
         p.set("nest", Value.NestLength);
-        //b.getRoot().add("name","root");
+        //b.getRoot().add("Name","root");
 
         p.apply(new CheatChars("a"),b,null);
         p.apply(new CheatChars("  aa"),b,null);
@@ -224,24 +224,24 @@ public class ExpTest {
         assertTrue("root has nest:",root.has("nest") && root.get("nest") instanceof Json);
         Json nest = root.getJson("nest");
         assertEquals("nest has 2 children",2,nest.size());
-        assertEquals("nest[0].name","a",nest.getJson(0).getString("name"));
-        assertEquals("nest[1].name","b",nest.getJson(1).getString("name"));
+        assertEquals("nest[0].Name","a",nest.getJson(0).getString("Name"));
+        assertEquals("nest[1].Name","b",nest.getJson(1).getString("Name"));
     }
 
     @Test
     public void valueTargetId(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("tid","(?<id>\\d+) (?<name>\\S+)");
+        Exp p = new Exp("tid","(?<id>\\d+) (?<Name>\\S+)");
         p.set("id",Value.TargetId);
         p.apply(new CheatChars("1 foo"),b,null);
         p.apply(new CheatChars("1 bar"),b,null);
 
-        assertTrue("root should have a name entry but was: "+b.getRoot(),b.getRoot().has("name"));
-        assertTrue("root should have two name values but was: "+b.getRoot(),b.getRoot().getJson("name").size()==2);
+        assertTrue("root should have a Name entry but was: "+b.getRoot(),b.getRoot().has("Name"));
+        assertTrue("root should have two Name values but was: "+b.getRoot(),b.getRoot().getJson("Name").size()==2);
         p.apply(new CheatChars("2 biz"),b,null);
         p.apply(new CheatChars("2 fiz"),b,null);
-        assertTrue("root should have a name entry but was: "+b.getRoot(),b.getRoot().has("name"));
-        assertTrue("root should have two name values but was: "+b.getRoot(),b.getRoot().getJson("name").size()==2);
+        assertTrue("root should have a Name entry but was: "+b.getRoot(),b.getRoot().has("Name"));
+        assertTrue("root should have two Name values but was: "+b.getRoot(),b.getRoot().getJson("Name").size()==2);
 
     }
     @Test
@@ -533,6 +533,8 @@ public class ExpTest {
         p.apply(new CheatChars(" age=23 "),b,null);
         p.apply(new CheatChars(" size=small "),b,null);
         assertEquals("<kv> should be and array of length 1",1,b.getRoot().getJson("kv").size());
+
+
 
     }
     @Test

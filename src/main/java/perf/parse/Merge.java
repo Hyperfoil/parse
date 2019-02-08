@@ -6,9 +6,10 @@ package perf.parse;
  */
 public enum Merge {
     /**
-     * Treat each match name as a collection of all the values that matched
+     * Treat each match Name as a collection of all the values that matched
      */
     Collection,
+
     /**
      * Treat each match as the start of a new entry under the parent context.
      * If there is not a defined grouping then each named capture group will be treated as a list for appending new matches

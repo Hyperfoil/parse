@@ -5,11 +5,12 @@ import perf.parse.internal.IMatcher;
 import perf.parse.internal.JsonBuilder;
 import perf.parse.internal.RegexMatcher;
 import perf.yaup.HashedLists;
+import perf.yaup.StringUtil;
 import perf.yaup.json.Json;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,14 +30,17 @@ public class Exp {
     public static final String ROOT_TARGET_NAME = "_ROOT";
     public static final String GROUPED_NAME = "_GROUPED";
 
-    private final Matcher fieldMatcher = java.util.regex.Pattern.compile("\\(\\?<([^>]+)>").matcher("");
+    public static final String CAPTURE_GROUP_PATTERN = "\\(\\?<([^>]+)>";
+
+    //matches (?<name> part of java named pattern matching
+    private final Matcher fieldMatcher = java.util.regex.Pattern.compile(CAPTURE_GROUP_PATTERN).matcher("");
 
     //Execute Rule
     private LinkedList<MatchAction> callbacks;
 
     private String pattern;
     private IMatcher matcher;
-    private LinkedHashMap<String,String> fieldValues; //Map<Name,Value|name of value for KeyValue pair>
+    private LinkedHashMap<String,String> fieldValues; //Map<Name,Value|Name of value for KeyValue pair>
 
     private HashedLists<Rule,Object> rules;
 
@@ -44,9 +48,19 @@ public class Exp {
     private LinkedHashSet<String> disables;
     private LinkedHashSet<String> requires;
 
-    private enum GroupType {Name,Extend,Key}
+    public enum GroupType {Name,Extend,Key}
+    private class GroupingPair{
+        private final String name;
+        private final GroupType type;
+        public GroupingPair(String name,GroupType type){
+            this.name = name;
+            this.type = type;
+        }
+        public String getName(){return name;}
+        public GroupType getType(){return type;}
+    }
 
-    private LinkedHashMap<String,GroupType> grouping;
+    private LinkedList<GroupingPair> groupings;
 
     private int eat=Eat.Match.getId();
 
@@ -61,6 +75,22 @@ public class Exp {
     public Exp debug(){
         debug=true;
         return this;
+    }
+    public String printDebug(){
+        StringBuffer sb = new StringBuffer();
+        sb.append("name="+name+"\n");
+        sb.append("pattern="+pattern+"\n");
+        sb.append("eat="+eat+"\n");
+        sb.append("merge="+merge+"\n");
+        sb.append("grouping\n");
+        groupings.forEach((p)->{
+            sb.append("  "+p.getName()+"="+p.getType()+"\n");
+        });
+        sb.append("rules\n");
+        rules.forEach((k,v)->{
+            sb.append("  "+k+"="+v+"\n");
+        });
+        return sb.toString();
     }
     public boolean isDebug(){return debug;}
     public String toString(){
@@ -84,15 +114,13 @@ public class Exp {
 
         this.rules = new HashedLists<>();
 
-        this.grouping = new LinkedHashMap<>();
+        this.groupings = new LinkedList<>();
 
         this.children = new LinkedList<>();
 
         this.enables = new LinkedHashSet<>();
         this.disables = new LinkedHashSet<>();
         this.requires = new LinkedHashSet<>();
-
-
     }
 
     public String getPattern(){return this.pattern;}
@@ -110,8 +138,8 @@ public class Exp {
         for(Rule rule : rules.keys()){
             rtrn.rules.putAll(rule,rules.get(rule));
         }
-        for(String group: this.grouping.keySet()){
-            rtrn.grouping.put(group,this.grouping.get(group));
+        for(GroupingPair pair : groupings){
+            rtrn.groupings.add(new GroupingPair(pair.getName(),pair.getType()));
         }
         for(Exp child : children){
             rtrn.add(child.clone());
@@ -131,11 +159,9 @@ public class Exp {
 
     public Json appendNames(Json input){
         Json ctx = input;
-        for(String name : grouping.keySet()){
-            GroupType gt = grouping.get(name);
-
-            ctx.add(name,new Json());
-            ctx = ctx.getJson(name);
+        for(GroupingPair pair : groupings){
+            ctx.add(pair.getName(),new Json());
+            ctx = ctx.getJson(pair.getName());
         }
         for(String value : fieldValues.keySet()){
             Value v = Value.from(fieldValues.get(value));
@@ -190,7 +216,7 @@ public class Exp {
     }
 
     /**
-     * parses a java.util.Regex pattern to identify the group names and associated them with a default perf.parse.Value.List
+     * parses a java.util.Regex pattern to identify the group names and associated them with a default perf.parse.Value
      * @param pattern - the java.util.Regex pattern
      * @return - a LinkedHashMap<MatchGroupName,perf.parse.Value.List.getId()>
      */
@@ -240,17 +266,38 @@ public class Exp {
 
     //Set status methods, all return a pointer to this for chaining
 
+    /**
+     * Set the expression nesting using name:groupType.name:groupType...
+     * @param nesting
+     * @return
+     */
+    public Exp nest(String nesting){
+        List<String> keys = chain(nesting);
+        for(String key : keys){
+            int index=-1;
+            String name = key;
+            String type = GroupType.Name.toString();
+            if( (index=key.indexOf(":")) > -1){
+                name = key.substring(0,index);
+                if(index<key.length()-1) {
+                    type = key.substring(index + 1);
+                }
+            }
+            groupings.add(new GroupingPair(name, StringUtil.getEnum(type,GroupType.class,GroupType.Name)));
+        }
+        return this;
+    }
     public Exp group(String name){
-        grouping.put(name,GroupType.Name);
+        groupings.add(new GroupingPair(name,GroupType.Name));
         return this;
     }
     public Exp key(String name){
-        grouping.put(name,GroupType.Key);
+        groupings.add(new GroupingPair(name,GroupType.Key));
         return this;
     }
     //
     public Exp extend(String name){
-        grouping.put(name,GroupType.Extend);
+        groupings.add(new GroupingPair(name,GroupType.Extend));
         return this;
     }
 
@@ -295,10 +342,13 @@ public class Exp {
         return this;
     }
     public boolean hasChildren(){return !children.isEmpty();}
+    public void eachChild(Consumer<Exp> consumer){
+        children.forEach(consumer);
+    }
     public int childCount(){return children.size();}
     public Exp set(String name,Value value){
         if(value == Value.Key){
-            throw new IllegalArgumentException("set(String name,Value value) cannot be used for Value.Key, use set(String name,String valueKey)");
+            throw new IllegalArgumentException("set(String Name,Value value) cannot be used for Value.Key, use set(String Name,String valueKey)");
         }
         fieldValues.put(name,value.getId());
         return this;
@@ -329,13 +379,23 @@ public class Exp {
     }
 
     /**
-     * Set how the matching name value groups should be merged into the result of previous / subsequent Exp matches
+     * Set how the matching Name value groups should be merged into the result of previous / subsequent Exp matches
      * @param merge
      * @return
      */
     public Exp set(Merge merge){
         this.merge = merge;
         return this;
+    }
+    public Merge getMerge(){return merge;}
+    public int getEat(){return eat;}
+    public void eachGroup(BiConsumer<String,GroupType> consumer){
+        groupings.forEach(p->consumer.accept(p.getName(),p.getType()));
+    }
+    public boolean isGrouped(){return !groupings.isEmpty();}
+    public boolean hasRules(){return !rules.isEmpty();}
+    public void eachRule(BiConsumer<Rule,List<Object>> consumer){
+        rules.forEach(consumer);
     }
 
     //if the Exp will eat the given amount
@@ -381,6 +441,12 @@ public class Exp {
         }
         return rtrn;
     }
+
+    /**
+     * Split the keys by non-slash escaped dots (. not \.)
+     * @param keys
+     * @return
+     */
     private List<String> chain(String keys){
         return new ArrayList<>(
             Arrays.asList(keys.split("\\.(?<!\\\\\\.)"))
@@ -751,13 +817,23 @@ public class Exp {
                     break;
                 case List:
                 default:
-                    Object newObj = fieldValue;
-                    if(Pattern.matches("\\d+",fieldValue)){//long
-                        newObj = Long.parseLong(fieldValue);
-                    }else if (Pattern.matches("\\d+\\.\\d+",fieldValue)){//double
-                        newObj = Double.parseDouble(fieldValue);
-                    }else{}
-                    chain(builder.getTarget(),fieldName).add(lastKey(fieldName),newObj);
+
+                        Object newObj = fieldValue;
+                        if (Pattern.matches("\\d+", fieldValue) && fieldValue.length()<19) {//long
+                            try {
+                                newObj = Long.parseLong(fieldValue);
+                            }catch(NumberFormatException nfe){
+                                //ignore because we are going to use the default newObj instead
+                            }
+                        } else if (Pattern.matches("\\d+\\.\\d+", fieldValue) && fieldValue.length()<19) {//double
+                            try {
+                                newObj = Double.parseDouble(fieldValue);
+                            }catch(NumberFormatException nfe){
+                                //ignore because we are going to use the default newObj instead
+                            }
+                        } else {
+                        }
+                        chain(builder.getTarget(), fieldName).add(lastKey(fieldName), newObj);
                     break;
             }
         }
@@ -887,7 +963,7 @@ public class Exp {
 
                 target = startTarget;
                 Json grouped = target;
-                if(grouping.isEmpty()){
+                if(groupings.isEmpty()){
                     if( is(Merge.Entry) ){
                         if( isDebug() ){
                             System.out.println("  > Entry w/o grouping");
@@ -947,10 +1023,11 @@ public class Exp {
                         }
                     }
                 }
-                for(Iterator<String> groupIter = grouping.keySet().iterator(); groupIter.hasNext();){
+                for(Iterator<GroupingPair> groupIter = groupings.iterator(); groupIter.hasNext();){
                     //TODO handle case where groupName should be an integer key?
-                    String groupName = groupIter.next();
-                    GroupType groupType = grouping.get(groupName);
+                    GroupingPair pair = groupIter.next();
+                    String groupName = pair.getName();
+                    GroupType groupType = pair.getType();
                     boolean extend = false;
                     if(isDebug()){
                         System.out.println("  grouping "+groupType+"="+groupName);
@@ -1306,6 +1383,7 @@ public class Exp {
     public static String pad(int i){
         if(i<=0)
             return "";
-        return "                                                                                                                                                                                                              ".substring(0,i);
+        return String.format("%"+i+"s","");
+//        return "                                                                                                                                                                                                              ".substring(0,i);
     }
 }

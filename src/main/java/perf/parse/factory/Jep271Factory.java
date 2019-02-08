@@ -14,6 +14,8 @@ public class Jep271Factory {
     public void addToParser(Parser p,boolean strict){
         //thankfully level is always the 2nd to last decorator
         p.add(gcId()
+                .set(Rule.TargetRoot)//so that gcId is always on the root
+                .set(Rule.PostPopTarget)
                 .add(gcExpanding())//does not occur under GC(#) but that might be a bug
                 .add(gcShrinking())
 
@@ -24,37 +26,79 @@ public class Jep271Factory {
                 .add(g1ResizePhase().requires("gc-g1").set(Merge.Entry))//G1
                 .add(g1TimedPhase().requires("gc-g1").set(Merge.Entry))//G1
 
-//                .add(g1FinalizeLiveData().requires("gc-g1"))//G1
-//                .add(g1CycleTime().requires("gc-g1"))//G1
-//                .add(g1ClearBitmap().requires("gc-g1"))//G1
-//                .add(g1ClearLive().requires("gc-g1"))//G1
-
                 //gc+cpu
-                .add(gcCpu())
+                .add(gcCpu()
+                    .group("cpu")
+                    //.eat(Eat.Line) was preventing gcLevel...
+                )
 
                 //gc+age
                 .add(gcAge())
                 .add(gcAgeTableHeader().set(Rule.PushTarget))//G1
-                .add(gcAgeTableEntry())//G1
+                .add(gcAgeTableEntry()
+                    .group("table")
+                    .key("age")
+                )//G1
 
 
+                //gc+heap
+                .add(gcHeapHeader()
+                    .group("heap")
+                    .set(Merge.Entry)
+                    .set(Rule.PreClearTarget)
 
-                .add(gcHeapHeader().set(Rule.PreClearTarget).set(Rule.PushTarget)
-                        .add(gcHeapRegion())//oracle-10 puts it on the same line as "Heap (before|after)..."
+                        .add(gcHeapRegion()
+                            .group("region")
+                            .set(Merge.Entry)
+
+                            .set(Rule.PreClearTarget)//gcId targets root
+                            //.set(Rule.PushTarget,"region")
+                        )//oracle-10 puts it on the same line as "Heap (before|after)..."
                         .add(gcHeapRegionG1().requires("gc-g1").set(Rule.PushTarget))
                 )
-                .add(gcHeapRegion())
-                .add(gcHeapSpace())
+                .add(gcHeapRegion()
+                    .group("region")
+                    .set(Merge.Entry)
+                    .set(Rule.PreClearTarget)//gcId targets root
+                )
+                .add(gcHeapSpace()
+                    .extend("region")
+                    .group("space")
+                    .set(Merge.Entry)
+                    .set(Rule.PrePopTarget)//gcId targets root
+                )
                 .add(gcHeapSpaceG1().requires("gc-g1"))
-                .add(gcHeapMetaRegion())
-                .add(gcHeapMetaSpace())
-                .add(gcHeapRegionResize().set(Rule.PreClearTarget))
-                .add(gcHeapRegionResizeG1().requires("gc-g1").set(Rule.PreClearTarget).set(Rule.PushTarget))
+                .add(gcHeapMetaRegion()
+                    .group("region")
+                    .set(Merge.Entry)
+                    .set(Rule.PreClearTarget)//gcId target and previous region
+                )
+                .add(gcHeapMetaSpace()
+                    .extend("region")
+                    .group("space")
+                    .set(Merge.Entry)
+                    .set(Rule.PrePopTarget)//gcId targets root
+                )
+                .add(gcHeapRegionResize()
+                    .group("resize")
+                    .set(Merge.Entry)
+                    .set(Rule.PreClearTarget)
+                )
+                .add(gcHeapRegionResizeG1()
+                    .requires("gc-g1")
+                    .group("resize")
+                    .set(Merge.Entry)
+                    .set(Rule.PreClearTarget)
+                    .set(Rule.PushTarget)
+                )
                 .add(gcHeapRegionResizeG1UsedWaste().requires("gc-g1"))
 
                 .add(gcClassHistoStart())
-                .add(gcClassHistoEntry())
-                .add(gcClassHistoTotal())
+                .add(gcClassHistoEntry()
+                    .group("histo")
+                    .set(Merge.Entry)
+                )
+                .add(gcClassHistoTotal().group("total"))
                 .add(gcClassHistoEnd())
         );
 
@@ -85,14 +129,20 @@ public class Jep271Factory {
 
         p.add(gcExpanding());//included here to match output from openjdk10+46
 
-        p.add(safepointStopTime());//safepoint
-        p.add(safepointAppTime());//safepoint
+        p.add(safepointStopTime().group("safepoint"));//safepoint
+        p.add(safepointAppTime().group("safepoint"));//safepoint
 
         //gc+heap
-        p.add(gcHeapSize());
-        p.add(gcHeapRange());
-        p.add(gcHeapYoungRange());
-        p.add(gcHeapOldRange());
+        p.add(gcHeapSize().group("heap"));
+        p.add(gcHeapRange().group("heap"));
+        p.add(gcHeapYoungRange()
+            .group("heap")
+            .group("young")
+        );
+        p.add(gcHeapOldRange()
+            .group("heap")
+            .group("old")
+        );
         //
         //end moved to after gcId
     }
@@ -127,8 +177,8 @@ public class Jep271Factory {
         return new Exp("tags","\\[(?<tags:set>[^\\s,\\]]+)")
                 .set(Rule.TargetRoot)
                 .add(new Exp("otherTags","^,(?<tags:set>[^\\s,\\]]+)")
-                        .set(Rule.Repeat)
-                        .set(Rule.TargetRoot)
+                    .set(Rule.Repeat)
+                    .set(Rule.TargetRoot)
                 )
                 .add(new Exp("tagsEnd","\\s*\\]")
                 )
@@ -140,7 +190,6 @@ public class Jep271Factory {
     }
     public Exp gcLevel(){//"[info ]"
         return new Exp("level","\\[(?<level:last>error|warning|info|debug|trace|develop)\\s*\\]")
-                .enables("jep271")
                 .set(Rule.TargetRoot)
                 .eat(Eat.ToMatch);
     }
@@ -179,72 +228,66 @@ public class Jep271Factory {
     //gc+cpu
     public Exp gcCpu(){//"User=0.02s Sys=0.01s Real=0.02s"
         return new Exp("gcCpu","User=(?<user>\\d+\\.\\d{2,3})s Sys=(?<sys>\\d+\\.\\d{2,3})s Real=(?<real>\\d+\\.\\d{2,3})s")
-                .group("cpu")
-                .eat(Eat.Line)
+
+                //.eat(Eat.Line)
                 ;
     }
 
     //gc+heap=trace
     public Exp gcHeapSize(){//"Maximum heap size 4173353984"
         return new Exp("gcHeapSize","(?<limit>Initial|Minimum|Maximum) heap size (?<size>\\d+)")
-                .group("heap")
+
                 .set("limit","size")
-                //.key("limit")
                 ;
     }
     //gc+heap=debug
     public Exp gcHeapRange(){//"Minimum heap 8388608  Initial heap 262144000  Maximum heap 4175429632"
         return new Exp("gcHeapRange","Minimum heap (?<min>\\d+)\\s+Initial heap (?<initial>\\d+)\\s+Maximum heap (?<max>\\d+)")
-                .group("heap");
+                ;
     }
     //gc+heap=trace
     public Exp gcHeapYoungRange(){//"1: Minimum young 196608  Initial young 87359488  Maximum young 1391788032"
         return new Exp("gcHeapYoungRange","1: Minimum young (?<min>\\d+)\\s+Initial young (?<initial>\\d+)\\s+Maximum young (?<max>\\d+)")
-                .group("heap")
-                .group("young");
+                ;
     }
 
     public Exp gcHeapOldRange(){//"Minimum old 65536  Initial old 174784512  Maximum old 2783641600"
         return new Exp("gcHeapOldRange","Minimum old (?<min>\\d+)\\s+Initial old (?<initial>\\d+)\\s+Maximum old (?<max>\\d+)")
-                .group("heap")
-                .group("old");
+                ;
     }
 
     //gc+heap=trace
     public Exp gcHeapHeader(){//"Heap before GC invocations=0 (full 0): "
         return new Exp("gcHeapHeader","Heap (?<phase>before|after) GC invocations=(?<invocations>\\d+) \\(full (?<full>\\d+)\\):\\s*")
-                .group("heap")
-                .key("phase")
                 ;
     }
     public Exp gcHeapRegion(){//"def new generation   total 76800K, used 63648K [0x00000006c7200000, 0x00000006cc550000, 0x000000071a150000)"
-        return new Exp("gcHeapRegion","(?<region:nestLength>\\s+)(?<name>\\w+(?:\\s\\w+)*)\\s+total (?<total:KMG>\\d+[bBkKmMgG]), used (?<used:KMG>\\d+[bBkKmMgG])" +
+        //removed (?<region:nestLength>\s+) from start, why was it nest-length?
+        return new Exp("gcHeapRegion","\\s*(?<name>\\w+(?:[\\s-]\\w+)*)\\s+total (?<total:KMG>\\d+[bBkKmMgG]), used (?<used:KMG>\\d+[bBkKmMgG])" +
                 "\\s+\\[(?<start>[^,]+), (?<current>[^,]+), (?<end>[^(]+)\\)")
-                //.group("region")
-                //.key("region")
+
                 ;
     }
     //TODO NOT in gc.json
     public Exp gcHeapRegionG1(){
-        return new Exp("gcHeapRegion_g1","(?<region:nestLength>\\s+)(?<name>\\w+(?:\\s\\w+)*)\\s+total (?<total:KMG>\\d+[bBkKmMgG]), used (?<used:KMG>\\d+[bBkKmMgG])"+
+        //removed (?<region:nestLength>\s+) from beginning to match changes to gcHeapRegion
+        return new Exp("gcHeapRegion_g1","\\s+(?<name>\\w+(?:\\s\\w+)*)\\s+total (?<total:KMG>\\d+[bBkKmMgG]), used (?<used:KMG>\\d+[bBkKmMgG])"+
                 "\\s+\\[(?<start>[^,]+), (?<end>[^(]+)\\)")
                 ;
     }
     public Exp gcHeapMetaRegion(){//"Metaspace       used 4769K, capacity 4862K, committed 5120K, reserved 1056768K"
-        return new Exp("gcHeapMetaRegion","(?<region:nestLength>\\s+)(?<name>Metaspace)" +
+        //removed (?<region:nestLength>\s+) from beginning to match changes to gcHeapRegion
+        return new Exp("gcHeapMetaRegion","\\s+(?<name>Metaspace)" +
                 "\\s+used (?<used:KMG>\\d+[KMG]), capacity (?<capacity:KMG>\\d+[bBkKmMgG]), committed (?<committed:KMG>\\d+[bBkKmMgG]), reserved (?<reserved:KMG>\\d+[bBkKmMgG])")
                 ;
     }
 
     public Exp gcHeapRegionResize(){//"ParOldGen: 145286K->185222K(210944K)"
         return new Exp("gcHeapRegionResize","\\s*(?<region>\\w+): (?<before:KMG>\\d+[bBkKmMgG])->(?<after:KMG>\\d+[bBkKmMgG])\\((?<size:KMG>\\d+[bBkKmMgG])\\)")
-                .key("region")
                 ;
     }
     public Exp gcHeapRegionResizeG1(){//"Eden regions: 4->0(149)"
         return new Exp("gcHeapRegionResizeG1","(?<region>\\S+) regions: (?<before>\\d+)->(?<after>\\d+)")
-                .key("region")
-
                 .add(new Exp("gcHeapRegionRegizeG1_total","\\((?<total>\\d+)\\)"))
                 ;
     }
@@ -255,13 +298,11 @@ public class Jep271Factory {
     public Exp gcHeapMetaSpace(){//"  class space    used 388K, capacity 390K, committed 512K, reserved 1048576K"
         return new Exp("gcHeapMetaSpace","\\s*(?<space>\\S+) space"+
                 "\\s+used (?<used:KMG>\\d+[bBkKmMgG]), capacity (?<capacity:KMG>\\d+[bBkKmMgG]), committed (?<committed:KMG>\\d+[bBkKmMgG]), reserved (?<reserved:KMG>\\d+[bBkKmMgG])")
-                //.key("space")//
                 ;
     }
     public Exp gcHeapSpace(){//"   eden space 68288K,  93% used [0x00000006c7200000, 0x00000006cb076880, 0x00000006cb4b0000)"
         return new Exp("gcHeapSpace","\\s+(?<space>\\S+) space (?<size:KMG>\\d+[bBkKmMgG]),\\s+(?<used>\\d+)% used"+
                 "\\s+\\[(?<start>[^,]+),\\s?(?<current>[^,]+),\\s?(?<end>[^(]+)\\)")
-                //.key("space")
                 ;
     }
     public Exp gcHeapSpaceG1(){//"   region size 1024K, 5 young (5120K), 0 survivors (0K)"
@@ -277,13 +318,13 @@ public class Jep271Factory {
     //safepoint=info
     public Exp safepointStopTime(){//"Total time for which application threads were stopped: 0.0019746 seconds, Stopping threads took: 0.0000102 seconds"
         return new Exp("safepointStop","Total time for which application threads were stopped: (?<stoppedSeconds:sum>\\d+\\.\\d+) seconds, Stopping threads took: (?<quiesceSeconds:sum>\\d+\\.\\d+) seconds")
-                .group("safepoint")
+
                 ;
     }
     //safepoint=info
     public Exp safepointAppTime(){//"Application time: 0.0009972 seconds"
         return new Exp("safepointApplication","Application time: (?<applicationSeconds:sum>\\d+\\.\\d+) seconds")
-                .group("safepoint")
+
                 ;
     }
     public Exp gcClassHistoStart(){//"Class Histogram (before full gc)"
@@ -292,13 +333,11 @@ public class Jep271Factory {
     }
     public Exp gcClassHistoEntry(){//"    1:          2709     1963112296  [B (java.base@10)"
         return new Exp("gcClassHistoEntry","(?<num>\\d+):\\s+(?<count>\\d+):?\\s+(?<bytes>\\d+)\\s+(?<name>.*)")
-                .group("histo")
-                .set(Merge.Entry)
                 ;
     }
     public Exp gcClassHistoTotal(){//"Total         14175     1963663064"
         return new Exp("gcClassHistoTotal","Total\\s+(?<count>\\d+)\\s+(?<bytes>\\d+)")
-                .group("total")
+
                 ;
     }
     public Exp gcClassHistoEnd(){//"Class Histogram (before full gc) 18.000ms"
@@ -307,9 +346,7 @@ public class Jep271Factory {
 
     }
     public Exp gcId(){//"GC(27)"
-        return new Exp("gcId","GC\\((?<gcId>\\d+)\\)")
-                .set(Rule.TargetRoot)
-                .set("gcId",Value.TargetId)
+        return new Exp("gcId","GC\\((?<gcId:TargetId>\\d+)\\)")
                 ;
     }
 
@@ -377,8 +414,7 @@ public class Jep271Factory {
     }
     public Exp gcAgeTableEntry(){//"- age   1:    6081448 bytes,    6081448 total"
         return new Exp("gcAgeTableEntry","- age\\s+(?<age>\\d+):\\s+(?<size>\\d+) bytes,\\s+(?<total>\\d+) total")
-                .group("table")
-                .key("age");
+;
     }
 
 

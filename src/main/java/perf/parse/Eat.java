@@ -1,5 +1,7 @@
 package perf.parse;
 
+import perf.yaup.StringUtil;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -50,5 +52,12 @@ public enum Eat {
 
     public static Eat from(int value) {
         return idMap.containsKey(value) ? idMap.get(value) : Width;
+    }
+    public static Eat from(String input){
+        if(input.matches("\\d+")){
+            return Eat.from(Integer.parseInt(input));
+        }else{
+            return StringUtil.getEnum(input,Eat.class,Eat.Match);
+        }
     }
 }

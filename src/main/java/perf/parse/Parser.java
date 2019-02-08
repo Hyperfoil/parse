@@ -2,6 +2,7 @@ package perf.parse;
 
 import perf.parse.internal.CheatChars;
 import perf.parse.internal.JsonBuilder;
+import perf.yaup.file.FileUtility;
 import perf.yaup.json.Json;
 
 import java.util.*;
@@ -10,6 +11,41 @@ import java.util.*;
  *
  */
 public class Parser {
+
+    public static void main(String[] args) {
+        Parser parser = new Parser();
+        parser.add(new Exp("timestamp","^(?<timestamp>\\d+)$").set(Merge.PreClose).eat(Eat.Line).debug());
+        parser.add(new Exp("cpu",
+                "^" +
+                        "(?<cpu>cpu\\d*) " +
+                        "(?<user>\\d+) " +
+                        "(?<nice>\\d+) " +
+                        "(?<system>\\d+) " +
+                        "(?<idle>\\d+) " +
+                        "(?<iowait>\\d+) " +
+                        "(?<irq>\\d+) " +
+                        "(?<softirq>\\d+) " +
+                        "(?<steal>\\d+) " +
+                        "(?<guest>\\d+) " +
+                        "(?<guest_nice>\\d+) " +
+                        "$"
+        ).eat(Eat.Line).nest("cpu").set(Merge.Entry).debug());
+
+        parser.add(new Exp("intr","^intr (?<intrTotal>\\d+)[\\s\\d]+$").eat(Eat.Line));
+        parser.add(new Exp("ctxt","^ctxt (?<ctxt>\\d+)$").eat(Eat.Line));
+        parser.add(new Exp("btime","^btime (?<btime>\\d+)$").eat(Eat.Line));
+        parser.add(new Exp("processes","^processes (?<processes>\\d+)$").eat(Eat.Line));
+        parser.add(new Exp("procs_running","^procs_running (?<procs_running>\\d+)$").eat(Eat.Line));
+        parser.add(new Exp("procs_blocked","^procs_blocked (?<procs_blocked>\\d+)$").eat(Eat.Line));
+
+        parser.add(new Exp("softirq","^softirq (?<softirq>\\d+)[\\s\\d+]$").eat(Eat.Line));
+
+        List<String> lines = FileUtility.lines("/home/wreicher/perfWork/jEnterprise/fullProfile/archive/run/benchserver2.perf.lab.eng.rdu.redhat.com/proc-stats.log");
+        for(int i=0; i<10;i++){
+            System.out.println("["+i+"/"+(lines.get(i).split("\\s+").length)+"]"+lines.get(i));
+            parser.onLine(lines.get(i));
+        }
+    }
 
     public static interface UnparsedConsumer {
         void accept(String remainder,String original,int lineNumber);

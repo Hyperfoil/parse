@@ -12,12 +12,12 @@ public class JsonBuilderTest {
     @Test
     public void clearTargets_name(){
         JsonBuilder builder = new JsonBuilder();
-        builder.getTarget().set("name","one");
+        builder.getTarget().set("Name","one");
         builder.pushTarget(new Json(),"two");
-        builder.getTarget().set("name","two");
+        builder.getTarget().set("Name","two");
         builder.setContext("mark",true);
         builder.pushTarget(new Json(),"three");
-        builder.getTarget().set("name","three");
+        builder.getTarget().set("Name","three");
 
         builder.clearTargets("two");
 
@@ -28,28 +28,28 @@ public class JsonBuilderTest {
     @Test
     public void popTarget_name(){
         JsonBuilder builder = new JsonBuilder();
-        builder.getTarget().set("name","one");
+        builder.getTarget().set("Name","one");
         builder.pushTarget(new Json(),"two");
-        builder.getTarget().set("name","two");
+        builder.getTarget().set("Name","two");
         builder.setContext("mark",true);
         builder.pushTarget(new Json(),"three");
-        builder.getTarget().set("name","three");
+        builder.getTarget().set("Name","three");
 
         Json pop = builder.popTarget("two");
 
         assertEquals("size",2,builder.size());
-        assertEquals("pop.name==two","two",pop.getString("name"));
+        assertEquals("pop.Name==two","two",pop.getString("Name"));
         assertFalse("no mark in context",builder.hasContext("mark",true));
     }
 
     @Test
     public void namedTargetIndex_topMatch(){
         JsonBuilder builder = new JsonBuilder();
-        builder.getTarget().set("name","one");
+        builder.getTarget().set("Name","one");
         builder.pushTarget(new Json(),"foo");
-        builder.getTarget().set("name","two");
+        builder.getTarget().set("Name","two");
         builder.pushTarget(new Json(),"foo");
-        builder.getTarget().set("name","three");
+        builder.getTarget().set("Name","three");
 
         int index = builder.namedTargetIndex("foo");
         assertEquals("top index",2,index);
@@ -71,31 +71,31 @@ public class JsonBuilderTest {
     @Test
     public void peekTarget_1(){
         JsonBuilder builder = new JsonBuilder();
-        builder.getTarget().set("name","one");
+        builder.getTarget().set("Name","one");
         builder.pushTarget(new Json());
-        builder.getTarget().set("name","two");
+        builder.getTarget().set("Name","two");
         builder.pushTarget(new Json());
-        builder.getTarget().set("name","three");
+        builder.getTarget().set("Name","three");
         builder.pushTarget(new Json());
-        builder.getTarget().set("name","four");
+        builder.getTarget().set("Name","four");
         Json peek = builder.peekTarget(1);
 
         assertFalse("peek should not be null",peek==null);
-        assertEquals("name:"+peek,"three",peek.getString("name"));
+        assertEquals("Name:"+peek,"three",peek.getString("Name"));
     }
 
     @Test
     public void getContextInteger_recursive(){
         JsonBuilder builder = new JsonBuilder();
-        builder.setContext("name",0);
+        builder.setContext("Name",0);
         builder.pushTarget(new Json());
-        builder.setContext("name",1);
+        builder.setContext("Name",1);
         builder.pushTarget(new Json());
-        builder.setContext("name",2);
+        builder.setContext("Name",2);
         builder.pushTarget(new Json());
 
-        int value = builder.getContextInteger("name",true);
-        assertEquals("name:\n"+builder.debug(true),2,value);
+        int value = builder.getContextInteger("Name",true);
+        assertEquals("Name:\n"+builder.debug(true),2,value);
 
     }
 }

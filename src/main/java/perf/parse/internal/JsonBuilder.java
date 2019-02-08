@@ -2,10 +2,9 @@ package perf.parse.internal;
 
 import perf.yaup.json.Json;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Stack;
 
 /**
  * Created by wreicher
@@ -172,7 +171,7 @@ public class JsonBuilder {
         }
     }
     /*
-     * Clear targets up to and including name if name is present
+     * Clear targets up to and including Name if Name is present
      */
     public void clearTargets(String name){
         int index = namedTargetIndex(name);

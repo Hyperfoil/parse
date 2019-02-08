@@ -431,7 +431,7 @@ public class PrintGcFactory {
         //Total Pauses (G)            =     1.02 s (a =   102115 us) (n =    10) (lvls, us =    39648,    56836,    88867,    97656,   229139)
         //  Accumulate Stats          =     0.00 s (a =       10 us) (n =     5) (lvls, us =        4,        4,        4,        4,       19)
         return new Exp("gcShenandoahStatisticsEntry",
-            "(?<detail:nestLength>\\s*)(?<name>\\S.+\\S)\\s+=\\s+(?<seconds>\\d+\\.\\d+) s \\(a = \\s+(?<average>\\d+) us\\) \\(n =\\s+(?<count>\\d+)\\) \\(lvls, us =\\s+(?<lvl0>\\d+),\\s+(?<lvl25>\\d+),\\s+(?<lvl50>\\d+),\\s+(?<lvl75>\\d+),\\s+(?<lvl100>\\d+)\\)");
+            "(?<detail:nestLength>\\s*)(?<Name>\\S.+\\S)\\s+=\\s+(?<seconds>\\d+\\.\\d+) s \\(a = \\s+(?<average>\\d+) us\\) \\(n =\\s+(?<count>\\d+)\\) \\(lvls, us =\\s+(?<lvl0>\\d+),\\s+(?<lvl25>\\d+),\\s+(?<lvl50>\\d+),\\s+(?<lvl75>\\d+),\\s+(?<lvl100>\\d+)\\)");
     }
     //footer
     public Exp gcShenandoahAFStats(){//4 allocation failure and 0 user requested GCs
@@ -626,7 +626,7 @@ public class PrintGcFactory {
         return new Exp("gcAdaptiveSizePolicyEdenCosts",
             "PSAdaptiveSizePolicy::compute_eden_space_size: costs minor_time: (?<minorTime>\\d+\\.\\d+) major_cost: (?<majorCost>\\d+\\.\\d+) mutator_cost: (?<mutatorCost>\\d+\\.\\d+) throughput_goal: (?<throughputGoal>\\d+\\.\\d+) live_space: (?<liveSpace>\\d+) free_space: (?<freeSpace>\\d+) old_eden_size: (?<oldEdenSize>\\d+) desired_eden_size: (?<desiredEdenSize>\\d+)");
     }
-    //TODO replace above and below Exp with common Exp that nests by "PSAdaptiveSizePolicy::<name> costs" and has child Exp for name,value pairs
+    //TODO replace above and below Exp with common Exp that nests by "PSAdaptiveSizePolicy::<Name> costs" and has child Exp for Name,value pairs
     public Exp gcAdaptiveSizePolicyOldGenCosts(){
         //PSAdaptiveSizePolicy::compute_old_gen_free_space: costs minor_time: 0.567664 major_cost: 0.014526 mutator_cost: 0.417810 throughput_goal: 0.990000 live_space: 292574784 free_space: 10737418240 old_promo_size: 4294967296 desired_promo_size: 4294967296
         return new Exp("gcAdaptiveSizePolicyOldGenCosts",

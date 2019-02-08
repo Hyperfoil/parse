@@ -25,7 +25,7 @@ public class JStackFactory {
                 .add(new Exp("daemon", " (?<daemon>daemon)")
                     .set("daemon", Value.BooleanKey)
                     .set(Rule.LineStart))
-                .add(new Exp("name", "\\\"(?<name>.+)\\\"(?: #\\d+)?")
+                .add(new Exp("Name", "\\\"(?<Name>.+)\\\"(?: #\\d+)?")
                     .set(Rule.LineStart)
 //                    .add(new Exp("#num"," #\\d+").debug()
 //                        .set(Rule.LineStart)

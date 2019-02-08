@@ -184,7 +184,7 @@ public class StringMatcher implements IMatcher {
                 }
             }
             if(closeCarretIdx <= startIdx+3){
-                return null; //each pattern must have a name
+                return null; //each pattern must have a Name
             }
             next.name = pattern.substring(startIdx+3,closeCarretIdx);
             String p = pattern.substring(closeCarretIdx + 1, closePatternIdx);
