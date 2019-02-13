@@ -47,7 +47,7 @@ One of the first json shaping issues is wanting to change the value type for the
   Exp("javaApi","(?<size>\\d+[kmgtKMGT][bB]?").set("name",Value.KMG); //Java API
   Exp("patternApi","(?<size:KMG>\\d+[kmgtKMGT][bB]?"); //pattern API
 ```
-The pattern API should work for all the Value types except `Value.Key`. Key is when you want to have a pattern `(?<alpha>\\S+)=(?<bravo>.*)` and want the resulting json to be `{alphaValue : bravoValue}` instead of '{alpha: alphaValue, bravo: bravoValue}`. `Value.Key` requires the Java API
+The pattern API should work for all the Value types except `Value.Key`. Key is when you want to have a pattern `(?<alpha>\\S+)=(?<bravo>.*)` and want the resulting json to be `{alphaValue : bravoValue}` instead of `{alpha: alphaValue, bravo: bravoValue}`. `Value.Key` requires the Java API
 ```Java
   Exp("key","(?<alpha\\S+)=(?<bravo>.*)").set("alpha","bravo");
 ```
