@@ -28,5 +28,4 @@ public enum Merge {
      * Treat each match as the end of a new context (after populating match keys)
      */
     PostClose,
-
     }

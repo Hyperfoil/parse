@@ -48,6 +48,8 @@ public class Exp {
     private LinkedHashSet<String> disables;
     private LinkedHashSet<String> requires;
 
+    private LinkedHashMap<String,Object> with = new LinkedHashMap<>();
+
     public enum GroupType {Name,Extend,Key}
     private class GroupingPair{
         private final String name;
@@ -121,6 +123,11 @@ public class Exp {
         this.enables = new LinkedHashSet<>();
         this.disables = new LinkedHashSet<>();
         this.requires = new LinkedHashSet<>();
+    }
+
+    public Exp with(String key,Object value){
+        with.putIfAbsent(key,value);
+        return this;
     }
 
     public String getPattern(){return this.pattern;}
@@ -837,6 +844,11 @@ public class Exp {
                     break;
             }
         }
+        if(!with.isEmpty()){
+            with.forEach((key,value)->{
+                Json.chainSet(builder.getTarget(),key,value);
+            });
+        }
         if(isDebug()){
             System.out.println(getName()+" < populate");
             System.out.println("  target  "+builder.getTarget());
@@ -875,7 +887,8 @@ public class Exp {
     //changed to atomic integer so pattern can change start offset if it eats before start
     private boolean applyWithStart(CheatChars line, JsonBuilder builder, Parser parser, AtomicInteger start){
 
-        if(line.length()==0 || start.get() > line.length()){
+        //BUG some Exp match the empty line!!
+        if(/*line.length()==0 ||*/ start.get() > line.length()){
             return false;
         }
         if(isDebug()){

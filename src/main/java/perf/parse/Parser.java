@@ -6,6 +6,7 @@ import perf.yaup.file.FileUtility;
 import perf.yaup.json.Json;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -56,6 +57,9 @@ public class Parser {
     private HashMap<String,Boolean> states;
     private JsonBuilder builder;
     private List<UnparsedConsumer> unparsedConsumers;
+
+
+    public List<String> patternNames(){return patterns.stream().map(p->p.getName()).collect(Collectors.toList());}
 
     public Parser(){
         consumers = new LinkedList<>();
@@ -128,6 +132,7 @@ public class Parser {
             }
         }
         if(index>-1) {
+
             patterns.remove(index);
         }
         return index;
@@ -159,6 +164,7 @@ public class Parser {
             matched = exp.apply(line,builder,this) && matched;
             int newSize = patterns.size();
             if(newSize!=size){ // deal with mod after executing exp
+
                 int diff = newSize-size;
                 i+=diff;
                 size+=diff;

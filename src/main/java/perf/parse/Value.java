@@ -44,7 +44,7 @@ public enum Value {
     /**
      * Treat the value as the key for the value of another named Exp parameter
      */
-    Key("_key_"),//will value of key will be the key for another key's value
+    Key("_key_"),//value of key will be the key for another key's value
     /**
      * Store a true of for the value if the Exp parameter matches
      */

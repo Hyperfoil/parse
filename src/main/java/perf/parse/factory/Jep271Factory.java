@@ -19,7 +19,12 @@ public class Jep271Factory {
                 .add(gcExpanding())//does not occur under GC(#) but that might be a bug
                 .add(gcShrinking())
 
-                .add(gcPause())
+                //shenandoah before gcPause because gcPause can match Pause stage
+
+                .add(shenandoahPhase().requires("gc-shenandoah").group("phases"))
+
+
+                .add(gcPause())//TODO put behind a requires so it doesn't match shenandoah pause phase?
 
                 .add(parallelSizeChanged())//ParallelGC
 
@@ -129,6 +134,8 @@ public class Jep271Factory {
 
         p.add(gcExpanding());//included here to match output from openjdk10+46
 
+        p.add(shenandoahTrigger().group("trigger").requires("gc-shenandoah"));
+
         p.add(safepointStopTime().group("safepoint"));//safepoint
         p.add(safepointAppTime().group("safepoint"));//safepoint
 
@@ -165,8 +172,16 @@ public class Jep271Factory {
         return new Exp("using","Using (?<gc>G1)")
                 .enables("gc-g1");
     }
+    public Exp usingShenandoah(){//
+        return new Exp("using","Using (?<gc>Shenandoah)")
+                .enables("gc-shenandoah");
+    }
+
+
+
 
     //gc
+    //can
     public Exp gcPause(){//"Pause Young (Allocation Failure) 62M->15M(241M) 9.238ms"
         return new Exp("pause","Pause (?<region>.+\\S)\\s+\\((?<reason>[^\\)]+)\\)")
                 .add(gcResize())
@@ -205,6 +220,53 @@ public class Jep271Factory {
     public Exp parallelSizeChanged(){//"PSYoung generation size changed: 1358848K->1356800K"
         return new Exp("parallelSizeChange","(?<region>\\w+) generation size changed: (?<before:KMG>\\d+[bBkKmMgG])->(?<after:KMG>\\d+[bBkKmMgG])")
                 .group("resize");
+    }
+
+    //Shenandoah
+    //
+    // Concurrent reset 50M->50M(512M) 0.381ms
+    // Pause Init Mark (process weakrefs) 1.939ms")
+    // Concurrent marking (process weakrefs) 50M->51M(512M) 6.146ms
+    public Exp shenandoahPhase(){//
+        return new Exp("shenandoah.phase","(?<lock>Pause|Concurrent) (?<phase>[a-zA-Z]+(?:\\s[a-zA-Z]+)*) ")
+                //.group("phases")
+                .set(Merge.Entry)
+                .add(new Exp("task","\\((?<task>[a-zA-Z]+(?:\\s[a-zA-Z]+)+)\\) "))
+                .add(gcResize())
+                .add(new Exp("milliseconds","(?<milliseconds>\\d+\\.\\d{3})ms"));
+    }
+
+    //Trigger: Allocated since last cycle (51M) is larger than allocation threshold (51M)
+    //Trigger: Time since last GC (30004 ms) is larger than guaranteed interval (30000 ms)
+    //Trigger: Handle Allocation Failure
+    //Trigger: Free (40M) is below minimum threshold (51M)
+    //Trigger: Learning 1 of 5. Free (357M) is below initial threshold (358M)
+    //Trigger: Average GC time (845.14 ms) is above the time for allocation rate (7.57 MB/s) to deplete free headroom (0M)
+    public Exp shenandoahTrigger(){
+        return new Exp("shenandoah.trigger","Trigger: ")
+            .add(
+                new Exp("learning","Learning (?<learningStep>\\d+) of (?<totalSteps>\\d+)\\. ")
+            )
+            .add(
+                new Exp("allocationFailure","Handle Allocation Failure")
+                .with("cause","allocation failure")
+            )
+            .add(
+                new Exp("freeThreshold","Free \\((?<free:KMG>\\d+[bBkKmMgG])\\) is below (?:minimum|initial) threshold \\((?<threshold:KMG>\\d+[bBkKmMgG])\\)")
+                .with("cause","free threshold")
+            )
+            .add(
+                new Exp("allocationThreshold","Allocated since last cycle \\((?<allocated:KMG>\\d+[bBkKmMgG])\\) is larger than allocation threshold \\((?<threshold:KMG>\\d+[bBkKmMgG])\\)")
+                .with("cause","allocation threshold")
+            )
+            .add(
+                new Exp("interval","Time since last GC \\((?<elapsed>\\d+) ms\\) is larger than guaranteed interval \\((?<guarantee>\\d+) ms\\)")
+                .with("cause","interval"))
+            .add(
+                new Exp("rate","Average GC time \\((?<milliseconds>\\d+\\.\\d{2}) ms\\) is above the time for allocation rate \\((?<rate>\\d+\\.\\d{2}) MB/s\\) to deplete free headroom \\((?<free:KMG>\\d+[bBkKmMgG])\\)")
+                .with("cause","rate"))
+            //.set(Merge.PreClose)
+        ;
     }
 
     //G1GC

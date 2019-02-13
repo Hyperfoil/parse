@@ -1,7 +1,6 @@
 package perf.parse.factory;
 
 import perf.parse.*;
-import perf.yaup.file.FileUtility;
 import perf.yaup.json.Json;
 
 /**
@@ -41,6 +40,7 @@ public class XanFactory {
             .execute((line, match, pattern, parser) -> {
                 if( parser != null ){
                     int removedIndex = parser.remove("row");
+
                 }
             })
         );
@@ -80,6 +80,8 @@ public class XanFactory {
                     int removedIndex = parser.remove("row");
 
                     parser.addAt(rowExp,1);
+
+
                 }
             })
         );

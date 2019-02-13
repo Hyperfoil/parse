@@ -4,7 +4,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import perf.parse.Eat;
-import perf.parse.Exp;
 import perf.parse.Rule;
 import perf.parse.internal.CheatChars;
 import perf.parse.internal.JsonBuilder;
@@ -24,6 +23,14 @@ public class XanFactoryTest {
 
     @Before
     public void reset(){}
+
+    @Test
+    public void blank(){
+        JsonBuilder jsonBuilder = new JsonBuilder();
+
+        boolean matched = f.blank().apply(new CheatChars(""),jsonBuilder,null);
+        assertTrue("blank should match an empty string",matched);
+    }
 
     @Test
     public void header(){
