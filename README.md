@@ -1,11 +1,12 @@
 # Parse
-write regex-like patterns to build json from text files
+Use regex patterns to build json from text files
 
 
 ## Warnings
 * I use this to parse all the logs from a benchmark run but that doesn't mean the API is stable.
 * `Merge`, `Value`, and `Rule` enums have overlapping concerns and should probably be refactored.
 * `Value.NestLength` and `Value.NestPeerless` are not well tested
+* The result json from any factory is subject to change :)
 
 
 ## Examples
@@ -15,9 +16,15 @@ Jep271Factory factory = new Jep271Factory();
 
 Parser parser = factory.newParser();
 
+final Json gc = new Json();//will end up as an array of gc events
+
+parser.add(gc::add); //save all the gc events to a list
+
 parser.add((json)->System.out.println(json.toString(2)); //JsonConsumer logs each json
 
-FileUtility.stream("server.gclog").forEach(parser::onLine) //pase each line to the parser
+Files.lines(Paths.get("server.gclog")).forEach(parser::onLine) //pass each line to the parser
+
+Files.write(Paths.get("gc.json"), gc.toString(2).getBytes(), StandardOpenOption.CREATE);
 ```
 
 If you don't find a parser and just need to parse a unique file you can add Exp directly to the parser. Each named capture group will be added to the json
@@ -29,7 +36,7 @@ parser.add((json)->System.out.println(json.toString(2)); //JsonConsumer logs eac
 
 parser.add(new Exp("tsValue","(?<timestamp>\\d+),(?<value>\\d+)").set(Merge.PreClose));
 //Merge.PreClose creates a new result json and will sends the previous one to the JsonConsumers
-FileUtility.stream("server.gclog").forEach(parser::onLine) //pase each line to the parser
+Files.lines(Paths.get("server.gclog")).forEach(parser::onLine) //pass each line to the parser
 
 ```
 
