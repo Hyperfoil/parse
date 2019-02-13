@@ -2,7 +2,7 @@ package perf.parse.factory;
 
 import perf.parse.*;
 
-public class Jep271Factory {
+public class Jep271Factory implements ParseFactory{
     public Parser newParser() {
         Parser p = new Parser();
         addToParser(p);

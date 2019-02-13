@@ -1,82 +1,9 @@
 package perf.parse.factory;
 
 import perf.parse.*;
-import perf.yaup.HashedLists;
-import perf.yaup.json.Json;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
+public class PrintGcFactory implements ParseFactory{
 
-public class PrintGcFactory {
-
-    public static void main(String[] args) {
-        PrintGcFactory printGcFactory = new PrintGcFactory();
-        Jep271Factory jep271Factory = new Jep271Factory();
-        Parser p = new Parser();
-        Set<String> unparsed = new HashSet<>();
-        printGcFactory.addToParser(p);
-        jep271Factory.addToParser(p);
-        HashedLists<String,String> fileUnparsed = new HashedLists<>();
-        File folder = new File("/home/wreicher/perfWork/jdcasey");
-        Arrays.asList(folder.listFiles())
-        .stream()
-        .filter((f)->!f.getName().endsWith(".swp"))//don't parse vi swp files :)
-        .filter((f)->f.getName().startsWith("gc.log"))
-        //.filter((f)->f.getPath().equals("/home/wreicher/perfWork/gc/jenkins/specjms.amq7.2017-11-14_14-30-32.pid25332.gclog"))
-        .forEach((path)->{
-            System.out.println(path);
-            p.clearUnparsedConsumers();
-            Json list = new Json();
-            p.addUnparsedConsumer((remainder,original,lineNumber)->{
-                if(unparsed.add(remainder)){
-                    fileUnparsed.put(path.toString(),remainder);
-                }
-                //System.out.println("REMAINDER::"+remainder+"::");
-            });
-
-            try {
-                AtomicInteger lines = new AtomicInteger(0);
-                try {
-                    Files.lines(path.toPath()).forEach((line) -> {
-                        lines.incrementAndGet();
-                        Json emit = p.onLine(line);
-                        if (emit != null) {
-                            list.add(emit);
-                            //System.out.println(emit.toString(2));
-                        }
-                        //System.out.println("||"+line+"||");
-                    });
-                }catch(UncheckedIOException uioe){
-                    System.out.println(path+" "+lines.get());
-                }
-            Json emit = p.close();
-            if(emit!=null){
-                list.add(emit);
-            }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            //System.out.println(Json.typeStructure(list).toString(2));
-        });
-        fileUnparsed.forEach((path,entries)->{
-            System.out.println(path);
-            entries.forEach(line->{
-                System.out.println("  ||"+line+"||");
-            });
-            try {
-                System.in.read();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-
-    }
     public Parser newParser() {
         Parser p = new Parser();
         addToParser(p);

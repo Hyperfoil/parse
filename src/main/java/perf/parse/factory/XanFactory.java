@@ -7,7 +7,7 @@ import perf.yaup.json.Json;
  * Created by wreicher
  * parsers faban xan files
  */
-public class XanFactory {
+public class XanFactory implements ParseFactory{
 
     public Exp blank(){
         return new Exp("blank","^\\s*$");

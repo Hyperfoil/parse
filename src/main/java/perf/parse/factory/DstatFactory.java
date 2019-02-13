@@ -13,7 +13,7 @@ import java.util.ArrayList;
  * Created by wreicher
  * DstatFactory - creates a Parser for dstat logs
  */
-public class DstatFactory {
+public class DstatFactory implements ParseFactory{
 
 
     //public static final String ANSI_RESET =  "\u001B[0m";

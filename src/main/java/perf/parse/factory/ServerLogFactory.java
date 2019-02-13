@@ -10,7 +10,7 @@ import perf.parse.Value;
 /**
  * Created by wreicher
  */
-public class ServerLogFactory {
+public class ServerLogFactory implements ParseFactory{
 
     public Parser newParser(){
         Parser p = new Parser();

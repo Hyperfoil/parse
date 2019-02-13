@@ -11,7 +11,7 @@ import perf.parse.Value;
 /**
  * Created by wreicher
  */
-public class JStackFactory {
+public class JStackFactory implements ParseFactory{
     public Exp threadDumpHeader(){
         return new Exp("start", "Full thread dump (?<vm>[^\\(]+)\\((?<version>[^\\(]+)\\)").set(Merge.PreClose);
     }

@@ -7,7 +7,7 @@ import perf.parse.Parser;
 /**
  * Created by wreicher
  */
-public class JmapHistoFactory {
+public class JmapHistoFactory implements ParseFactory{
 
     public Exp classEntry(){
         return new Exp("class","\\s*(?<num>\\d+):\\s+(?<instances>\\d+)\\s+(?<bytes>\\d+)\\s+(?<className>.+)");

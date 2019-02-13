@@ -27,7 +27,7 @@ If you don't find a parser and just need to parse a unique file you can add Exp 
 Parser parser = new Parser();
 parser.add((json)->System.out.println(json.toString(2)); //JsonConsumer logs each json
 parser.add(new Exp("tsValue","(?<timestamp>\\d+),(?<value>\\d+)").set(Merge.PreClose));
-//Merge.PreClose creates a new result json and will sends the previous one to the JsonConsumers
+//Merge.PreClose creates a new result json and sends the previous one to the JsonConsumers
 Files.lines(Paths.get("server.gclog")).forEach(parser::onLine) //pass each line to the parser
 ```
 
