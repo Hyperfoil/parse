@@ -13,17 +13,11 @@ Use regex patterns to build json from text files
 There are existing Factories in perf.parse.factory for common log formats. For example, parsing jdk-9+ gclogs
 ```Java
 Jep271Factory factory = new Jep271Factory();
-
 Parser parser = factory.newParser();
-
 final Json gc = new Json();//will end up as an array of gc events
-
-parser.add(gc::add); //save all the gc events to a list
-
+parser.add(gc::add); //save all the gc events
 parser.add((json)->System.out.println(json.toString(2)); //JsonConsumer logs each json
-
 Files.lines(Paths.get("server.gclog")).forEach(parser::onLine) //pass each line to the parser
-
 Files.write(Paths.get("gc.json"), gc.toString(2).getBytes(), StandardOpenOption.CREATE);
 ```
 
@@ -31,13 +25,10 @@ If you don't find a parser and just need to parse a unique file you can add Exp 
 
 ```Java
 Parser parser = new Parser();
-
 parser.add((json)->System.out.println(json.toString(2)); //JsonConsumer logs each json
-
 parser.add(new Exp("tsValue","(?<timestamp>\\d+),(?<value>\\d+)").set(Merge.PreClose));
 //Merge.PreClose creates a new result json and will sends the previous one to the JsonConsumers
 Files.lines(Paths.get("server.gclog")).forEach(parser::onLine) //pass each line to the parser
-
 ```
 
 ## Exp
