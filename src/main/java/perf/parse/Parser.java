@@ -164,10 +164,12 @@ public class Parser {
             matched = exp.apply(line,builder,this) && matched;
             int newSize = patterns.size();
             if(newSize!=size){ // deal with mod after executing exp
-
-                int diff = newSize-size;
-                i+=diff;
-                size+=diff;
+                int newIndex = patterns.indexOf(exp);
+                //int diff = newSize-size;
+                //i+=diff;
+                //size+=diff;
+                i=newIndex;
+                size=newSize;
             }
         }
 

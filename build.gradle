@@ -43,8 +43,8 @@ dependencies {
     compile 'perf:yaup:+'
 
     //compile project(':diff')
-    compile 'org.json:json:20141113'
-    compile 'org.apache.commons:commons-math3:3.0'
+    //compile 'org.json:json:20141113'
+    //compile 'org.apache.commons:commons-math3:3.0'
     compile 'org.yaml:snakeyaml:1.23'
     compile 'commons-cli:commons-cli:1.4'
 

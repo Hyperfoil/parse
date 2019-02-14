@@ -15,9 +15,6 @@ import java.util.ArrayList;
  */
 public class DstatFactory implements ParseFactory{
 
-
-    //public static final String ANSI_RESET =  "\u001B[0m";
-
     public Exp defaultMessage(){
         return new Exp("defaultMessage","You did not select any stats, using -cdngy by default");
     }
