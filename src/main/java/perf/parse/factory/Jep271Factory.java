@@ -16,8 +16,9 @@ public class Jep271Factory implements ParseFactory{
         p.add(gcId()
                 .set(Rule.TargetRoot)//so that gcId is always on the root
                 .set(Rule.PostPopTarget)
-                .add(gcExpanding())//does not occur under GC(#) but that might be a bug
-                .add(gcShrinking())
+                //Expanding does not occur under GC(#) but that might be a bug. In 11.0.1 it is now under gcId
+                .add(gcExpanding().group("resize").set(Merge.Entry))
+                .add(gcShrinking().group("resize").set(Merge.Entry))
 
                 //shenandoah before gcPause because gcPause can match Pause stage
 
@@ -26,7 +27,7 @@ public class Jep271Factory implements ParseFactory{
 
                 .add(gcPause())//TODO put behind a requires so it doesn't match shenandoah pause phase?
 
-                .add(parallelSizeChanged())//ParallelGC
+                .add(parallelSizeChanged().group("resize").set(Merge.Entry))//ParallelGC
 
                 .add(g1ResizePhase().requires("gc-g1").set(Merge.Entry))//G1
                 .add(g1TimedPhase().requires("gc-g1").set(Merge.Entry))//G1
@@ -107,6 +108,9 @@ public class Jep271Factory implements ParseFactory{
                 .add(gcClassHistoEnd())
         );
 
+        //before level so it can PreClose the previous trigger
+        p.add(shenandoahTrigger().group("trigger").requires("gc-shenandoah").set(Merge.PreClose));
+
         p.add(gcLevel().set(Rule.ChildrenLookBehind).enables("jep271-decorator")
                 .add(time())
                 .add(utcTime())
@@ -127,14 +131,15 @@ public class Jep271Factory implements ParseFactory{
         //p.add(gcKeyValue());
         p.add(g1MarkStack().requires("gc-g1"));
 
-        p.add(usingSerial());
-        p.add(usingParallel());
-        p.add(usingCms());
-        p.add(usingG1());
+        p.add(usingSerial().set(Merge.PostClose));
+        p.add(usingParallel().set(Merge.PostClose));
+        p.add(usingCms().set(Merge.PostClose));
+        p.add(usingG1().set(Merge.PostClose));
+        p.add(usingShenandoah().set(Merge.PostClose));
 
         p.add(gcExpanding());//included here to match output from openjdk10+46
 
-        p.add(shenandoahTrigger().group("trigger").requires("gc-shenandoah"));
+
 
         p.add(safepointStopTime().group("safepoint"));//safepoint
         p.add(safepointAppTime().group("safepoint"));//safepoint
@@ -219,7 +224,7 @@ public class Jep271Factory implements ParseFactory{
     //
     public Exp parallelSizeChanged(){//"PSYoung generation size changed: 1358848K->1356800K"
         return new Exp("parallelSizeChange","(?<region>\\w+) generation size changed: (?<before:KMG>\\d+[bBkKmMgG])->(?<after:KMG>\\d+[bBkKmMgG])")
-                .group("resize");
+                ;
     }
 
     //Shenandoah
@@ -455,12 +460,14 @@ public class Jep271Factory implements ParseFactory{
         return new Exp("expand","Expanding (?<region>\\S.+\\S) from (?<from:KMG>\\d+[kKmMgG]?)")
                 .add(new Exp("by"," by (?<by:KMG>\\d+[kKmMgG]?)"))
                 .add(new Exp("to"," to (?<to:KMG>\\d+[kKmMgG]?)"))
+                .with("change","expanding")
                 ;
     }
     public Exp gcShrinking(){//"Shrinking ParOldGen from 171008K by 11264K to 159744K"
         return new Exp("shrink","Shrinking (?<region>\\S.+\\S) from (?<from:KMG>\\d+[kKmMgG]?)")
                 .add(new Exp("by"," by (?<by:KMG>\\d+[kKmMgG]?)"))
                 .add(new Exp("to"," to (?<to:KMG>\\d+[kKmMgG]?)"))
+                .with("change","shrinking")
                 ;
     }
 

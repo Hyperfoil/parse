@@ -520,9 +520,9 @@ public class Exp {
             switch(v){
                 case TargetId: {
                     Object value = fieldValue;
-                    if (Pattern.matches("\\d+", fieldValue)) {//long
+                    if (Pattern.matches("-?\\d+", fieldValue)) {//long
                         value = Long.parseLong(fieldValue);
-                    } else if (Pattern.matches("\\d+\\.\\d+", fieldValue)) {//double
+                    } else if (Pattern.matches("-?\\d+\\.\\d+", fieldValue)) {//double
                         value = Double.parseDouble(fieldValue);
                     } else {
                     }
@@ -740,9 +740,9 @@ public class Exp {
                 case Key: {
                     String keyValue = m.group(vString);
                     Object toSet = keyValue;
-                    if (Pattern.matches("\\d+", keyValue)) {//long
+                    if (Pattern.matches("-?\\d+", keyValue)) {//long
                         toSet = Long.parseLong(keyValue);
-                    } else if (Pattern.matches("\\d+\\.\\d+", keyValue)) {//double
+                    } else if (Pattern.matches("-?\\d+\\.\\d+", keyValue)) {//double
                         toSet = Double.parseDouble(keyValue);
                     } else {
                     }
@@ -765,9 +765,9 @@ public class Exp {
                     break;
                 case First: {
                     Object firstValue = fieldValue;
-                    if (Pattern.matches("\\d+", fieldValue)) {//long
+                    if (Pattern.matches("-?\\d+", fieldValue)) {//long
                         firstValue = Long.parseLong(fieldValue);
-                    } else if (Pattern.matches("\\d+\\.\\d+", fieldValue)) {//double
+                    } else if (Pattern.matches("-?\\d+\\.\\d+", fieldValue)) {//double
                         firstValue = Double.parseDouble(fieldValue);
                     } else {
                     }
@@ -779,9 +779,9 @@ public class Exp {
                 }
                 case Last:
                     Object lastValue = fieldValue;
-                    if(Pattern.matches("\\d+",fieldValue)){//long
+                    if(Pattern.matches("-?\\d+",fieldValue)){//long
                         lastValue = Long.parseLong(fieldValue);
-                    }else if (Pattern.matches("\\d+\\.\\d+",fieldValue)){//double
+                    }else if (Pattern.matches("-?\\d+\\.\\d+",fieldValue)){//double
                         lastValue = Double.parseDouble(fieldValue);
                     }else{}
                     chain(builder.getTarget(),fieldName).set(lastKey(fieldName),lastValue);
@@ -789,9 +789,9 @@ public class Exp {
                 case Set:
 
                     Object value = fieldValue;
-                    if(Pattern.matches("\\d+",fieldValue)){//long
+                    if(Pattern.matches("-?\\d+",fieldValue)){//long
                         value = Long.parseLong(fieldValue);
-                    }else if (Pattern.matches("\\d+\\.\\d+",fieldValue)){//double
+                    }else if (Pattern.matches("-?\\d+\\.\\d+",fieldValue)){//double
                         value = Double.parseDouble(fieldValue);
                     }else{}
                     Json chained = chain(builder.getTarget(),fieldName);
@@ -826,13 +826,13 @@ public class Exp {
                 default:
 
                         Object newObj = fieldValue;
-                        if (Pattern.matches("\\d+", fieldValue) && fieldValue.length()<19) {//long
+                        if (Pattern.matches("-?\\d+", fieldValue) && fieldValue.length()<19) {//long
                             try {
                                 newObj = Long.parseLong(fieldValue);
                             }catch(NumberFormatException nfe){
                                 //ignore because we are going to use the default newObj instead
                             }
-                        } else if (Pattern.matches("\\d+\\.\\d+", fieldValue) && fieldValue.length()<19) {//double
+                        } else if (Pattern.matches("-?\\d+\\.\\d+", fieldValue) && fieldValue.length()<19) {//double
                             try {
                                 newObj = Double.parseDouble(fieldValue);
                             }catch(NumberFormatException nfe){

@@ -11,16 +11,19 @@ import java.util.function.Function;
 
 public class FileRule {
 
-    private String name="";
+    private String name;
     private MatchCriteria criteria = new MatchCriteria();
     private final List<Filter> filters = new LinkedList<>();
     private String nest="";
     private Function<String, Json> converter =null;
 
-    public FileRule(){}
+    public FileRule(){this("");}
     public FileRule(String name){
         this.name = name;
     }
+
+    public void setName(String name){this.name = name;}
+    public String getName(){return name;}
 
     public boolean isValid(){
         return converter !=null && nest!=null;
@@ -61,27 +64,32 @@ public class FileRule {
     }
 
     public boolean apply(String path, BiConsumer<String,Json> callback){
+        try {
+            Json state = new Json();
+            boolean matched = getCriteria().match(path, state);
 
-        Json state = new Json();
-        boolean matched = getCriteria().match(path,state);
-        if(matched){
+            if (matched) {
 
-            Json result = getConverter().apply(path);
-            String nestPath = StringUtil.populatePattern(getNest(),Json.toObjectMap(state));
-            System.out.println(name+" matched "+path);
-            if(getFilters().isEmpty()){
-                callback.accept(nestPath,result);
-            }else{
-                final Json postFilter = new Json();
-                BiConsumer<String,Object> filterCallback = (nest,json)->{
-                    Json.chainSet(postFilter,nest,json);
-                };
-                for(Filter filter: getFilters()){
-                    filter.apply(result,filterCallback);
+                Json result = getConverter().apply(path);
+                String nestPath = StringUtil.populatePattern(getNest(), Json.toObjectMap(state));
+                if (getFilters().isEmpty()) {
+                    callback.accept(nestPath, result);
+                } else {
+                    final Json postFilter = new Json();
+                    BiConsumer<String, Object> filterCallback = (nest, json) -> {
+                        Json.chainSet(postFilter, nest, json);
+                    };
+                    for (Filter filter : getFilters()) {
+                        filter.apply(result, filterCallback);
+                    }
+                    callback.accept(nestPath, postFilter);
                 }
-                callback.accept(nestPath,postFilter);
             }
+            return matched;
+        }catch(Exception e){
+            System.out.println("Failed to convert "+path);
+            e.printStackTrace(System.out);
         }
-        return matched;
+        return false;
     }
 }

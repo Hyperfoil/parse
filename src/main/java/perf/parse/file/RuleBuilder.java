@@ -13,7 +13,7 @@ public class RuleBuilder {
     private final FileRule rule;
     public RuleBuilder(String name){
         this.name = name;
-        this.rule = new FileRule();
+        this.rule = new FileRule(name);
     }
 
     public RuleBuilder path(String path){

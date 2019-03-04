@@ -25,6 +25,42 @@ public class Jep271FactoryTest {
     }
 
     @Test
+    public void newParser_parallel_bug_expand_and_resize(){
+        Parser p = f.newParser();
+        final List<Json> found = new LinkedList<>();
+        p.add(found::add);
+        p.onLine("[2019-02-12T02:46:28.812+0000][12.639s][1549939588812ms][debug][gc] GC(44) Expanding ParOldGen from 87552K by 15872K to 103424K");
+        p.onLine("[2019-02-12T02:46:28.812+0000][12.639s][1549939588812ms][trace][gc] GC(44) PSYoung generation size changed: 48128K->36864K");
+        p.onLine("[2019-02-12T02:46:28.812+0000][12.639s][1549939588812ms][info ][gc] GC(44) Pause Full (Ergonomics) 85M->80M(123M) 290.567ms");
+        p.close();
+        System.out.println(found.size());
+        found.forEach(gc->System.out.println(gc.toString(2)));
+    }
+
+    @Test
+    public void newParser_shenandoah_bug_reason_array(){
+        Parser p = f.newParser();
+        final List<Json> found = new LinkedList<>();
+        p.add(found::add);
+        p.onLine("[2019-02-28T01:28:36.496+0000][0.003s][1551317316496ms][info][gc] Using Shenandoah");
+        p.onLine("[2019-02-28T01:28:38.862+0000][2.369s][1551317318862ms][info][gc] Trigger: Learning 1 of 5. Free (358M) is below initial threshold (358M)");
+        p.onLine("[2019-02-28T01:28:38.943+0000][2.450s][1551317318943ms][info][gc] GC(0) Concurrent reset 127M->128M(512M) 80.716ms");
+        p.onLine("[2019-02-28T01:28:38.946+0000][2.453s][1551317318946ms][info][gc] GC(0) Pause Init Mark (process weakrefs) 3.095ms");
+        p.onLine("[2019-02-28T01:28:38.963+0000][2.470s][1551317318963ms][info][gc] GC(0) Concurrent marking (process weakrefs) 128M->135M(512M) 16.612ms");
+        p.onLine("[2019-02-28T01:28:38.963+0000][2.470s][1551317318963ms][info][gc] GC(0) Concurrent precleaning 135M->135M(512M) 0.375ms");
+        p.onLine("[2019-02-28T01:28:39.044+0000][2.551s][1551317319044ms][info][gc] GC(0) Pause Final Mark (process weakrefs) 2.004ms");
+        p.onLine("[2019-02-28T01:28:39.044+0000][2.551s][1551317319044ms][info][gc] GC(0) Concurrent cleanup 135M->135M(512M) 0.064ms");
+        p.onLine("[2019-02-28T01:28:39.058+0000][2.566s][1551317319058ms][info][gc] GC(0) Concurrent evacuation 135M->157M(512M) 14.606ms");
+        p.onLine("[2019-02-28T01:28:39.059+0000][2.566s][1551317319059ms][info][gc] GC(0) Pause Init Update Refs 0.044ms");
+        p.onLine("[2019-02-28T01:28:39.144+0000][2.651s][1551317319144ms][info][gc] GC(0) Concurrent update references 157M->166M(512M) 84.958ms");
+        p.onLine("[2019-02-28T01:28:39.145+0000][2.653s][1551317319145ms][info][gc] GC(0) Pause Final Update Refs 1.376ms");
+        p.onLine("[2019-02-28T01:28:39.145+0000][2.653s][1551317319145ms][info][gc] GC(0) Concurrent cleanup 166M->47M(512M) 0.119ms");
+        p.close();
+        System.out.println(found.size());
+        found.forEach(gc->System.out.println(gc.toString(2)));
+    }
+
+    @Test
     public void newParser_shenandoah_trigger(){
         Parser p = f.newParser();
         p.setState("gc-shenandoah",true);
