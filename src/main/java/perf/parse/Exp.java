@@ -382,7 +382,6 @@ public class Exp {
       return apply(line,builder,parser,line.reference(0));
    }
    protected boolean apply(DropString line, JsonBuilder builder, Parser parser, DropString.Ref startIndex){
-      System.out.println(getName()+".apply > @ "+startIndex.get()+" ||"+line.toString()+"||");
 
       boolean rtrn = false;
       try {
@@ -406,12 +405,10 @@ public class Exp {
 
          int matchStart = this.matchTarget.apply(this.matcher, line, startIndex.get());
 
-         System.out.println(getName()+" matchStart="+matchStart);
 
          if (this.matcher.find()) {
             rtrn = true;
 
-            System.out.println(getName()+".apply >> @ "+startIndex.get()+" ||"+line.toString()+"||");
 
             DropString.Ref firstStart = line.reference(matcher.start());
             DropString.Ref firstEnd = line.reference(matcher.end());
@@ -434,11 +431,6 @@ public class Exp {
 
                DropString.Ref matcherStart = line.reference(matcher.start());
                DropString.Ref matcherEnd = line.reference(matcher.end());
-
-
-               System.out.println(getName()+".FOUND > @ "+startIndex.get()+" ||"+line.toString()+"||");
-               System.out.println("  FOUND matcher("+matcher.start()+","+matcher.end()+") ref=("+matcherStart.get()+","+matcherEnd.get()+")||"+line.subSequence(matcher.start(),matcher.end())+"||");
-
 
 
                boolean needPop = false;
@@ -486,7 +478,6 @@ public class Exp {
                   do {
                      childMatched = false;
                      for (Exp child : children) {
-                        System.out.println(getName()+".child beforeMatchStart="+beforeMatchStart.get()+" beforeMatchEnd="+beforeMatchEnd.get());
                         if (MatchTarget.BeforeParent.equals(child.matchTarget)) {
                            boolean matched = child.apply(beforeMatch, builder, parser, beforeMatchStart);
                            childMatched = matched || childMatched;
@@ -526,11 +517,8 @@ public class Exp {
             this.rules.forEach((rule, roleObjects) -> {
                rule.postChildren(builder, ruleTarget, roleObjects);
             });
-            System.out.println(getName()+".apply < @ "+startIndex.get()+" ||"+line.toString()+"||");
          }
       }catch(Exception e){
-         System.out.println(getName()+" :: Caught "+e.getMessage());
-         e.printStackTrace(System.out);
          throw new RuntimeException((e));
       }
 
@@ -538,7 +526,6 @@ public class Exp {
    }
    public void populate(JsonBuilder builder){
       //first do all targeting changes
-      System.out.println(getName()+".populate > \n  root:"+builder.getRoot().toString()+"\n  target:"+builder.getTarget().toString()+"\n"+builder.debug(true));
       for(ValueInfo valueInfo : fields.values()){
 
          if(valueInfo.isSkip()){
@@ -552,7 +539,6 @@ public class Exp {
       }
       //now populate values from non-targeting fields
       for(ValueInfo valueInfo : fields.values()){
-         System.out.println("  "+valueInfo.name+" type="+valueInfo.getType()+" target="+valueInfo.getTarget()+" merge="+valueInfo.getMerge());
          if(valueInfo.isSkip()){
             continue;
          }
@@ -571,7 +557,6 @@ public class Exp {
             Json.chainSet(builder.getTarget(),key,with.get(key));
          }
       }
-      System.out.println(getName()+".populate < "+builder.getRoot().toString());
    }
    public boolean test(CharSequence input){
       matcher.reset(input);

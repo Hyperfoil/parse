@@ -15,7 +15,6 @@ public class CheatChars extends DropString implements CharSequence {
 
     @Override
     public void drop(int start, int end){
-        System.out.println("CC.drop("+start+","+end+")");
         if(start>end || start < 0 || end > currentLine.length()){
             throw new IllegalArgumentException("Invalid drop range. [length="+ currentLine.length()+" start="+start+" end="+end+"] currentLine="+this.toString());
         }

@@ -525,7 +525,6 @@ public class ExpOld {
                         }
 
                         if( length > builder.getContextInteger(fieldName,true) ){//the current match needs to be a child of target
-                            System.out.println("child");
                             if(isDebug()){
                                 System.out.println("  CHILD");
                             }
@@ -540,9 +539,7 @@ public class ExpOld {
                             builder.pushTarget(newChild);
 
                             changedTarget = true;
-                            System.out.println("child->"+builder.getRoot().toString());
                         } else if( length < builder.getContextInteger(fieldName,true) ) { // elder (ancestor but not parent)
-                            System.out.println("ancestor");
                             if(isDebug()){
                                 System.out.println("  ELDER");
                                 System.out.println("    "+builder.debug(true).replaceAll("\n","\n    "));
@@ -608,7 +605,6 @@ public class ExpOld {
 
                                 //if pointed at the nest-array
                                 if(builder.getContextBoolean(fieldName+NEST_ARRAY,false)){
-                                    System.out.println("add to array to avoid pop NEST_ARRAY");
                                     builder.getTarget().add(newEntry);//change to add to array to avoid having to pop the NEST_ARRAY
                                 }else{
                                     //likely an indent less than the initial indent that started the array, tree as new tree
@@ -626,9 +622,7 @@ public class ExpOld {
                             changedTarget = true;
                             //target = newEntry;
                             //need to add a new entry for the context to use?
-                            System.out.println("ancestor->"+builder.getRoot().toString());
                         } else { // sibling
-                            System.out.println("sibling");
                             if(isDebug()){
                                 System.out.println("  SIBLING");
                                 //need to look recursively in case child ExpOld pushed targets
@@ -666,7 +660,6 @@ public class ExpOld {
                                 changedTarget = true;
 
                             }
-                            System.out.println("sibling->"+builder.getRoot().toString());
                         }
                     }else{//start the tree
 
@@ -897,7 +890,6 @@ public class ExpOld {
 
         if(matcher.find()){
 
-            //System.out.println("  "+getValue()+" "+line.subSequence(matcher.start(),matcher.end())+" ||"+line.subSequence(startPoint,line.length())+"||");
 
             if(isDebug()){
                 System.out.println("  MATCHED ||"+line.subSequence(matcher.start(),matcher.end())+"||");

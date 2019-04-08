@@ -126,39 +126,6 @@ public class StringMatcher implements IMatcher {
         return matches.get(name);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public void print(){
-        System.out.println("StringMatcher: ");
-        System.out.println("input="+input);
-        for(Matchable m : matchers){
-            System.out.println("  Matchable="+m.prefix+"("+m.name+":"+m.expected+")"+m.suffix+" start="+m.forceStart+" end="+m.forceEnd+" last"+m.lastSuffix+" expect="+m.expectString);
-        }
-        System.out.println("region=("+regionStart+", "+regionEnd+") match=("+matchStart+", "+matchEnd);
-        for(String key : matches.keySet()){
-            System.out.println("  Match <"+key+"> = "+matches.get(key));
-        }
-
-    }
-
-
-
     public static boolean canMatch(String pattern){
         return parsePattern(pattern)!=null; // wasteful use of the parsing but nothing compared to the waste of using Regex
     }
@@ -224,19 +191,5 @@ public class StringMatcher implements IMatcher {
         if(i<=0)
             return "";
         return "                                                                                                                                                                                                              ".substring(0,i);
-    }
-
-
-    public static void main(String[] args) {
-        String pattern = "^(?<timestamp>.{10}T.{17}): ";
-
-        System.out.println(canMatch(pattern));
-
-        String line = "OpenJDK 64-Bit Server VM (25.0-b70) for linux-amd64 JRE (1.8.0-internal-benchuser_2015_01_29_15_41-b00), built on Jan 29 2015 15:43:22 by \"benchuser\" with gcc 4.8.2 20140120 (Red Hat 4.8.2-16)\n";
-        StringMatcher m = new StringMatcher("^\\[(?<gctype>GC) ");
-        m.reset(line);
-        boolean found = m.find();
-        System.out.println("found = "+found);
-        m.print();
     }
 }

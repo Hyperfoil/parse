@@ -39,6 +39,5 @@ public class CheatCharsTest {
         CheatChars test = new CheatChars("0123456");
         test.drop(1,4);
         assertEquals("0456",test.toString());
-        //System.out.println("0123456".substring(1,4));
     }
 }

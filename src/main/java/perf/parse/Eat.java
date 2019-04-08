@@ -68,7 +68,6 @@ public enum Eat {
 
     public static void preEat(int eat, DropString line, int start, int end){
         Eat toEat = Eat.from(eat);
-        System.out.println("  Eat "+toEat+" @ "+start+","+end+" ||"+line+"||");
         switch (toEat){
             case Match:
                 line.drop(start,end);

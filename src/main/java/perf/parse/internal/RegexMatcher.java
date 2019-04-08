@@ -81,7 +81,6 @@ public class RegexMatcher implements IMatcher {
     }
 
     public void region(int start,int end){
-        System.out.println("Matcher.region("+start+","+end+")");
         this.regionStart=start;
         this.regionStop=end;
         if(cachedMatcher.get()!=null) {

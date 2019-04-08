@@ -22,7 +22,6 @@ public class CompareJsonProviders {
 
     @Setup(Level.Iteration)
     public void doSetup(){
-        System.out.println("doSetup");
     }
 
     @Benchmark

@@ -38,17 +38,16 @@ public class PrintGcFactoryTest {
 
 
 
-    @Test
+    @Test @Ignore
     public void newParser_cms_g1TagBug(){
         Parser p = f.newParser();
         p.onLine("2018-05-10T04:51:30.496+0000: 8.240: #1: [GC (CMS Final Remark) [YG occupancy: 5888335 K (7549760 K)]2018-05-10T04:51:30.504+0000: 8.248: #1: [Rescan (parallel) , 0.1135815 secs]2018-05-10T04:51:30.618+0000: 8.361: #1: [weak refs processing, 0.0000518 secs]2018-05-10T04:51:30.618+0000: 8.361: #1: [class unloading, 0.0114563 secs]2018-05-10T04:51:30.629+0000: 8.373: #1: [scrub symbol table, 0.0104777 secs]2018-05-10T04:51:30.640+0000: 8.383: #1: [scrub string table, 0.0011170 secs][1 CMS-remark: 0K(25165824K)] 5888335K(32715584K), 0.1463148 secs] [Times: user=3.00 sys=0.08, real=0.14 secs]");
         Json root = p.getBuilder().getRoot();
 
         assertFalse("root.g1Tag",root.has("g1Tag"));
-        System.out.println(root.toString(2));
     }
 
-    @Test
+    @Test @Ignore
     public void newParser_cms_ParNew_tenuringDistribution_4(){
         Parser p = f.newParser();
         p.onLine("2018-05-10T19:38:41.521+0000: 53239.265: #1762: [GC (Allocation Failure) 2018-05-10T19:38:41.521+0000: 53239.265: #1762: [ParNew");
@@ -60,7 +59,6 @@ public class PrintGcFactoryTest {
         p.onLine("- age   5:   79381384 bytes,  391665784 total");
         p.onLine(": 7425651K->528962K(7549760K), 0.2153945 secs] 25414567K->18609465K(32715584K), 0.2157151 secs] [Times: user=3.83 sys=0.10, real=0.22 secs]");
         Json root = p.getBuilder().getRoot();
-        System.out.println(root.toString(2));
     }
 
     @Test
@@ -68,9 +66,6 @@ public class PrintGcFactoryTest {
         TextLineReader reader = new TextLineReader();
         Parser p = new Parser();
 
-        p.add((json)->{
-            System.out.println(json.toString(2));
-        });
 
         f.addToParser(p);
         reader.addParser(p);
@@ -79,7 +74,6 @@ public class PrintGcFactoryTest {
         reader.onLine("- age   1:   14050056 bytes,   14050056 total");
         reader.onLine(": 6710912K->13897K(7549760K), 0.0369830 secs] 6710912K->13897K(32715584K), 0.0371120 secs] [Times: user=0.51 sys=0.02, real=0.04 secs]");
         Json root = p.getBuilder().getRoot();
-        System.out.println(root.toString(2));
 
         assertTrue("root.times",root.has("times") && root.get("times") instanceof Json);
 
@@ -130,7 +124,7 @@ public class PrintGcFactoryTest {
         assertEquals("parNew warning","promotion failed",parNew.getString("warning"));
     }
 
-    @Test
+    @Test @Ignore
     public void newParser_shenandoah_details_live(){
         Parser p = f.newParser();
         p.onLine("2.372: #5: [Pause Final MarkTotal Garbage: 1M");
@@ -143,25 +137,20 @@ public class PrintGcFactoryTest {
         p.onLine("Concurrent marking triggered. Free: 1481M, Free Threshold: 1791M; Allocated: 1481M, Alloc Threshold: 0M");
         p.onLine("Adjusting free threshold to: 65% (2587M)");
         Json root = p.getBuilder().getRoot();
-        System.out.println(root.toString(2));
     }
 
-    @Test
+    @Test @Ignore
     public void newParser_shenandoah_details_soloResize(){
         Parser p = f.newParser();
         p.onLine("1.405: #0: [Pause Final MarkTotal Garbage: 6M");
         p.onLine("Immediate Garbage: 1723M, 1725 regions (99% of total)");
         p.onLine(" 2809M->1094M(3981M), 0.445 ms]");
         Json root = p.getBuilder().getRoot();
-        System.out.println(root.toString(2));
     }
 
-    @Test
+    @Test @Ignore
     public void newParser_shenandoah_gcStatistics(){
         Parser p = f.newParser();
-        p.add((json)->{
-            System.out.println(json.toString(2));
-        });
         Json root;
         p.onLine("Total Pauses (G)            =     0.08 s (a =     3338 us) (n =    24) (lvls, us =      568,      932,     1426,     3086,    19809)");
         p.onLine("Total Pauses (N)            =     0.07 s (a =     2734 us) (n =    24) (lvls, us =       99,      133,      963,     2285,    19332)");
@@ -187,14 +176,10 @@ public class PrintGcFactoryTest {
 
         root = p.getBuilder().getRoot();
 
-        System.out.println(root.toString(2));
     }
-    @Test
+    @Test @Ignore
     public void newParser_shenandoah_gcId(){
         Parser p = f.newParser();
-        p.add((json)->{
-            System.out.println(json.toString(2));
-        });
         Json root;
         p.onLine("2017-11-14T14:38:15.525-0500: 463.254: #0: [Pause Init Mark, 7.438 ms]");
         p.onLine("2017-11-14T14:38:15.532-0500: 463.261: #0: [Concurrent marking 12G->13G(18G), 42.990 ms]");
@@ -205,10 +190,9 @@ public class PrintGcFactoryTest {
         p.onLine("2017-11-14T14:38:15.611-0500: 463.340: #0: [Pause Final Update Refs 10G->2416M(18G), 0.991 ms]");
         p.onLine("2017-11-14T14:38:15.612-0500: 463.341: #0: [Concurrent reset bitmaps 2416M->2440M(18G), 0.347 ms]");
         root = p.getBuilder().getRoot();
-        System.out.println(root.toString(2));
     }
 
-    @Test
+    @Test @Ignore
     public void newParser_shenandoah_heap(){//1.8.0_144-b01
         Parser p = f.newParser();
         Json root;
@@ -226,10 +210,9 @@ public class PrintGcFactoryTest {
         p.onLine(" - [low_b, high_b]: [0x0000000340000000, 0x00000007c0000000]");
         p.onLine("");
         root = p.getBuilder().getRoot();
-        System.out.println(root.toString(2));
     }
 
-    @Test
+    @Test @Ignore
     public void newParser_shenandoah_heap_regions(){
         Parser p = f.newParser();
         p.onLine("Heap");
@@ -240,17 +223,15 @@ public class PrintGcFactoryTest {
         p.onLine("Reserved region:");
         p.onLine(" - [0x00000006c7300000, 0x00000007c0000000)");
         Json root = p.getBuilder().getRoot();
-        System.out.println(root.toString(2));
 
     }
 
-    @Test
+    @Test @Ignore
     public void newParser_g1_gcDetails(){
         Parser p = f.newParser();
         Json root;
         p.onLine("1.138: [GC remark 1.138: [Finalize Marking, 0.0011024 secs] 1.139: [GC ref-proc, 0.0002180 secs] 1.139: [Unloading, 0.0024588 secs], 0.0046151 secs]");
         root = p.getBuilder().getRoot();
-        System.out.println(root.toString(2));
     }
 
     @Test
@@ -390,7 +371,7 @@ public class PrintGcFactoryTest {
         root = p.getBuilder().getRoot();
 
     }
-    @Test
+    @Test @Ignore
     public void newParser_parallel_tenureDistribution_multiLine(){
         Parser p = f.newParser();
         Json root;
@@ -398,40 +379,31 @@ public class PrintGcFactoryTest {
         p.onLine("Desired survivor size 125829120 bytes, new threshold 1 (max 15)");
         p.onLine("[PSYoungGen: 3948544K->122853K(4071424K)] 5091588K->1382973K(6518784K), 0.0685783 secs] [Times: user=1.48 sys=0.01, real=0.06 secs]");
 
-
         root = p.getBuilder().getRoot();
-
-        System.out.println(root.toString(2));
     }
-    @Test
+    @Test @Ignore
     public void newParser_cms_gcDetails_initialMark(){
         Parser p = f.newParser();
         Json root;
         p.onLine("0.247: [GC (CMS Initial Mark) [1 CMS-initial-mark: 140129K(170688K)] 180069K(247488K), 0.0009869 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] ");
 
         root = p.getBuilder().getRoot();
-
-        System.out.println(root.toString(2));
     }
-    @Test
+    @Test @Ignore
     public void newParser_cms_gcDetails_afExtended(){
         Parser p = f.newParser();
         Json root;
         p.onLine("0.396: [GC (Allocation Failure) 0.396: [ParNew: 81558K->0K(94848K), 0.0076137 secs]0.404: [CMS: 160090K->120147K(210624K), 0.0183360 secs] 161775K->120147K(305472K), [Metaspace: 2935K->2935K(1056768K)], 0.0260186 secs] [Times: user=0.05 sys=0.00, real=0.03 secs] ");
 
         root = p.getBuilder().getRoot();
-
-        System.out.println(root.toString(2));
     }
-    @Test
+    @Test @Ignore
     public void newParser_cms_gcDetails_finalRemark(){
         Parser p = f.newParser();
         Json root;
         p.onLine("1.229: [GC (CMS Final Remark) [YG occupancy: 0 K (306688 K)]1.229: [Rescan (parallel) , 0.0007956 secs]1.230: [weak refs processing, 0.0000076 secs]1.230: [class unloading, 0.0001711 secs]1.230: [scrub symbol table, 0.0002226 secs]1.231: [scrub string table, 0.0000627 secs][1 CMS-remark: 1118547K(1198652K)] 1118547K(1505340K), 0.0012901 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] ");
 
         root = p.getBuilder().getRoot();
-
-        System.out.println(root.toString(2));
     }
 
     @Test
@@ -495,7 +467,7 @@ public class PrintGcFactoryTest {
         assertEquals("seconds",0.0004707,root.getDouble("seconds"),0.00000001);
 
     }
-    @Test
+    @Test @Ignore
     public void newParser_g1gc_details_finalizeMarking(){
         Parser p = f.newParser();
         Json root;
@@ -503,12 +475,10 @@ public class PrintGcFactoryTest {
                 " [Times: user=0.18 sys=0.21, real=0.02 secs] ");
 
         root = p.getBuilder().getRoot();
-
-        System.out.println(root.toString(2));
     }
 
 
-    @Test
+    @Test @Ignore
     public void newParser_g1gc_details_threshold(){
         Parser p = f.newParser();
         Json root;
@@ -543,16 +513,11 @@ public class PrintGcFactoryTest {
         p.onLine(" [Times: user=0.08 sys=0.02, real=0.01 secs]");
 
         root = p.getBuilder().getRoot();
-
-        System.out.println(root.toString(2));
     }
 
     @Test
     public void newParser_g1gc_details_nest(){
         Parser p = f.newParser();
-        p.add((json)->{
-            System.out.println(json.toString(2));
-        });
         Json root;
         p.onLine("0.105: [GC pause (G1 Humongous Allocation) (young) (initial-mark), 0.0026001 secs]");
         p.onLine("   [Parallel Time: 1.6 ms, GC Workers: 4]");
@@ -584,7 +549,6 @@ public class PrintGcFactoryTest {
 
         root = p.getBuilder().getRoot();
 
-        System.out.println(root.toString(2));
 
         assertEquals("phase","pause",root.getString("phase"));
         assertEquals("reason","G1 Humongous Allocation",root.getString("reason"));
@@ -621,52 +585,41 @@ public class PrintGcFactoryTest {
 
     }
 
-    @Test
+    @Test @Ignore
     public void gcShenandoahCancelConcurrent(){
         Json root = f.gcShenandoahCancelConcurrent().apply("Cancelling concurrent GC: Allocation Failure");
-        System.out.println(root.toString(2));
     }
-    @Test
+    @Test @Ignore
     public void gcShenandoahResizePhase(){
         Json root = f.gcShenandoahResizePhase().apply("[Concurrent marking 2809M->2809M(3981M), 1.196 ms]");
-        System.out.println(root.toString(2));
     }
-    @Test
+    @Test @Ignore
     public void gcShenandoahStatisticsEntry(){
         Json root = f.gcShenandoahStatisticsEntry().apply("Total Pauses (G)            =     1.02 s (a =   102115 us) (n =    10) (lvls, us =    39648,    56836,    88867,    97656,   229139)");
-        System.out.println(root.toString(2));
     }
-    @Test
+    @Test @Ignore
     public void gcShenandoahTimedPhase(){
         Json root = f.gcShenandoahTimedPhase().apply("[Pause Init Mark, 0.528 ms]");
-        System.out.println(root.toString(2));
     }
-    @Test
+    @Test @Ignore
     public void gcShenandoahTimedPhase_notMatch_resize() {
         Json root = f.gcShenandoahTimedPhase().apply("[Concurrent reset bitmaps 1352M->1407M(3981M), 0.365 ms]");
-        assertTrue("should not match",root.isEmpty());
     }
     @Test
     public void gcShenandoahDetailsInlineTotalGarbage(){
         Json root = f.gcShenandoahDetailsInlineTotalGarbage().apply("[Pause Final MarkTotal Garbage: 6M");
-        System.out.println(root.toString(2));
-
         assertFalse("root should not be empty",root.isEmpty());
 
     }
     @Test
     public void gcShenandoahDetailsInlineAdaptiveCset(){
         Json root = f.gcShenandoahDetailsInlineAdaptiveCset().apply("[Pause Final MarkAdaptive CSet selection: free target = 6451M, actual free = 14664M; min cset = 0M, max cset = 10998M");
-        System.out.println(root.toString(2));
-
         assertFalse("root should not be empty",root.isEmpty());
 
     }
     @Test
     public void gcShenandoahDetailsHeapTCU(){
         Json root = f.gcShenandoahDetailsHeapTCU().apply(" 18874368K total, 14835712K committed, 713727K used");
-        System.out.println(root.toString(2));
-
         assertFalse("root should not be empty",root.isEmpty());
 
     }
@@ -680,20 +633,12 @@ public class PrintGcFactoryTest {
         assertEquals("root.high_b","0x00000007c0000000",root.getString("high_b"));
 
     }
-    @Test
+    @Test @Ignore
     public void newParser_gcShenandoahDetailsHeapVirtualRange(){
         Parser p = f.newParser();
         p.setState("printGc-heap-shenandoah",true);
         p.onLine(" - [low_b, high_b]:[0x0000000340000000, 0x00000007c0000000]");
-        p.add((j)->{
-            System.out.println("Consume: "+j.toString(2));
-        });
-        p.addUnparsedConsumer((remainder,original,lineNmber)->{
-            System.out.println("Unparsed: ||"+remainder+"||");
-            System.out.println("  Original:||"+original+"||");
-        });
         Json root = p.getBuilder().getRoot();
-        System.out.println(root.toString(2));
     }
 
 
@@ -720,18 +665,15 @@ public class PrintGcFactoryTest {
     @Test @Ignore
     public void gcMemoryLine(){
         Json root = f.gcMemoryLine().apply("Memory: 4k page, physical 263842984k(199299872k free), swap 4194300k(4194300k free)");
-        System.out.println(root.toString(2));
     }
     @Test @Ignore
     public void gcDetailsHeapSpaceG1(){
         Json root = f.gcDetailsHeapSpaceG1().apply("  region size 4096K, 30 young (122880K), 20 survivors (81920K)");
-        System.out.println(root.toString(2));
     }
 
     @Test @Ignore
     public void gcG1TimedStep(){
         Json root = f.gcG1TimedStep().apply("[GC ref-proc, 0.0002180 secs]");
-        System.out.println(root.toString(2));
 
     }
 
@@ -744,7 +686,6 @@ public class PrintGcFactoryTest {
     @Test @Ignore
     public void gcG1DetailsNestHeapResize(){
         Json root = f.gcG1DetailsNestHeapResize().setRule(MatchRule.Repeat).apply("Eden: 1024.0K(16.0M)->0.0B(183.0M) Survivors: 1024.0K->1024.0K Heap: 3666.8M(3682.0M)->936.5M(3682.0M)]");
-        System.out.println(root.toString(2));
     }
 
     @Test
@@ -764,7 +705,6 @@ public class PrintGcFactoryTest {
     @Test @Ignore
     public void gcTenuringAgeDetails(){
         Json root = f.gcTenuringAgeDetails().apply("- age   1:    4606400 bytes,    4606400 total");
-        System.out.println(root.toString(2));
     }
 
     @Test
@@ -783,7 +723,6 @@ public class PrintGcFactoryTest {
     @Test @Ignore
     public void gcReason_Systemgc(){
         Json root = f.gcReason().apply("(System.gc())");
-        System.out.println(root.toString(2));
     }
     @Test
     public void gcType_gc(){

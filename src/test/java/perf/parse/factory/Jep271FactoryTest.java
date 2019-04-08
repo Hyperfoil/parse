@@ -29,7 +29,7 @@ public class Jep271FactoryTest {
         f = new Jep271Factory();
     }
 
-    @Test
+    @Test @Ignore
     public void newParser_parallel_bug_expand_and_resize(){
         Parser p = f.newParser();
         final List<Json> found = new LinkedList<>();
@@ -38,11 +38,9 @@ public class Jep271FactoryTest {
         p.onLine("[2019-02-12T02:46:28.812+0000][12.639s][1549939588812ms][trace][gc] GC(44) PSYoung generation size changed: 48128K->36864K");
         p.onLine("[2019-02-12T02:46:28.812+0000][12.639s][1549939588812ms][info ][gc] GC(44) Pause Full (Ergonomics) 85M->80M(123M) 290.567ms");
         p.close();
-        System.out.println(found.size());
-        found.forEach(gc->System.out.println(gc.toString(2)));
     }
 
-    @Test
+    @Test @Ignore
     public void newParser_shenandoah_bug_reason_array(){
         Parser p = f.newParser();
         final List<Json> found = new LinkedList<>();
@@ -61,8 +59,6 @@ public class Jep271FactoryTest {
         p.onLine("[2019-02-28T01:28:39.145+0000][2.653s][1551317319145ms][info][gc] GC(0) Pause Final Update Refs 1.376ms");
         p.onLine("[2019-02-28T01:28:39.145+0000][2.653s][1551317319145ms][info][gc] GC(0) Concurrent cleanup 166M->47M(512M) 0.119ms");
         p.close();
-        System.out.println(found.size());
-        found.forEach(gc->System.out.println(gc.toString(2)));
     }
 
     @Test
@@ -244,9 +240,6 @@ public class Jep271FactoryTest {
         ).stream().forEach(p::onLine);
 
         Json root = p.getBuilder().getRoot();
-        System.out.println(root.toString(2));
-
-
     }
 
     @Test @Ignore
@@ -275,7 +268,6 @@ public class Jep271FactoryTest {
                 "[2018-04-18T09:07:26.370-0500][0.193s][debug][gc,heap] GC(0)   class space    used 428K, capacity 458K, committed 512K, reserved 1048576K"
         ).stream().forEach(p::onLine);
         Json root = p.getBuilder().getRoot();
-        System.out.println(root.toString(2));
 
 
     }
@@ -303,7 +295,6 @@ public class Jep271FactoryTest {
         "[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18)  Metaspace       used 4769K, capacity 4862K, committed 5120K, reserved 1056768K",
         "[2018-04-18T09:09:52.949-0500][1.464s][debug][gc,heap] GC(18)   class space    used 397K, capacity 426K, committed 512K, reserved 1048576K").stream().forEach(p::onLine);
         Json root = p.getBuilder().getRoot();
-        System.out.println(root.toString(2));
     }
 
     @Test
@@ -346,33 +337,28 @@ public class Jep271FactoryTest {
         Json root = f.shenandoahTrigger().apply("Trigger: Average GC time (845.14 ms) is above the time for allocation rate (7.57 MB/s) to deplete free headroom (0M)");
         assertEquals("cause\n"+root.toString(2),"rate",root.getString("cause"));
         assertEquals("milliseconds\n"+root.toString(2),845.14,root.getDouble("milliseconds"),0.0001);
-        System.out.println(root.toString(2));
     }
-    @Test
+    @Test @Ignore
     public void shenandoahTrigger_learning(){
         Json root = f.shenandoahTrigger().apply("Trigger: Learning 1 of 5. Free (357M) is below initial threshold (358M)");
-        System.out.println(root.toString(2));
     }
-    @Test
+    @Test @Ignore
     public void shenandoahTrigger_freeThreshold(){
         Json root = f.shenandoahTrigger().apply("Trigger: Free (40M) is below minimum threshold (51M)");
-        System.out.println(root.toString(2));
+
     }
-    @Test
+    @Test @Ignore
     public void shenandoahTrigger_allocationFailure(){
         Json root = f.shenandoahTrigger().apply("Trigger: Handle Allocation Failure");
-        System.out.println(root.toString(2));
     }
 
-    @Test
+    @Test @Ignore
     public void shenandoahTrigger_interval(){
         Json root = f.shenandoahTrigger().apply("Trigger: Time since last GC (30004 ms) is larger than guaranteed interval (30000 ms)");
-        System.out.println(root.toString(2));
     }
     @Test
     public void shenandoahTrigger_allocationThreshold(){
         Json root = f.shenandoahTrigger().apply("Trigger: Allocated since last cycle (51M) is larger than allocation threshold (51M)");
-        System.out.println(root.toString(2));
         assertEquals("cause\n"+root.toString(2),"allocation threshold",root.getString("cause"));
         assertEquals("allocated\n"+root.toString(2), ExpOld.parseKMG("51M"),root.getLong("allocated"));
         assertEquals("threshold\n"+root.toString(2), ExpOld.parseKMG("51M"),root.getLong("threshold"));
@@ -617,7 +603,6 @@ public class Jep271FactoryTest {
 
         root = f.gcHeapRegionG1().apply("");
 
-        System.out.println(root.toString(2));
     }
 
     @Test

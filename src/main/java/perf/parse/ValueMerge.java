@@ -96,7 +96,6 @@ public enum ValueMerge {
             }else{
                 target.set(k,v.toString()+target.getString(k,""));
             }
-            System.out.println("Add "+key+" -> "+target.get(k));
         });
 
         return false;
@@ -132,14 +131,12 @@ public enum ValueMerge {
      * Sets key = [value,...] where the array only contains unique entries
      */
     Set((key,value,builder,data)->{
-        System.out.println("Set for ("+key+") value="+value);
         Json.chainAct(builder.getTarget(),key,value,(target,k,v)->{
            if(!target.has(k)){
                target.set(k,new Json());
            }
            boolean haveIt = target.getJson(k).values().stream()
               .filter(existing->{
-                  System.out.println(" already have "+existing);
                   return existing.equals(v);
 
               })

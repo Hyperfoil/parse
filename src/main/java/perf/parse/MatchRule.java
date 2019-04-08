@@ -28,14 +28,12 @@ public enum MatchRule {
             changedTarget=true;
             break;
          case PrePopTarget:
-            System.out.println(">>PrePopTarget\n"+builder.debug(true));
             if(filteredData.isEmpty()){
                builder.popTarget();
             }else{
                filteredData.forEach(name->builder.popTarget(name.toString()));
             }
             changedTarget=true;
-            System.out.println("<<PrePopTarget\n"+builder.debug(true));
             break;
          case PreClearTarget:
             if (filteredData.isEmpty()) {
@@ -46,9 +44,7 @@ public enum MatchRule {
             changedTarget=true;
             break;
          case TargetRoot:
-            System.out.println("  "+toString());
             builder.pushTarget(builder.getRoot(),filteredData.toString()+ Exp.ROOT_TARGET_NAME);
-            System.out.println(builder.getRoot().toString());
             break;
       }
       return changedTarget;
@@ -78,29 +74,23 @@ public enum MatchRule {
             changedTarget = true;
             break;
          case PostPopTarget:
-            System.out.println(">>PostPopTarget "+data+"\n"+builder.debug(true));
             if(filteredData.isEmpty()){
                builder.popTarget(data.size());
             }else{
                filteredData.forEach(name->builder.popTarget(name.toString()));
             }
             changedTarget = true;
-            System.out.println("<<PostPopTarget\n"+builder.debug(true));
             break;
          case PostClearTarget:
-            System.out.println(">>PostClearTarget "+data+"\n"+builder.debug(true));
             if(filteredData.isEmpty()){
                builder.clearTargets();
             }else{
                filteredData.forEach(name->builder.clearTargets(name.toString()));
             }
-            System.out.println("<<PostClearTarget "+data+builder.debug(true));
             changedTarget=true;
          break;
          case TargetRoot:
-            System.out.println("  "+toString());
             builder.popTarget(filteredData.toString()+ Exp.ROOT_TARGET_NAME);
-            System.out.println(builder.getRoot().toString());
             break;
       }
       return changedTarget;

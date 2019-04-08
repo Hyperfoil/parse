@@ -58,12 +58,7 @@ public class Exp2Test {
       DropString.Ref starIndex = input.reference(0);
       b.apply(input,builder,null,starIndex);
 
-
-
-
       Json json = builder.getRoot();
-      System.out.println("line="+input.toString());
-      System.out.println(json.toString(2));
       assertEquals("ball\n"+json.toString(2),"ball",json.getString("b"));
       assertEquals("apple\n"+json.toString(2),"apple",json.getString("a"));
       assertEquals("again\n"+json.toString(2),"ant",json.getString("again"));

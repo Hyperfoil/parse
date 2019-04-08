@@ -66,14 +66,8 @@ public class ServerLogFactoryTest {
         for(String line : test){
             p.onLine(line);
         }
-        p.addUnparsedConsumer(((remainder, original, lineNumber) -> {
-            System.out.println("WTF::"+lineNumber+"::"+remainder);
-        }));
         //p.close();
         Json root = p.getBuilder().getRoot();
-
-        System.out.println(root.toString(2));
-        System.out.println(consumer.getJson().size());
     }
 
     @Test
@@ -99,7 +93,6 @@ public class ServerLogFactoryTest {
         }
         //p.close();
         Json root = p.getBuilder().getRoot();
-        System.out.println(root.toString(2));
         assertEquals("Top Stack should have 2 frames",2,root.getJson("stack").size());
 
 

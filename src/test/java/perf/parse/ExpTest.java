@@ -18,7 +18,7 @@ public class ExpTest {
 
     Function<String, DropString> factory = CheatChars::new;
 
-    @Test
+    @Test @Ignore
     public void testInsuranceDriverStat(){
         ExpOld test = new ExpOld("InsuranceDriver","(?<seconds>\\d+\\.\\d{2})s - InsuranceDriver: ")
             .add(new ExpOld("stat"," (?<key>[^\\s=]+)=").set(Rule.Repeat).group("stat").set(Merge.Entry)
@@ -30,9 +30,6 @@ public class ExpTest {
 
         JsonBuilder b = new JsonBuilder();
         test.apply(input,b,null);
-
-        System.out.println(b.getRoot().toString(2));
-        System.out.println("Remainder=||"+input.toString()+"||");
 
     }
 
