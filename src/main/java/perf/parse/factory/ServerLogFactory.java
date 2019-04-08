@@ -1,11 +1,7 @@
 package perf.parse.factory;
 
-import perf.parse.Eat;
+import perf.parse.*;
 import perf.parse.Exp;
-import perf.parse.Merge;
-import perf.parse.Parser;
-import perf.parse.Rule;
-import perf.parse.Value;
 
 /**
  * Created by wreicher
@@ -29,7 +25,7 @@ public class ServerLogFactory implements ParseFactory{
     public Exp newStartEntryExp(){
         return new Exp("timestamp","(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3})")
             .eat(Eat.Match)
-            .set(Merge.PreClose)
+            .setRule(ExpRule.PreClose)
             .add(new Exp("level", " (?<level>[A-Z]+)\\s+")
                     .eat(Eat.Match))
             .add(new Exp("component","\\[(?<component>[^\\]]+)\\]\\s+")
@@ -42,24 +38,24 @@ public class ServerLogFactory implements ParseFactory{
     public Exp newFrameExp(){
         return new Exp("frame","\\s+at (?<frame>[^\\(]+)")
             .eat(Eat.Match)
-            .group("stack").set(Merge.Entry)
+            .group("stack").setMerge(ExpMerge.AsEntry)
             //.debug()
             .add(new Exp("nativeMethod", "\\((?<nativeMethod>Native Method)\\)")
                     .eat(Eat.Line)
-                    .set("nativeMethod", Value.BooleanKey))
+                    .setMerge("nativeMethod", ValueMerge.BooleanKey))
             .add(new Exp("lineNumber","\\((?<file>[^:]+):(?<line>[^\\)]+)\\)")
                     .eat(Eat.Line)
                 )
             .add(new Exp("unknownSource","\\((?<unknownSource>Unknown Source)\\)")
                     .eat(Eat.Line)
-                    .set("unknownSource", Value.BooleanKey)
+                    .setMerge("unknownSource", ValueMerge.BooleanKey)
                 );
     }
     public Exp newCausedByExp(){
         return new Exp("causedBy","Caused by: (?<exception>[^:]+): (?<message>.+\n?)")
             //.group("stack")
             .group("causedBy")
-            .set(Rule.PushTarget).eat(Eat.Line);
+            .setRule(ExpRule.PushTarget).eat(Eat.Line);
     }
     public Exp newStackRemainderExp(){
         return new Exp("more","\\s+\\.\\.\\. (?<stackRemainder>\\d+) more")
@@ -67,6 +63,6 @@ public class ServerLogFactory implements ParseFactory{
                 .eat(Eat.Line);
     }
     public Exp newMessageExp(){
-        return new Exp("message","(?<message>.+\n?)").set("message", Value.String);
+        return new Exp("message","(?<message>.+\n?)").setMerge("message", ValueMerge.Add);
     }
 }

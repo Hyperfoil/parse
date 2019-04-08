@@ -47,12 +47,12 @@ public class XanFactory implements ParseFactory{
         p.add(
             title()
             .eat(Eat.Line)
-            .set(Merge.PreClose)
+            .setRule(ExpRule.PreClose)
         );
         p.add(
             section()
             .eat(Eat.Line)
-            .set(Merge.PreClose)
+            .setRule(ExpRule.PreClose)
         );
         p.add(
             display()
@@ -64,7 +64,7 @@ public class XanFactory implements ParseFactory{
         );
         p.add(
             header()
-            .set(Rule.Repeat)
+            .setRule(ExpRule.Repeat)
             .eat(Eat.Line)
             .execute((line, match, pattern, parser) -> {
                 Json arry = match.getJson("header");
@@ -75,7 +75,7 @@ public class XanFactory implements ParseFactory{
                     sb.append("(?<"+header+">[^ -].*?)(?:\\s{2,}|$)");
                 }
                 Exp rowExp = new Exp("row",sb.toString())
-                        .eat(Eat.Line).set(Merge.Entry);
+                        .eat(Eat.Line).setMerge(ExpMerge.AsEntry);
                 if(parser!=null) {
                     int removedIndex = parser.remove("row");
 

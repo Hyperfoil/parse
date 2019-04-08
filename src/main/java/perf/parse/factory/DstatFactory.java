@@ -1,10 +1,7 @@
 package perf.parse.factory;
 
-import perf.parse.Eat;
+import perf.parse.*;
 import perf.parse.Exp;
-import perf.parse.Merge;
-import perf.parse.Parser;
-import perf.parse.Rule;
 import perf.yaup.json.Json;
 
 import java.util.ArrayList;
@@ -33,13 +30,13 @@ public class DstatFactory implements ParseFactory{
         final ArrayList<String> headers = new ArrayList<>();
         p.add(
             defaultMessage()
-            .set(Merge.PreClose)
+           .setRule(ExpRule.PreClose)
             .eat(Eat.Line)
         );
         p.add(
             headerGroup()
-            .set(Merge.PreClose)
-            .set(Rule.Repeat)
+            .setRule(ExpRule.PreClose)
+            .setRule(ExpRule.Repeat)
             .eat(Eat.Line)
             .execute((line, match, pattern, parser) -> {
                 Json arry = match.getJson("header");
@@ -68,8 +65,8 @@ public class DstatFactory implements ParseFactory{
         );
         p.add(
             columnGroup()
-            .set(Merge.PreClose)
-            .set(Rule.Repeat)
+            .setRule(ExpRule.PreClose)
+            .setRule(ExpRule.Repeat)
             .eat(Eat.Line)
             .execute((line, match, pattern, parser) -> {
                 Json arry = match.getJson("column");
@@ -104,7 +101,7 @@ public class DstatFactory implements ParseFactory{
                     sb.append("\\s*");
                 }
                 Exp entryExp = new Exp("dstat",sb.toString());
-                entryExp.set(Merge.PreClose);
+                entryExp.setRule(ExpRule.PreClose);
                 entryExp.eat(Eat.Line);
                 parser.addAhead(entryExp);
             })

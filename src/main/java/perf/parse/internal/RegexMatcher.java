@@ -2,10 +2,7 @@ package perf.parse.internal;
 
 import perf.yaup.StringUtil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -68,12 +65,21 @@ public class RegexMatcher implements IMatcher {
         matcher.reset(input);
     }
     public boolean find(){
+
         if(cachedMatcher.get()!=null){
             return cachedMatcher.get().find();
         }else {
             return matcher.find();
         }
     }
+
+    @Override
+    public boolean find(CharSequence input, int start, int end) {
+        reset(input);
+        region(start,end);
+        return find();
+    }
+
     public void region(int start,int end){
         this.regionStart=start;
         this.regionStop=end;
@@ -96,6 +102,9 @@ public class RegexMatcher implements IMatcher {
         }else {
             return matcher.end();
         }
+    }
+    public Set<String> groups(){
+        return renames.keySet();
     }
     public String group(String name){
         String newName = renames.containsKey(name) ? renames.get(name) : name;

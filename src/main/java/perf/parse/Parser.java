@@ -2,7 +2,6 @@ package perf.parse;
 
 import perf.parse.internal.CheatChars;
 import perf.parse.internal.JsonBuilder;
-import perf.yaup.file.FileUtility;
 import perf.yaup.json.Json;
 
 import java.util.*;
@@ -12,41 +11,6 @@ import java.util.stream.Collectors;
  *
  */
 public class Parser {
-
-    public static void main(String[] args) {
-        Parser parser = new Parser();
-        parser.add(new Exp("timestamp","^(?<timestamp>\\d+)$").set(Merge.PreClose).eat(Eat.Line).debug());
-        parser.add(new Exp("cpu",
-                "^" +
-                        "(?<cpu>cpu\\d*) " +
-                        "(?<user>\\d+) " +
-                        "(?<nice>\\d+) " +
-                        "(?<system>\\d+) " +
-                        "(?<idle>\\d+) " +
-                        "(?<iowait>\\d+) " +
-                        "(?<irq>\\d+) " +
-                        "(?<softirq>\\d+) " +
-                        "(?<steal>\\d+) " +
-                        "(?<guest>\\d+) " +
-                        "(?<guest_nice>\\d+) " +
-                        "$"
-        ).eat(Eat.Line).nest("cpu").set(Merge.Entry).debug());
-
-        parser.add(new Exp("intr","^intr (?<intrTotal>\\d+)[\\s\\d]+$").eat(Eat.Line));
-        parser.add(new Exp("ctxt","^ctxt (?<ctxt>\\d+)$").eat(Eat.Line));
-        parser.add(new Exp("btime","^btime (?<btime>\\d+)$").eat(Eat.Line));
-        parser.add(new Exp("processes","^processes (?<processes>\\d+)$").eat(Eat.Line));
-        parser.add(new Exp("procs_running","^procs_running (?<procs_running>\\d+)$").eat(Eat.Line));
-        parser.add(new Exp("procs_blocked","^procs_blocked (?<procs_blocked>\\d+)$").eat(Eat.Line));
-
-        parser.add(new Exp("softirq","^softirq (?<softirq>\\d+)[\\s\\d+]$").eat(Eat.Line));
-
-        List<String> lines = FileUtility.lines("/home/wreicher/perfWork/jEnterprise/fullProfile/archive/run/benchserver2.perf.lab.eng.rdu.redhat.com/proc-stats.log");
-        for(int i=0; i<10;i++){
-            System.out.println("["+i+"/"+(lines.get(i).split("\\s+").length)+"]"+lines.get(i));
-            parser.onLine(lines.get(i));
-        }
-    }
 
     public static interface UnparsedConsumer {
         void accept(String remainder,String original,int lineNumber);
@@ -101,7 +65,7 @@ public class Parser {
     public void addAhead(Exp pattern){
         patterns.add(0,pattern);
     }
-    public void addAt(Exp pattern,int order){
+    public void addAt(Exp pattern, int order){
         patterns.add(order,pattern);
     }
     public void add(Exp pattern){
@@ -141,7 +105,7 @@ public class Parser {
 
     public boolean test(CharSequence line){
         for(Exp pattern : patterns){
-            if(pattern.is(Merge.PreClose)){
+            if(pattern.hasRule(ExpRule.PreClose)){
                 if(pattern.test(line)){
                     return true;
                 }
@@ -174,7 +138,7 @@ public class Parser {
         }
 
         if(!line.isEmpty() && !line.toString().trim().isEmpty() && !unparsedConsumers.isEmpty()){
-            unparsedConsumers.forEach(consumer -> consumer.accept(line.toString(),line.getOriginalLine(),lineNumber));
+            unparsedConsumers.forEach(consumer -> consumer.accept(line.toString(),line.getLine(),lineNumber));
         }
 
         return emit();

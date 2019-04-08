@@ -24,15 +24,15 @@ public class ExpRepresent implements Represent {
             Exp exp = (Exp)data;
             tupleList.add(stringTuple.apply("Name",exp.getName()));
             tupleList.add(stringTuple.apply("pattern",exp.getPattern()));
-            tupleList.add(stringTuple.apply("merge",exp.getMerge().name()));
+            tupleList.add(stringTuple.apply("merge",exp.getExpMerge().name()));
             if(Eat.Width.equals(Eat.from(exp.getEat()))){
                 tupleList.add(stringTuple.apply("eat",""+exp.getEat()));
             }else{
                 tupleList.add(stringTuple.apply("eat",Eat.from(exp.getEat()).name()));
             }
 
-            if(exp.isGrouped()){
-                exp.eachGroup((k,v)->{
+            if(exp.isNested()){
+                exp.eachNest((k,v)->{
                     switch (v){
                         case Name:
                             tupleList.add(stringTuple.apply("group",k));
@@ -40,7 +40,7 @@ public class ExpRepresent implements Represent {
                         case Extend:
                             tupleList.add(stringTuple.apply("extend",k));
                             break;
-                        case Key:
+                        case Field:
                             tupleList.add(stringTuple.apply("key",k));
                         default:
                             //TODO What grouping is this?

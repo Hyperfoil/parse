@@ -1,8 +1,12 @@
 package perf.parse;
 
+import perf.parse.internal.CheatChars;
+import perf.parse.internal.DropString;
+import perf.parse.internal.SharedString;
 import perf.yaup.StringUtil;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -58,6 +62,29 @@ public enum Eat {
             return Eat.from(Integer.parseInt(input));
         }else{
             return StringUtil.getEnum(input,Eat.class,Eat.Match);
+        }
+    }
+
+
+    public static void preEat(int eat, DropString line, int start, int end){
+        Eat toEat = Eat.from(eat);
+        switch (toEat){
+            case Match:
+                line.drop(start,end);
+                break;
+            case ToMatch:
+                line.drop(0,end);
+                break;
+            case Width:
+                line.drop(start,start+eat);
+                break;
+        }
+    }
+    public static void postEat(int eat,DropString line,int start,int end){
+        Eat toEat = Eat.from(eat);
+        switch (toEat){
+            case Line:
+                line.drop(0,line.length());
         }
     }
 }

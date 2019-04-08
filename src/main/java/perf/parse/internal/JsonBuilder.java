@@ -175,7 +175,6 @@ public class JsonBuilder {
      */
     public void clearTargets(String name){
         int index = namedTargetIndex(name);
-        int size = size();
 
         if(index >= 0){
             while (size()-1>=index){
@@ -205,10 +204,25 @@ public class JsonBuilder {
         }while(!rtrn && recursive && index >= 0);
         return rtrn;
     }
+    public void setRootContext(String key,Object value){
+        setContext(key,value,-1);
+    }
+    public void setContext(String key,Object value,int offset){
+        int index = targets.size()-1;
+        if(offset<0){
+            index=0;
+        }else{
+            index-=offset;
+        }
+        if(index<0){
+            index=0;
+        }
+        targets.get(index).info.put(key,value);
+    }
     public void setContext(String key,Object value){
         targets.peek().info.put(key,value);
     }
-    private Object getContext(String key,boolean recursive,Object defaultValue){
+    public Object getContext(String key,boolean recursive,Object defaultValue){
         int index = targets.size()-1;
         Object rtrn = defaultValue;
         boolean found = false;
