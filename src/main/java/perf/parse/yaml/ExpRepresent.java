@@ -4,7 +4,7 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.nodes.*;
 import org.yaml.snakeyaml.representer.Represent;
 import perf.parse.Eat;
-import perf.parse.Exp;
+import perf.parse.ExpOld;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -20,8 +20,8 @@ public class ExpRepresent implements Represent {
             );
         };
         List<NodeTuple> tupleList = new LinkedList<>();
-        if(data instanceof Exp){
-            Exp exp = (Exp)data;
+        if(data instanceof ExpOld){
+            ExpOld exp = (ExpOld)data;
             tupleList.add(stringTuple.apply("Name",exp.getName()));
             tupleList.add(stringTuple.apply("pattern",exp.getPattern()));
             tupleList.add(stringTuple.apply("merge",exp.getMerge().name()));
@@ -40,7 +40,7 @@ public class ExpRepresent implements Represent {
                         case Extend:
                             tupleList.add(stringTuple.apply("extend",k));
                             break;
-                        case Key:
+                        case Field:
                             tupleList.add(stringTuple.apply("key",k));
                         default:
                             //TODO What grouping is this?

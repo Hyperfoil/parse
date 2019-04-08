@@ -3,11 +3,11 @@ package perf.parse.factory;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import perf.parse.Exp;
+import perf.parse.MatchRule;
 import perf.parse.Parser;
-import perf.parse.Rule;
 import perf.parse.reader.TextLineReader;
 import perf.yaup.Sets;
+import perf.yaup.StringUtil;
 import perf.yaup.json.Json;
 
 import java.util.Arrays;
@@ -87,18 +87,18 @@ public class PrintGcFactoryTest {
         assertEquals("root.datestamp","2018-05-10T04:51:23.342+0000",root.getString("datestamp"));
         assertEquals("root.timestamp",1.085,root.getDouble("timestamp"),0.00000001);
         assertEquals("root.gcId",0,root.getLong("gcId"));
-        assertEquals("root.before",Exp.parseKMG("6710912K"),root.getLong("before"));
-        assertEquals("root.after",Exp.parseKMG("13897K"),root.getLong("after"));
-        assertEquals("root.capacity", Exp.parseKMG("32715584K"),root.getLong("capacity"));
+        assertEquals("root.before\n"+root.toString(2), StringUtil.parseKMG("6710912K"),root.getLong("before"));
+        assertEquals("root.after", StringUtil.parseKMG("13897K"),root.getLong("after"));
+        assertEquals("root.capacity", StringUtil.parseKMG("32715584K"),root.getLong("capacity"));
         assertTrue("root has region",root.has("region") && root.get("region") instanceof Json);
         Json region = root.getJson("region");
         assertEquals("region.size",1,region.size());
 
         Json region0 = region.getJson(0);
         assertEquals("region[0].region","ParNew",region0.getString("region"));
-        assertEquals("region[0].before",Exp.parseKMG("6710912K"),region0.getLong("before"));
-        assertEquals("region[0].after",Exp.parseKMG("13897K"),region0.getLong("after"));
-        assertEquals("region[0].capacity", Exp.parseKMG("7549760K"),region0.getLong("capacity"));
+        assertEquals("region[0].before", StringUtil.parseKMG("6710912K"),region0.getLong("before"));
+        assertEquals("region[0].after", StringUtil.parseKMG("13897K"),region0.getLong("after"));
+        assertEquals("region[0].capacity", StringUtil.parseKMG("7549760K"),region0.getLong("capacity"));
 
         assertTrue("root.tenuring",root.has("tenuring") && root.get("tenuring") instanceof Json);
 
@@ -464,9 +464,9 @@ public class PrintGcFactoryTest {
 
         root = p.getBuilder().getRoot();
 
-        assertEquals("phase","concurrent-mark-end",root.getString("phase"));
-        assertEquals("seconds",0.0003460,root.getDouble("seconds"),0.00000001);
-        assertEquals("timestamp",0.122,root.getDouble("timestamp"),0.00000001);
+        assertEquals("phase\n"+root.toString(2),"concurrent-mark-end",root.getString("phase"));
+        assertEquals("seconds\n"+root.toString(2),0.0003460,root.getDouble("seconds"),0.00000001);
+        assertEquals("timestamp\n"+root.toString(2),0.122,root.getDouble("timestamp"),0.00000001);
     }
     @Test
     public void newParser_g1gc_phase_remark(){
@@ -517,16 +517,16 @@ public class PrintGcFactoryTest {
         p.onLine(", 0.0096917 secs]");
         p.onLine("   [Parallel Time: 3.2 ms, GC Workers: 23]");
         p.onLine("      [GC Worker Start (ms): Min: 474.7, Avg: 475.6, Max: 477.6, Diff: 2.9]");
-        p.onLine("      [Ext Root Scanning (ms): Min: 0.0, Avg: 0.2, Max: 1.4, Diff: 1.4, Sum: 4.3]");
-        p.onLine("      [Update RS (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]");
-        p.onLine("         [Processed Buffers: Min: 0, Avg: 0.0, Max: 0, Diff: 0, Sum: 0]");
-        p.onLine("      [Scan RS (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]");
-        p.onLine("      [Code Root Scanning (ms): Min: 0.0, Avg: 0.3, Max: 2.5, Diff: 2.5, Sum: 7.5]");
-        p.onLine("      [Object Copy (ms): Min: 0.0, Avg: 0.9, Max: 2.0, Diff: 2.0, Sum: 19.9]");
-        p.onLine("      [Termination (ms): Min: 0.0, Avg: 0.6, Max: 0.9, Diff: 0.9, Sum: 14.6]");
-        p.onLine("         [Termination Attempts: Min: 1, Avg: 13.7, Max: 34, Diff: 33, Sum: 314]");
-        p.onLine("      [GC Worker Other (ms): Min: 0.0, Avg: 0.1, Max: 1.7, Diff: 1.7, Sum: 2.0]");
-        p.onLine("      [GC Worker Total (ms): Min: 0.2, Avg: 2.1, Max: 3.0, Diff: 2.9, Sum: 48.4]");
+        p.onLine("      [Ext Root Scanning (ms): Min: 0.0, Avg: 0.2, Max: 1.4, Diff: 1.4, Add: 4.3]");
+        p.onLine("      [Update RS (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Add: 0.0]");
+        p.onLine("         [Processed Buffers: Min: 0, Avg: 0.0, Max: 0, Diff: 0, Add: 0]");
+        p.onLine("      [Scan RS (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Add: 0.0]");
+        p.onLine("      [Code Root Scanning (ms): Min: 0.0, Avg: 0.3, Max: 2.5, Diff: 2.5, Add: 7.5]");
+        p.onLine("      [Object Copy (ms): Min: 0.0, Avg: 0.9, Max: 2.0, Diff: 2.0, Add: 19.9]");
+        p.onLine("      [Termination (ms): Min: 0.0, Avg: 0.6, Max: 0.9, Diff: 0.9, Add: 14.6]");
+        p.onLine("         [Termination Attempts: Min: 1, Avg: 13.7, Max: 34, Diff: 33, Add: 314]");
+        p.onLine("      [GC Worker Other (ms): Min: 0.0, Avg: 0.1, Max: 1.7, Diff: 1.7, Add: 2.0]");
+        p.onLine("      [GC Worker Total (ms): Min: 0.2, Avg: 2.1, Max: 3.0, Diff: 2.9, Add: 48.4]");
         p.onLine("      [GC Worker End (ms): Min: 477.7, Avg: 477.7, Max: 477.8, Diff: 0.0]");
         p.onLine("   [Code Root Fixup: 0.1 ms]");
         p.onLine("   [Code Root Purge: 0.0 ms]");
@@ -557,16 +557,16 @@ public class PrintGcFactoryTest {
         p.onLine("0.105: [GC pause (G1 Humongous Allocation) (young) (initial-mark), 0.0026001 secs]");
         p.onLine("   [Parallel Time: 1.6 ms, GC Workers: 4]");
         p.onLine("      [GC Worker Start (ms): Min: 104.7, Avg: 104.8, Max: 105.0, Diff: 0.3]");
-        p.onLine("      [Ext Root Scanning (ms): Min: 0.0, Avg: 0.5, Max: 1.4, Diff: 1.4, Sum: 2.0]");
-        p.onLine("      [Update RS (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]");
-        p.onLine("         [Processed Buffers: Min: 0, Avg: 0.0, Max: 0, Diff: 0, Sum: 0]");
-        p.onLine("      [Scan RS (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]");
-        p.onLine("      [Code Root Scanning (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]");
-        p.onLine("      [Object Copy (ms): Min: 0.0, Avg: 0.3, Max: 0.4, Diff: 0.4, Sum: 1.2]");
-        p.onLine("      [Termination (ms): Min: 0.0, Avg: 0.6, Max: 0.8, Diff: 0.8, Sum: 2.3]");
-        p.onLine("         [Termination Attempts: Min: 1, Avg: 2.5, Max: 4, Diff: 3, Sum: 10]");
-        p.onLine("      [GC Worker Other (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]");
-        p.onLine("      [GC Worker Total (ms): Min: 1.2, Avg: 1.4, Max: 1.5, Diff: 0.3, Sum: 5.6]");
+        p.onLine("      [Ext Root Scanning (ms): Min: 0.0, Avg: 0.5, Max: 1.4, Diff: 1.4, Add: 2.0]");
+        p.onLine("      [Update RS (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Add: 0.0]");
+        p.onLine("         [Processed Buffers: Min: 0, Avg: 0.0, Max: 0, Diff: 0, Add: 0]");
+        p.onLine("      [Scan RS (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Add: 0.0]");
+        p.onLine("      [Code Root Scanning (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Add: 0.0]");
+        p.onLine("      [Object Copy (ms): Min: 0.0, Avg: 0.3, Max: 0.4, Diff: 0.4, Add: 1.2]");
+        p.onLine("      [Termination (ms): Min: 0.0, Avg: 0.6, Max: 0.8, Diff: 0.8, Add: 2.3]");
+        p.onLine("         [Termination Attempts: Min: 1, Avg: 2.5, Max: 4, Diff: 3, Add: 10]");
+        p.onLine("      [GC Worker Other (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Add: 0.0]");
+        p.onLine("      [GC Worker Total (ms): Min: 1.2, Avg: 1.4, Max: 1.5, Diff: 0.3, Add: 5.6]");
         p.onLine("      [GC Worker End (ms): Min: 106.1, Avg: 106.2, Max: 106.2, Diff: 0.0]");
         p.onLine("   [Code Root Fixup: 0.0 ms]");
         p.onLine("   [Code Root Purge: 0.0 ms]");
@@ -743,7 +743,7 @@ public class PrintGcFactoryTest {
 
     @Test @Ignore
     public void gcG1DetailsNestHeapResize(){
-        Json root = f.gcG1DetailsNestHeapResize().set(Rule.Repeat).apply("Eden: 1024.0K(16.0M)->0.0B(183.0M) Survivors: 1024.0K->1024.0K Heap: 3666.8M(3682.0M)->936.5M(3682.0M)]");
+        Json root = f.gcG1DetailsNestHeapResize().setRule(MatchRule.Repeat).apply("Eden: 1024.0K(16.0M)->0.0B(183.0M) Survivors: 1024.0K->1024.0K Heap: 3666.8M(3682.0M)->936.5M(3682.0M)]");
         System.out.println(root.toString(2));
     }
 

@@ -1,7 +1,7 @@
 package perf.parse;
 
 /**
- * Represent the various actions to take when a perf.parse.Exp matches against the input.
+ * Represent the various actions to take when a perf.parse.ExpOld matches against the input.
  * !! Merge actions are exclusive !!
  */
 public enum Merge {
@@ -16,16 +16,16 @@ public enum Merge {
      */
     Entry,
     /**
-     * Treat each match of the perf.parse.Exp as an extension of the last entry in the grouping.
+     * Treat each match of the perf.parse.ExpOld as an extension of the last entry in the grouping.
      * If there is not a defined grouping then this Merge rule is ignored.
      */
     Extend,
     /**
-     * Treat each match as the start of a new context
+         * Treat each match as the start of a new context
      */
     PreClose,
     /**
-     * Treat each match as the end of a new context (after populating match keys)
+     * Treat each match as the end of the current context (after populating the matched json info)
      */
     PostClose,
     }

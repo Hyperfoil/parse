@@ -139,7 +139,7 @@ public class JsonBuilder {
         Json rtrn = null;
         synchronized (this){
             for(int i=0; i<count; i++){
-                if(targets.size()>1) {//TODO see which Exp are trying to pop root
+                if(targets.size()>1) {//TODO see which ExpOld are trying to pop root
                     rtrn = targets.pop().target;
                     //targetInfo.pop();
                 }
@@ -175,7 +175,6 @@ public class JsonBuilder {
      */
     public void clearTargets(String name){
         int index = namedTargetIndex(name);
-        int size = size();
 
         if(index >= 0){
             while (size()-1>=index){

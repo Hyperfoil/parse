@@ -1,23 +1,23 @@
 package perf.parse;
 
 /**
- * Rules for how an Exp will match to input and where it will place the json entries
+ * Rules for how an ExpOld will match to input and where it will place the json entries
  */
 public enum Rule {
     /**
-     * The Exp will start matching from the beginning of the line. The default behaviour starts matching from where the previous Exp finished
+     * The ExpOld will start matching from the beginning of the line. The default behaviour starts matching from where the previous ExpOld finished
      */
     LineStart,
     /**
-     * The Exp will match as many substrings as possible
+     * The ExpOld will match as many substrings as possible
      */
     Repeat,
     /**
-     * The Exp, once matched, will loop over all children as long as one matched each loop
+     * The ExpOld, once matched, will loop over all children as long as one matched each loop
      */
     RepeatChildren,
     /**
-     * The children Exp will be applied to the characters that precede the match region this Exp
+     * The children ExpOld will be applied to the characters that precede the match region this ExpOld
      */
     ChildrenLookBehind,
     /**

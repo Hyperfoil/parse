@@ -1,8 +1,6 @@
 package perf.parse.factory;
 
-import perf.parse.Exp;
-import perf.parse.Merge;
-import perf.parse.Parser;
+import perf.parse.*;
 
 /**
  * Created by wreicher
@@ -20,7 +18,7 @@ public class JmapHistoFactory implements ParseFactory{
     public void addToParser(Parser p){
         p.add(
             classEntry()
-            .set(Merge.PreClose)
+            .setRule(MatchRule.PreClose)
         );
     }
 }

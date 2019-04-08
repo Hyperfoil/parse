@@ -4,51 +4,51 @@ package perf.parse.internal;
  * A mutable wrapper for String that allows us to repeatedly match a pattern and remove the match substring
  * Created by wreicher
  */
-public class CheatChars implements CharSequence {
+public class CheatChars extends DropString implements CharSequence {
 
-    private String originalLine;
-    private String line;
+    private String currentLine;
 
     public CheatChars(String line){
-        this.originalLine = line;
-        this.line = line;
+        super(line);
+        this.currentLine = line;
     }
-
-    public void drop(int start, int end){
-        if(start>end || start < 0 || end > line.length()){
-            throw new IllegalArgumentException("Invalid drop range. [length="+line.length()+" start="+start+" end="+end+"] line="+this.toString());
-        }
-        if( start==0 && end == line.length()){ //shortcut for common case of dropping the entire line
-            line = "";
-        } else {
-            line = line.substring(0, start) + line.substring(end);
-        }
-    }
-
-    public boolean isEmpty(){ return line.isEmpty();}
 
     @Override
-    public int length() { return line.length(); }
+    public void drop(int start, int end){
+        System.out.println("CC.drop("+start+","+end+")");
+        if(start>end || start < 0 || end > currentLine.length()){
+            throw new IllegalArgumentException("Invalid drop range. [length="+ currentLine.length()+" start="+start+" end="+end+"] currentLine="+this.toString());
+        }
+        if( start==0 && end == currentLine.length()){ //shortcut for common case of dropping the entire currentLine
+            currentLine = "";
+        } else {
+            currentLine = currentLine.substring(0, start) + currentLine.substring(end);
+        }
+        updateReferences(start,end);
+    }
+
+    public boolean isEmpty(){ return currentLine.isEmpty();}
+
+    @Override
+    public int length() { return currentLine.length(); }
     @Override
     public char charAt(int index) {
         try {
-            return line.charAt(index);
+            return currentLine.charAt(index);
         }catch(StringIndexOutOfBoundsException e){
-            System.out.println(index+" > "+line.length()+" line=||"+line+"||");
             throw e;
         }
     }
     @Override
     public CheatChars subSequence(int start, int end) {
-        return new CheatChars(line.subSequence(start,end).toString());
+        return new CheatChars(currentLine.subSequence(start,end).toString());
     }
     @Override
-    public String toString(){ return line; }
-    public String getOriginalLine(){return originalLine;}
+    public String toString(){ return currentLine; }
     @Override
-    public boolean equals(Object obj){ return originalLine.equals(obj); }
+    public boolean equals(Object obj){ return line.equals(obj); }
     @Override
-    public int hashCode(){ return originalLine.hashCode(); }
+    public int hashCode(){ return line.hashCode(); }
 
 }
 

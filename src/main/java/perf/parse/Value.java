@@ -17,7 +17,7 @@ public enum Value {
      */
     NestLength("_nestlength_"),
     /**
-     * Uses the length of the value to determien if it should be a child, sibling, or elder. Siblings must have the same
+     * Uses the length of the value to determine if it should be a child, sibling, or elder. Siblings must have the same
      * prefix string
      */
     NestPeerless("_nestpeerless_"),
@@ -42,15 +42,15 @@ public enum Value {
      */
     Sum("_sum_"),
     /**
-     * Treat the value as the key for the value of another named Exp parameter
+     * Treat the value as the key for the value of another named ExpOld parameter
      */
     Key("_key_"),//value of key will be the key for another key's value
     /**
-     * Store a true of for the value if the Exp parameter matches
+     * Store key:true if the ExpOld parameter matches
      */
     BooleanKey("_booleankey_"),
     /**
-     * Use the value as a key with a value of true if the Exp parameter matches
+     * Store value:true if the ExpOld parameter matches
      */
     BooleanValue("_booleanvalue_"),
     /**

@@ -11,20 +11,20 @@ public class PrintGcFactory implements ParseFactory{
     }
     public void addToParser(Parser p) {
         p.add(gcMemoryLine()
-            .set(Merge.PreClose)
+            .setRule(MatchRule.PreClose)
         );
         p.add(gcCommandLine()
-            .set(Merge.PreClose)
+            .setRule(MatchRule.PreClose)
         );
 
         p.add(gcTenuringDistribution()
             .group("survivor")
-            .set(Rule.TargetRoot)
+            .setRule(MatchRule.TargetRoot,"survivor")
         );
         p.add(gcTenuringAgeDetails()
-            .set(Rule.TargetRoot)
+            .setRule(MatchRule.TargetRoot,"tenuring")
             .group("tenuring")
-            .set(Merge.Entry)
+            .setMerge(ExpMerge.AsEntry)
             //.key("age")
         );
 
@@ -68,17 +68,17 @@ public class PrintGcFactory implements ParseFactory{
             .group("cset")
         );
         p.add(gcShenandoahTimedPhase()
-            .set(Merge.PreClose)
+            .setRule(MatchRule.PreClose)
         );
         p.add(gcShenandoahResizePhase()
-            .set(Merge.PreClose)
+            .setRule(MatchRule.PreClose)
         );
 
         p.add(gcShenandoahDetailsInlineTotalGarbage()
-            .set(Merge.PreClose)
+            .setRule(MatchRule.PreClose)
         );
         p.add(gcShenandoahDetailsInlineAdaptiveCset()
-            .set(Merge.PreClose)
+            .setRule(MatchRule.PreClose)
         );
 
         p.add(gcShenandoahDetailsPeriodicTrigger());
@@ -100,7 +100,7 @@ public class PrintGcFactory implements ParseFactory{
         p.add(gcShenandoahDetailsSoloTime());
 
         p.add(gcShenandoahStatisticsHeader()
-            .set(Merge.PreClose)
+            .setRule(MatchRule.PreClose)
         );
         p.add(gcShenandoahStatisticsEntry());
         p.add(gcShenandoahAFStats());
@@ -113,16 +113,16 @@ public class PrintGcFactory implements ParseFactory{
                 .group("heap")
                 .key("category")
                 .eat(Eat.Line)
-                .set(Rule.RepeatChildren)
+                .setRule(MatchRule.RepeatChildren)
                 .add(gcG1DetailsNestHeapBeforeAfter()
                     .group("heap")
                     .key("category")
-                    .set(Rule.PrePopTarget)
-                    .set(Rule.PushTarget)
+                    .setRule(MatchRule.PrePopTarget)
+                    .setRule(MatchRule.PushTarget)
                 )
                 .add(gcG1DetailsNestHeapResize()
-                    .set(Rule.PrePopTarget)
-                    .set(Rule.PushTarget)
+                    .setRule(MatchRule.PrePopTarget)
+                    .setRule(MatchRule.PushTarget)
                 )
             )
             .add(gcG1DetailsNestCategory()
@@ -141,18 +141,18 @@ public class PrintGcFactory implements ParseFactory{
         //moved before GC line matching because of (full) matching a reason
         p.add(gcHeapAtGcHeader()//before gcDetailsHeap to match before "Heap" matches
             .enables("printGc-heap")
-            .set(Merge.PreClose)
+            .setRule(MatchRule.PreClose)
         );
         p.add(gcDetailsHeap()
             .enables("printGc-heap")
-            .set(Merge.PreClose)
+            .setRule(MatchRule.PreClose)
         );
 
         p.add(gcDetailsHeapRegion()
             .requires("printGc-heap")
             .key("region")
-            .set(Rule.PrePopTarget)
-            .set(Rule.PushTarget)
+            .setRule(MatchRule.PrePopTarget)
+            .setRule(MatchRule.PushTarget)
         );
         p.add(gcDetailsHeapSpaceExtraAddress()
             .requires("printGc-heap")
@@ -173,8 +173,8 @@ public class PrintGcFactory implements ParseFactory{
         p.add(gcDetailsHeapMeta()
             .requires("printGc-heap")
             .key("region")
-            .set(Rule.PrePopTarget)
-            .set(Rule.PushTarget)
+            .setRule(MatchRule.PrePopTarget)
+            .setRule(MatchRule.PushTarget)
         );
         p.add(gcHeapAtGcSuffix()
             .disables("printGc-heap")
@@ -224,33 +224,34 @@ public class PrintGcFactory implements ParseFactory{
             .requires("printGc-heap-shenandoah")
             .group("virtual")
             .group("range")
-            .set(Merge.Entry)
+            .setMerge(ExpMerge.AsEntry)
         );
         p.add(gcType()
             .disables("printGc-heap")
             .disables("printGc-heap-shenandoah")
-            .set(Merge.PreClose)
+            .setRule(MatchRule.PreClose)
             .add(gcReason())
             .add(gcG1TimedStep()
                 .group("steps")
-                .set(Merge.Entry)
-                .set(Rule.Repeat)
+                .setMerge(ExpMerge.AsEntry)
+                .setRule(MatchRule.Repeat)
             )
             .add(gcAdaptiveSizePolicyAverages()
                 .group("adaptiveSize")
             )//PrintAdaptiveSizePolicy
             .add(gcG1Phase())
             .add(gcG1Tag()
-                .set(Rule.Repeat)
+                .setRule(MatchRule.Repeat)
             )
         );
 
 
         //This would normally go under gcType to be on same line but PrintTenuringDistribution,PrintAdaptiveSizePolicy can break it to multiple lines
-        //needs to be bofore gcDetailsRegionName to prevent gcDetailsRegionName from matching "[Times:'
+        //needs to be before gcDetailsRegionName to prevent gcDetailsRegionName from matching "[Times:'
         p.add(gcDetailsTimes()
             .group("times")
-            .set(Rule.TargetRoot)//in case we are in a gcDetailsRegionName that split into multiple lines
+            .setRule(MatchRule.TargetRoot)//in case we are in a gcDetailsRegionName that split into multiple lines
+
         );
         //just gcCmsUsed for "[YG occupancy: 5888335 K (7549760 K)]"
 //        p.add(new Exp("gcDetailsCmsOccupancy",
@@ -261,42 +262,42 @@ public class PrintGcFactory implements ParseFactory{
 //        );
         p.add(gcDetailsRegionName()
             .group("region")
-            .set(Merge.Entry)
-            .set(Rule.PreClearTarget,"gcDetailsRegionName")
-            .set(Rule.PushTarget,"gcDetailsRegionName")
-            .set(Rule.Repeat)
+            .setMerge(ExpMerge.AsEntry)
+            .setRule(MatchRule.PreClearTarget,"gcDetailsRegionName")
+            .setRule(MatchRule.PushTarget,"gcDetailsRegionName")
+            .setRule(MatchRule.Repeat)
             .add(gcDetailsRegionWarning())//for (promotion failed)
             .add(gcResize()
                 .add(gcDetailsRegionClose()
-                    .set(Rule.PostClearTarget,"gcDetailsRegionName")
+                    .setRule(MatchRule.PostClearTarget,"gcDetailsRegionName")
                     //hack closing GROUP_NAME, should ROOT and GROUP really have separate names?
                     //both auto-close but then other patterns cannot interact with them...
                     //closing GROUP_NAME fixes newParser_serial_gcDetails_prefixed which was putting seconds with Metadata rather than root
-                    .set(Rule.PostClearTarget,"gcDetailsRegionName"+Exp.GROUPED_NAME)
+                    .setRule(MatchRule.PostClearTarget,"gcDetailsRegionName"+ Exp.GROUPED_NAME)
                 )//hack, one pop should be fine but it appears we need 2? not sure why
             )
             .add(gcCmsUsed()
                 .add(gcCmsUsedCloser()
-                    .set(Rule.PostClearTarget,"gcDetailsRegionName")
-                    .set(Rule.PostClearTarget,"gcDetailsRegionName"+Exp.GROUPED_NAME)
+                    .setRule(MatchRule.PostClearTarget,"gcDetailsRegionName")
+                    .setRule(MatchRule.PostClearTarget,"gcDetailsRegionName"+ Exp.GROUPED_NAME)
                 )//hack to close targets, something is double pushing targets, maybe nest isn't poping correctly?
             )
             .add(gcCmsTimed()
                 .group("phases")
-                .set(Merge.Entry)
-                .set(Rule.Repeat)
+                .setMerge(ExpMerge.AsEntry)
+                .setRule(MatchRule.Repeat)
             )
             .add( new Exp("gcSecs-2","\\s*, (?<seconds>\\d+\\.\\d{7}) secs\\]")
-                    .set(Rule.PostPopTarget,"gcDetailsRegionName")//not sure if named is required here
+                    .setRule(MatchRule.PostPopTarget,"gcDetailsRegionName")//not sure if named is required here
                 )
         );
         p.add(
             new Exp("grouping-resize+size","")
-                .set(Rule.RepeatChildren)
+                .setRule(MatchRule.RepeatChildren)
                 .add(gcResize())
                 .add(gcCmsUsed())
                 .add(gcSecs()
-                    .set(Rule.PostClearTarget,"gcDetailsRegionName")//remove gcDetailsRegionName if still in it
+                    .setRule(MatchRule.PostClearTarget,"gcDetailsRegionName")//remove gcDetailsRegionName if still in it
                 )
 
         );
@@ -314,24 +315,24 @@ public class PrintGcFactory implements ParseFactory{
 
         //application timing, before gc line decorators to include decorators in PreClose
         p.add(gcApplicationConcurrent()
-            .set(Merge.PreClose)
+            .setRule(MatchRule.PreClose)
         );
         p.add(gcApplicationStopped()
-            .set(Merge.PreClose)
+            .setRule(MatchRule.PreClose)
         );
 
         //gc line start decorators (that also get strewn throughout the Serial collector gc but we only want the first one
         p.add(gcDateStamps()
-            .set(Rule.TargetRoot)//in case we are in a gcDetailsRegionName that split into multiple lines
-            .set(Rule.LineStart)
+            .setRule(MatchRule.TargetRoot)//in case we are in a gcDetailsRegionName that split into multiple lines
+            .setTarget(MatchTarget.EntireLine)
         );
         p.add(gcTimestamp()
-            .set(Rule.LineStart)
-            .set(Rule.TargetRoot)//in case we are in a gcDetailsRegionName that split into multiple lines
+            .setTarget(MatchTarget.EntireLine)
+            .setRule(MatchRule.TargetRoot)//in case we are in a gcDetailsRegionName that split into multiple lines
         );//after the other parser to avoid picking out incorrect #.###:
         p.add(gcId()
-            .set(Rule.LineStart)
-            .set(Rule.TargetRoot)//in case we are in a gcDetailsRegionName that split into multiple lines
+            .setTarget(MatchTarget.EntireLine)
+            .setRule(MatchRule.TargetRoot)//in case we are in a gcDetailsRegionName that split into multiple lines
         );
 
     }
@@ -358,7 +359,7 @@ public class PrintGcFactory implements ParseFactory{
         //Total Pauses (G)            =     1.02 s (a =   102115 us) (n =    10) (lvls, us =    39648,    56836,    88867,    97656,   229139)
         //  Accumulate Stats          =     0.00 s (a =       10 us) (n =     5) (lvls, us =        4,        4,        4,        4,       19)
         return new Exp("gcShenandoahStatisticsEntry",
-            "(?<detail:nestLength>\\s*)(?<Name>\\S.+\\S)\\s+=\\s+(?<seconds>\\d+\\.\\d+) s \\(a = \\s+(?<average>\\d+) us\\) \\(n =\\s+(?<count>\\d+)\\) \\(lvls, us =\\s+(?<lvl0>\\d+),\\s+(?<lvl25>\\d+),\\s+(?<lvl50>\\d+),\\s+(?<lvl75>\\d+),\\s+(?<lvl100>\\d+)\\)");
+            "(?<detail:treeSibling>\\s*)(?<Name>\\S.+\\S)\\s+=\\s+(?<seconds>\\d+\\.\\d+) s \\(a = \\s+(?<average>\\d+) us\\) \\(n =\\s+(?<count>\\d+)\\) \\(lvls, us =\\s+(?<lvl0>\\d+),\\s+(?<lvl25>\\d+),\\s+(?<lvl50>\\d+),\\s+(?<lvl75>\\d+),\\s+(?<lvl100>\\d+)\\)");
     }
     //footer
     public Exp gcShenandoahAFStats(){//4 allocation failure and 0 user requested GCs
@@ -499,8 +500,8 @@ public class PrintGcFactory implements ParseFactory{
         //" - [low_b, high_b]: [0x0000000340000000, 0x00000007c0000000]"
         return new Exp("gcShenandoahDetailsHeapVirtualRange",
             "- \\[(?<first>[^,]+), (?<second>[^\\]]+)\\]:\\s*\\[(?<start>0x[0-9a-f]+), (?<end>0x[0-9a-f]+)\\]")
-            .set("first","start")
-            .set("second","end");
+            .setKeyValue("first","start")
+            .setKeyValue("second","end");
     }
 
     //-XX:+UnlockDiagnosticVMOptions -XX:+ShenandoahAllocationTrace
@@ -633,7 +634,7 @@ public class PrintGcFactory implements ParseFactory{
         return new Exp("g1TimedStep","\\[(?<step>\\w+(?:\\s[\\w-]+)*), (?<seconds>\\d+\\.\\d{7}) secs\\]");
     }
     public Exp gcG1DetailsNest(){//[Parallel Time: | Ext Root Scanning (ms):
-        return new Exp("g1DetailsNest","^(?<detail:nestLength>\\s+)\\[");//\\[(?<category>[^:]+):");
+        return new Exp("g1DetailsNest","^(?<detail:treeSibling>\\s+)\\[");//\\[(?<category>[^:]+):");
     }
     public Exp gcG1DetailsNestHeapResize(){//"[Eden: 1024.0K(16.0M)->0.0B(183.0M) Survivors: 1024.0K->1024.0K Heap: 3666.8M(3682.0M)->936.5M(3682.0M)]"
         return new Exp("g1DetailsNestHeapResize","^(?<category>\\w+): (?<before>\\d+\\.\\d+[BKMG])\\((?<beforeSize>\\d+\\.\\d+[BKMG])\\)->(?<after>\\d+\\.\\d+[BKMG])\\((?<afterSize>\\d+\\.\\d+[BKMG])\\)[\\s\\]]");
@@ -654,7 +655,7 @@ public class PrintGcFactory implements ParseFactory{
         return new Exp("g1DetailsNestMinMax"," Min: (?<min>\\d+\\.?\\d*), Avg: (?<avg>\\d+\\.?\\d*), Max: (?<max>\\d+\\.?\\d*), Diff: (?<diff>\\d+\\.?\\d*)");
     }
     public Exp gcG1DetailsNestSum(){
-        return new Exp("g1DetailsNestSum",", Sum: (?<sum>\\d+\\.?\\d*)");
+        return new Exp("g1DetailsNestSum",", Add: (?<sum>\\d+\\.?\\d*)");
     }
     public Exp gcG1DetailsNestUserSys(){//" user=0.01 sys=0.00, real=0.00 secs"
         return new Exp("g1DetailsNestuserSys"," user=(?<user>\\d+\\.\\d+) sys=(?<sys>\\d+\\.\\d+), real=(?<real>\\d+\\.\\d+) secs");

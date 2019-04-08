@@ -2,6 +2,7 @@ package perf.parse.internal;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Set;
 
 /**
  *
@@ -96,6 +97,11 @@ public class StringMatcher implements IMatcher {
     }
 
     @Override
+    public boolean find(CharSequence input, int start, int end) {
+        return false;
+    }
+
+    @Override
     public void region(int start, int end) {
         regionStart = start;
         regionEnd = end;
@@ -112,6 +118,8 @@ public class StringMatcher implements IMatcher {
     public int end() {
         return matchEnd;
     }
+
+    public Set<String> groups(){return matches.keySet();}
 
     @Override
     public String group(String name) {

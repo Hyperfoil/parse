@@ -2,7 +2,6 @@ package perf.parse;
 
 import perf.parse.internal.CheatChars;
 import perf.parse.internal.JsonBuilder;
-import perf.yaup.file.FileUtility;
 import perf.yaup.json.Json;
 
 import java.util.*;
@@ -11,14 +10,14 @@ import java.util.stream.Collectors;
 /**
  *
  */
-public class Parser {
+public class ParserOld {
 
     public static interface UnparsedConsumer {
-        void accept(String remainder,String original,int lineNumber);
+        void accept(String remainder, String original, int lineNumber);
     }
 
     private List<JsonConsumer> consumers;
-    private ArrayList<Exp> patterns;
+    private ArrayList<ExpOld> patterns;
     private HashMap<String,Boolean> states;
     private JsonBuilder builder;
     private List<UnparsedConsumer> unparsedConsumers;
@@ -26,7 +25,7 @@ public class Parser {
 
     public List<String> patternNames(){return patterns.stream().map(p->p.getName()).collect(Collectors.toList());}
 
-    public Parser(){
+    public ParserOld(){
         consumers = new LinkedList<>();
         unparsedConsumers = new LinkedList<>();
         patterns = new ArrayList<>();
@@ -46,7 +45,7 @@ public class Parser {
 
     public Json getNames(){
         Json rtrn = new Json();
-        for(Exp p : patterns){
+        for(ExpOld p : patterns){
             p.appendNames(rtrn);
         }
         return rtrn;
@@ -63,13 +62,13 @@ public class Parser {
         unparsedConsumers.clear();
     }
 
-    public void addAhead(Exp pattern){
+    public void addAhead(ExpOld pattern){
         patterns.add(0,pattern);
     }
-    public void addAt(Exp pattern, int order){
+    public void addAt(ExpOld pattern, int order){
         patterns.add(order,pattern);
     }
-    public void add(Exp pattern){
+    public void add(ExpOld pattern){
         patterns.add(pattern);
     }
     public void add(JsonConsumer consumer){
@@ -77,11 +76,11 @@ public class Parser {
             consumers.add(consumer);
         }
     }
-    public List<Exp> exps(){return Collections.unmodifiableList(patterns);}
-    public Exp get(String patternName){
-        Exp rtrn = null;
+    public List<ExpOld> exps(){return Collections.unmodifiableList(patterns);}
+    public ExpOld get(String patternName){
+        ExpOld rtrn = null;
         for(int i=0; i<patterns.size() && rtrn==null; i++){
-            Exp exp = patterns.get(i);
+            ExpOld exp = patterns.get(i);
             if(exp.getName().equals(patternName)){
                 rtrn = exp;
             }
@@ -91,7 +90,7 @@ public class Parser {
     public int remove(String patternName) {
         int index = -1;
         for(int i=0; i<patterns.size() && index==-1; i++){
-            Exp exp = patterns.get(i);
+            ExpOld exp = patterns.get(i);
             if(exp.getName().equals(patternName)){
                 index = i;
             }
@@ -105,8 +104,8 @@ public class Parser {
     public void clearConsumers(){consumers.clear();}
 
     public boolean test(CharSequence line){
-        for(Exp pattern : patterns){
-            if(pattern.hasRule(MatchRule.PreClose)){
+        for(ExpOld pattern : patterns){
+            if(pattern.is(Merge.PreClose)){
                 if(pattern.test(line)){
                     return true;
                 }
@@ -125,7 +124,7 @@ public class Parser {
 
         int size = patterns.size();
         for(int i=0; i<size; i++){ //to get around concurrent mod from exp matching
-            Exp exp = patterns.get(i);
+            ExpOld exp = patterns.get(i);
             matched = exp.apply(line,builder,this) && matched;
             int newSize = patterns.size();
             if(newSize!=size){ // deal with mod after executing exp

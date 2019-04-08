@@ -3,8 +3,11 @@ package perf.parse;
 import org.junit.Ignore;
 import org.junit.Test;
 import perf.parse.internal.CheatChars;
+import perf.parse.internal.DropString;
 import perf.parse.internal.JsonBuilder;
 import perf.yaup.json.Json;
+
+import java.util.function.Function;
 
 import static org.junit.Assert.*;
 
@@ -13,20 +16,39 @@ import static org.junit.Assert.*;
  */
 public class ExpTest {
 
+    Function<String, DropString> factory = CheatChars::new;
+
+    @Test
+    public void testInsuranceDriverStat(){
+        ExpOld test = new ExpOld("InsuranceDriver","(?<seconds>\\d+\\.\\d{2})s - InsuranceDriver: ")
+            .add(new ExpOld("stat"," (?<key>[^\\s=]+)=").set(Rule.Repeat).group("stat").set(Merge.Entry)
+                .add(new ExpOld("value","^/?(?<value>-|\\d+\\.\\d{3})").set(Rule.Repeat)))
+            .add(new ExpOld("group","(?<group>[^/]+)[/|$]").set(Rule.Repeat))
+            ;
+
+        DropString input = factory.apply("1800.02s - InsuranceDriver: REST - Accept Quote/REST - Add Vehicle/REST - Delete Vehicle/REST - Login/REST - Logout/REST - Register/REST - Register Invalid/REST - Unregister/REST - Update User/REST - View Insurance/REST - View Quote/REST - View User/REST - View Vehicle CThru=114.592/130.791/50.430/427.272/424.505/41.431/11.166/27.232/52.030/51.597/132.058/78.661/170.655 OThru=114.527/132.157/51.557/427.414/427.291/42.737/10.774/26.162/52.975/49.549/132.237/79.503/164.191 CErr=0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000 CResp=0.009/0.003/0.004/0.001/0.000/0.002/0.003/0.003/0.004/0.001/0.002/0.002/0.001 OResp=0.011/0.005/0.006/0.002/0.000/0.003/0.006/0.004/0.005/0.003/0.004/0.003/0.003 CSD=0.004/0.003/0.000/0.000/0.000/0.000/0.000/0.000/0.050/0.000/0.003/0.000/0.002 OSD=0.038/0.033/0.036/0.029/0.000/0.031/0.057/0.029/0.033/0.027/0.028/0.030/0.028 C90%Resp=0.020/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010 O90%Resp=0.020/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010");
+
+        JsonBuilder b = new JsonBuilder();
+        test.apply(input,b,null);
+
+        System.out.println(b.getRoot().toString(2));
+        System.out.println("Remainder=||"+input.toString()+"||");
+
+    }
+
 
     @Test
     public void pushTarget_named(){
-        Exp push = new Exp("push","(?<a>a)").set(Rule.PushTarget,"a");
+        ExpOld push = new ExpOld("push","(?<a>a)").set(Rule.PushTarget,"a");
 
         JsonBuilder b = new JsonBuilder();
-        push.apply(new CheatChars("a"),b,null);
+        push.apply(factory.apply("a"),b,null);
 
-        System.out.println(b.debug(true));
         assertEquals("target Name","a",b.getContextString(JsonBuilder.NAME_KEY,false));
     }
     @Test
     public void prePopTarget_named(){
-        Exp a = new Exp("a","(?<a>a)").set(Rule.PrePopTarget,"popMe");
+        ExpOld a = new ExpOld("a","(?<a>a)").set(Rule.PrePopTarget,"popMe");
 
         JsonBuilder b = new JsonBuilder();
         b.getTarget().set("Name",0);
@@ -34,17 +56,17 @@ public class ExpTest {
         b.getTarget().set("Name",1);
         b.pushTarget(new Json());
         b.getTarget().set("Name",2);
-        a.apply(new CheatChars("a"),b,null);
+        a.apply(factory.apply("a"),b,null);
 
         assertFalse("no named target",b.hasContext(JsonBuilder.NAME_KEY,true));
     }
 
     @Test
     public void rootTarget(){
-        Exp group = new Exp("group","(?<a>a)").group("one").group("two");
-        Exp root = new Exp("root","(?<b>b)").set(Rule.TargetRoot);
-        Exp close = new Exp("close","c").set(Merge.PreClose);
-        Parser p = new Parser();
+        ExpOld group = new ExpOld("group","(?<a>a)").group("one").group("two");
+        ExpOld root = new ExpOld("root","(?<b>b)").set(Rule.TargetRoot);
+        ExpOld close = new ExpOld("close","c").set(Merge.PreClose);
+        ParserOld p = new ParserOld();
         p.add(group);
         p.add(root);
         p.add(close);
@@ -54,10 +76,10 @@ public class ExpTest {
     }
     @Test
     public void rootTarget_group(){
-        Exp group = new Exp("group","(?<a>a)").group("one").group("two");
-        Exp root = new Exp("root","(?<b>b)").group("uno").group("dos").set(Rule.TargetRoot);
-        Exp close = new Exp("close","c").set(Merge.PreClose);
-        Parser p = new Parser();
+        ExpOld group = new ExpOld("group","(?<a>a)").group("one").group("two");
+        ExpOld root = new ExpOld("root","(?<b>b)").group("uno").group("dos").set(Rule.TargetRoot);
+        ExpOld close = new ExpOld("close","c").set(Merge.PreClose);
+        ParserOld p = new ParserOld();
         p.add(group);
         p.add(root);
         p.add(close);
@@ -65,14 +87,13 @@ public class ExpTest {
         Json json = p.onLine("abc");
         assertFalse("json.b",json.has("b"));
         assertTrue("json.uno",json.has("uno"));
-        System.out.println(json.toString(2));
 
     }
 
 
     @Test
     public void keySplit(){
-        Exp exp = new Exp("keySplit","(?<foo.bar>.*)");
+        ExpOld exp = new ExpOld("keySplit","(?<foo.bar>.*)");
 
         Json result = exp.apply("biz");
 
@@ -83,7 +104,7 @@ public class ExpTest {
 
     @Test
     public void valueFrom(){
-        assertEquals("Default value should be Key", Value.Key, Value.from("fooooooo"));
+        assertEquals("Default value should be Field", Value.Key, Value.from("fooooooo"));
     }
     @Test
     public void eatFrom(){
@@ -94,27 +115,27 @@ public class ExpTest {
     @Test
     public void parseKMG(){
 
-        assertEquals("wrong value for 1", Math.pow(1024.0,0), Exp.parseKMG("1"), 0.000);
-        assertEquals("wrong value for 8b (expected 1 byte)",Math.pow(1024.0,0), Exp.parseKMG("8b"),0.000);
-        assertEquals("wrong value for 1k",Math.pow(1024.0,1), Exp.parseKMG("1k"),0.000);
-        assertEquals("wrong value for 1m",Math.pow(1024.0,2), Exp.parseKMG("1m"),0.000);
-        assertEquals("wrong value for 1g",Math.pow(1024.0,3), Exp.parseKMG("1g"),0.000);
-        assertEquals("wrong value for 1t",Math.pow(1024.0,4), Exp.parseKMG("1t"),0.000);
+        assertEquals("wrong value for 1", Math.pow(1024.0,0), ExpOld.parseKMG("1"), 0.000);
+        assertEquals("wrong value for 8b (expected 1 byte)",Math.pow(1024.0,0), ExpOld.parseKMG("8b"),0.000);
+        assertEquals("wrong value for 1k",Math.pow(1024.0,1), ExpOld.parseKMG("1k"),0.000);
+        assertEquals("wrong value for 1m",Math.pow(1024.0,2), ExpOld.parseKMG("1m"),0.000);
+        assertEquals("wrong value for 1g",Math.pow(1024.0,3), ExpOld.parseKMG("1g"),0.000);
+        assertEquals("wrong value for 1t",Math.pow(1024.0,4), ExpOld.parseKMG("1t"),0.000);
 
     }
 
     @Test
     public void groupOrder(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").group("first").group("second");
-        p.apply(new CheatChars("foo=bar"),b,null);
+        ExpOld p = new ExpOld("kv","(?<key>\\w+)=(?<value>\\w+)").group("first").group("second");
+        p.apply(factory.apply("foo=bar"),b,null);
         assertTrue("Groupings should be FiFo starting at root", b.getRoot().has("first"));
         assertTrue("Groupings should be FiFo starting at root", b.getRoot().getJson("first").has("second"));
 
     }
     @Test
     public void valueInPattern(){
-        Exp p = new Exp("valueInpattern","(?<id:targetId>\\w+) (?<nest:nestLength>\\w+) (?<key:key>\\w+)(?<size:kmg>\\w+) ");
+        ExpOld p = new ExpOld("valueInpattern","(?<id:targetId>\\w+) (?<nest:nestLength>\\w+) (?<key:key>\\w+)(?<size:kmg>\\w+) ");
         assertEquals("id should use targetId value",Value.TargetId,p.get("id"));
         assertEquals("nest should use key value",Value.NestLength,p.get("nest"));
         assertEquals("key should use key value",Value.Key,p.get("key"));
@@ -125,9 +146,9 @@ public class ExpTest {
     @Test
     public void key(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)")
+        ExpOld p = new ExpOld("kv","(?<key>\\w+)=(?<value>\\w+)")
                 .key("key");
-        p.apply(new CheatChars("foo=bar"),b,null);
+        p.apply(factory.apply("foo=bar"),b,null);
         assertTrue("Should be grouped by value of key field (foo)", b.getRoot().has("foo"));
 
     }
@@ -137,9 +158,9 @@ public class ExpTest {
         Json status = new Json(false);
         b.getRoot().set("status",status);
 
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").extend("status");
-        p.apply(new CheatChars("foo=bar"),b,null);
-        p.apply(new CheatChars("fizz=fuzz"),b,null);
+        ExpOld p = new ExpOld("kv","(?<key>\\w+)=(?<value>\\w+)").extend("status");
+        p.apply(factory.apply("foo=bar"),b,null);
+        p.apply(factory.apply("fizz=fuzz"),b,null);
 
         assertTrue("Status should have value and keyas child objects but is "+b.getRoot(), status.has("value") && status.has("key"));
     }
@@ -151,9 +172,9 @@ public class ExpTest {
         Json status = new Json(false);
         b.getRoot().set("status",status);
 
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").extend("status").group("lock").set(Merge.Entry);
-        p.apply(new CheatChars("foo=bar"),b,null);
-        p.apply(new CheatChars("fizz=fuzz"),b,null);
+        ExpOld p = new ExpOld("kv","(?<key>\\w+)=(?<value>\\w+)").extend("status").group("lock").set(Merge.Entry);
+        p.apply(factory.apply("foo=bar"),b,null);
+        p.apply(factory.apply("fizz=fuzz"),b,null);
 
         assertTrue("Status should have <lock> as child object but is "+b.getRoot(), status.has("lock"));
     }
@@ -161,14 +182,14 @@ public class ExpTest {
     @Test
     public void nest_entry(){
 
-        Exp norm = new Exp("kv","\\s*(?<key>\\S+)\\s*:\\s*(?<value>.*)")
+        ExpOld norm = new ExpOld("kv","\\s*(?<key>\\S+)\\s*:\\s*(?<value>.*)")
             .set(Merge.Entry)
             .eat(Eat.Match);
-        Exp nest = new Exp("nest","(?<child:nestLength>[\\s-]*-\\s*)")
+        ExpOld nest = new ExpOld("nest","(?<child:nestLength>[\\s-]*-\\s*)")
             .eat(Eat.Match)
             .add(norm);
 
-        Parser p = new Parser();
+        ParserOld p = new ParserOld();
         p.add(nest);
         p.add(norm);
 
@@ -188,14 +209,14 @@ public class ExpTest {
     public void value_nestLength(){
 
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("tree","(?<nest>\\s*)(?<Name>\\w+)");
+        ExpOld p = new ExpOld("tree","(?<nest>\\s*)(?<Name>\\w+)");
         p.set("nest", Value.NestLength);
         //b.getRoot().add("Name","root");
 
-        p.apply(new CheatChars("a"),b,null);
-        p.apply(new CheatChars(" aa"),b,null);
-        p.apply(new CheatChars("  aaa"),b,null);
-        p.apply(new CheatChars("b"),b,null);
+        p.apply(factory.apply("a"),b,null);
+        p.apply(factory.apply(" aa"),b,null);
+        p.apply(factory.apply("  aaa"),b,null);
+        p.apply(factory.apply("b"),b,null);
 
         assertTrue("tree should use nest as the child key:\n"+b.getRoot().toString(2),b.getRoot().has("nest") && b.getRoot().getJson("nest").isArray());
         assertTrue("expect only one key on root json:\n"+b.getRoot().toString(2),b.getRoot().size()==1);
@@ -208,17 +229,17 @@ public class ExpTest {
     public void value_nestLength_multi(){
 
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("tree","(?<nest>\\s*)(?<Name>\\w+)");
+        ExpOld p = new ExpOld("tree","(?<nest>\\s*)(?<Name>\\w+)");
         p.set("nest", Value.NestLength);
         //b.getRoot().add("Name","root");
 
-        p.apply(new CheatChars("a"),b,null);
-        p.apply(new CheatChars("  aa"),b,null);
-        p.apply(new CheatChars("    aaa"),b,null);
-        p.apply(new CheatChars("    aab"),b,null);
-        p.apply(new CheatChars("      aaba"),b,null);
-        p.apply(new CheatChars("    aac"),b,null);
-        p.apply(new CheatChars("b"),b,null);
+        p.apply(factory.apply("a"),b,null);
+        p.apply(factory.apply("  aa"),b,null);
+        p.apply(factory.apply("    aaa"),b,null);
+        p.apply(factory.apply("    aab"),b,null);
+        p.apply(factory.apply("      aaba"),b,null);
+        p.apply(factory.apply("    aac"),b,null);
+        p.apply(factory.apply("b"),b,null);
 
         Json root = b.getRoot();
         assertTrue("root has nest:",root.has("nest") && root.get("nest") instanceof Json);
@@ -231,15 +252,15 @@ public class ExpTest {
     @Test
     public void valueTargetId(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("tid","(?<id>\\d+) (?<Name>\\S+)");
+        ExpOld p = new ExpOld("tid","(?<id>\\d+) (?<Name>\\S+)");
         p.set("id",Value.TargetId);
-        p.apply(new CheatChars("1 foo"),b,null);
-        p.apply(new CheatChars("1 bar"),b,null);
+        p.apply(factory.apply("1 foo"),b,null);
+        p.apply(factory.apply("1 bar"),b,null);
 
         assertTrue("root should have a Name entry but was: "+b.getRoot(),b.getRoot().has("Name"));
         assertTrue("root should have two Name values but was: "+b.getRoot(),b.getRoot().getJson("Name").size()==2);
-        p.apply(new CheatChars("2 biz"),b,null);
-        p.apply(new CheatChars("2 fiz"),b,null);
+        p.apply(factory.apply("2 biz"),b,null);
+        p.apply(factory.apply("2 fiz"),b,null);
         assertTrue("root should have a Name entry but was: "+b.getRoot(),b.getRoot().has("Name"));
         assertTrue("root should have two Name values but was: "+b.getRoot(),b.getRoot().getJson("Name").size()==2);
 
@@ -247,82 +268,82 @@ public class ExpTest {
     @Test
     public void autoNumber(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)");
-        p.apply(new CheatChars("age=23"),b,null);
+        ExpOld p = new ExpOld("kv","(?<key>\\w+)=(?<value>\\w+)");
+        p.apply(factory.apply("age=23"),b,null);
 
         assertEquals(23,b.getRoot().getLong("value"));
     }
     @Test
     public void valueKMG(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").set("value", Value.KMG);
-        p.apply(new CheatChars("age=1G"),b,null);
+        ExpOld p = new ExpOld("kv","(?<key>\\w+)=(?<value>\\w+)").set("value", Value.KMG);
+        p.apply(factory.apply("age=1G"),b,null);
         assertEquals(Math.pow(1024.0,3),b.getRoot().getLong("value"),0.000);
     }
 
     @Test
     public void valueCount(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").set("value", Value.Count);
-        p.apply(new CheatChars("age=old"),b,null);
+        ExpOld p = new ExpOld("kv","(?<key>\\w+)=(?<value>\\w+)").set("value", Value.Count);
+        p.apply(factory.apply("age=old"),b,null);
         assertEquals(1,b.getRoot().getLong("old"));
-        p.apply(new CheatChars("age=old"),b,null);
+        p.apply(factory.apply("age=old"),b,null);
         assertEquals(2,b.getRoot().getLong("old"));
     }
     @Test
     public void valueSum(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").set("value", Value.Sum);
-        p.apply(new CheatChars("age=23"),b,null);
+        ExpOld p = new ExpOld("kv","(?<key>\\w+)=(?<value>\\w+)").set("value", Value.Sum);
+        p.apply(factory.apply("age=23"),b,null);
         assertEquals(23,b.getRoot().getLong("value"));
-        p.apply(new CheatChars("age=23"),b,null);
+        p.apply(factory.apply("age=23"),b,null);
         assertEquals(46,b.getRoot().getLong("value"));
     }
     @Test
     public void valueKey(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").set("key", "value");
-        p.apply(new CheatChars("age=23"),b,null);
+        ExpOld p = new ExpOld("kv","(?<key>\\w+)=(?<value>\\w+)").set("key", "value");
+        p.apply(factory.apply("age=23"),b,null);
 
         assertTrue("Should turn value of <key> to the key for <value>", b.getRoot().has("age"));
         assertEquals("expected {\"age\":\"23\"}","23",b.getRoot().getString("age"));
     }
     @Test
-    public void valueBoolanKey(){
+    public void valueBooleanKey(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").set("key", Value.BooleanKey);
-        p.apply(new CheatChars("age=23"),b,null);
+        ExpOld p = new ExpOld("kv","(?<key>\\w+)=(?<value>\\w+)").set("key", Value.BooleanKey);
+        p.apply(factory.apply("age=23"),b,null);
         assertEquals("value should be a boolean",true,b.getRoot().getBoolean("key"));
     }
     @Test
-    public void valueBoolanValue(){
+    public void valueBooleanValue(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").set("key", Value.BooleanValue);
-        p.apply(new CheatChars("age=23"),b,null);
+        ExpOld p = new ExpOld("kv","(?<key>\\w+)=(?<value>\\w+)").set("key", Value.BooleanValue);
+        p.apply(factory.apply("age=23"),b,null);
         assertEquals("value should be a boolean",true,b.getRoot().getBoolean("age"));
     }
     @Test
     public void valuePosition(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").set("key", Value.Position);
-        p.apply(new CheatChars("012345 age=23"),b,null);
+        ExpOld p = new ExpOld("kv","(?<key>\\w+)=(?<value>\\w+)").set("key", Value.Position);
+        p.apply(factory.apply("012345 age=23"),b,null);
         assertEquals("should equal the offset from start of line", 7, b.getRoot().getLong("key"));
     }
     @Test
     public void valueString(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").set("value", Value.String);
-        p.apply(new CheatChars("age=23"),b,null);
-        p.apply(new CheatChars("age=23"),b,null);
+        ExpOld p = new ExpOld("kv","(?<key>\\w+)=(?<value>\\w+)").set("value", Value.String);
+        p.apply(factory.apply("age=23"),b,null);
+        p.apply(factory.apply("age=23"),b,null);
 
         assertEquals("<value> should use string concat rather than list append", "2323", b.getRoot().getString("value"));
     }
     @Test
     public void valueList(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").set("value", Value.List);
-        p.apply(new CheatChars("age=23"),b,null);
-        p.apply(new CheatChars("age=23"),b,null);
+        ExpOld p = new ExpOld("kv","(?<key>\\w+)=(?<value>\\w+)").set("value", Value.List);
+        p.apply(factory.apply("age=23"),b,null);
+        p.apply(factory.apply("age=23"),b,null);
 
         assertTrue("<key> should be treated as a list by default",b.getRoot().get("key") instanceof Json);
         assertTrue("<value> should be treated as a list",b.getRoot().get("value") instanceof Json);
@@ -330,17 +351,17 @@ public class ExpTest {
 
     @Test
     public void eatMatch(){
-        CheatChars line = new CheatChars("age=23, age=24, age=26");
+        DropString line = factory.apply("age=23, age=24, age=26");
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").eat(Eat.Match);
+        ExpOld p = new ExpOld("kv","(?<key>\\w+)=(?<value>\\w+)").eat(Eat.Match);
         p.apply(line, b, null);
         assertEquals("should remove the matched string", ", age=24, age=26", line.toString());
     }
     @Test
     public void eatToMatch(){
-        CheatChars line = new CheatChars("foo=1 bar=1 foo=2");
+        DropString line = factory.apply("foo=1 bar=1 foo=2");
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("bar","bar=(?<bar>\\S+)").eat(Eat.ToMatch);
+        ExpOld p = new ExpOld("bar","bar=(?<bar>\\S+)").eat(Eat.ToMatch);
         p.apply(line,b,null);
         assertEquals("should remove first foo"," foo=2",line.toString());
     }
@@ -348,17 +369,17 @@ public class ExpTest {
 
     @Test
     public void eatWidth(){
-        CheatChars line = new CheatChars("age=23, age=24, age=26");
+        DropString line = factory.apply("age=23, age=24, age=26");
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").eat(8);
+        ExpOld p = new ExpOld("kv","(?<key>\\w+)=(?<value>\\w+)").eat(8);
         p.apply(line,b,null);
         assertEquals("should remove the matched string","age=24, age=26",line.toString());
     }
     @Test
     public void eatLine(){
-        CheatChars line = new CheatChars("age=23, age=24, age=26");
+        DropString line = factory.apply("age=23, age=24, age=26");
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").eat(Eat.Line);
+        ExpOld p = new ExpOld("kv","(?<key>\\w+)=(?<value>\\w+)").eat(Eat.Line);
         p.apply(line,b,null);
         assertEquals("should remove the matched string","",line.toString());
     }
@@ -366,29 +387,28 @@ public class ExpTest {
     @Test
     public void lineStart(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv", "(?<key>\\w+)=(?<value>\\w+)")
-                .add( new Exp("-","(?<sk>\\w+)\\-(?<sv>\\w+)").set(Rule.LineStart) );
+        ExpOld p = new ExpOld("kv", "(?<key>\\w+)=(?<value>\\w+)")
+                .add( new ExpOld("-","(?<sk>\\w+)\\-(?<sv>\\w+)").set(Rule.LineStart) );
 
-        p.apply(new CheatChars("a-b key=value foo-bar"),b,null);
-
+        p.apply(factory.apply("a-b key=value foo-bar"),b,null);
         assertEquals("should match first <sk>-<sv> not the last","a",b.getRoot().getString("sk"));
     }
 
     @Test @Ignore
     public void nestmap(){
         JsonBuilder b = new JsonBuilder();
-        Exp open = new Exp("start","^\\s*\\{")
+        ExpOld open = new ExpOld("start","^\\s*\\{")
             .group("child").set(Rule.PushTarget).set(Merge.Entry).eat(Eat.Match);
-        Exp comma = new Exp("comma","^\\s*,\\s*").eat(Eat.Match);
-        Exp kvSeparator = new Exp("kvSeparator","^\\s*:\\s*").eat(Eat.Match);
-        Exp key = new Exp("key","^\\s*(?<key>[^:\\s,\\]]+)\\s*").eat(Eat.Match).set(Merge.Entry);;
-        Exp value = new Exp("value","^\\s*(?<value>[^,\\}\\{]*[^\\s,\\}\\{])").eat(Eat.Match);
-        Exp close = new Exp("close","^\\s*\\}")
+        ExpOld comma = new ExpOld("comma","^\\s*,\\s*").eat(Eat.Match);
+        ExpOld kvSeparator = new ExpOld("kvSeparator","^\\s*:\\s*").eat(Eat.Match);
+        ExpOld key = new ExpOld("key","^\\s*(?<key>[^:\\s,\\]]+)\\s*").eat(Eat.Match).set(Merge.Entry);;
+        ExpOld value = new ExpOld("value","^\\s*(?<value>[^,\\}\\{]*[^\\s,\\}\\{])").eat(Eat.Match);
+        ExpOld close = new ExpOld("close","^\\s*\\}")
                 .eat(Eat.Match)
                 .set(Rule.PostPopTarget)
                 .set(Rule.PostPopTarget)
                 ;
-        Parser p = new Parser();
+        ParserOld p = new ParserOld();
         p.add(open.clone().set(Rule.RepeatChildren)
                 .add(comma)
                 .add(open.clone().set(Rule.Repeat))
@@ -415,16 +435,16 @@ public class ExpTest {
 
         //works with a double pop
         JsonBuilder b = new JsonBuilder();
-        Exp open = new Exp("start","^\\s*\\[")
+        ExpOld open = new ExpOld("start","^\\s*\\[")
                 .group("child").set(Rule.PushTarget).set(Merge.Entry).eat(Eat.Match);
-        Exp comma = new Exp("comma","^\\s*,\\s*").eat(Eat.Match);
-        Exp entry = new Exp("entry","^\\s*(?<key>[^:\\s,\\]]+)\\s*").eat(Eat.Match).set(Merge.Entry);
-        Exp close = new Exp("close","^\\s*]")
+        ExpOld comma = new ExpOld("comma","^\\s*,\\s*").eat(Eat.Match);
+        ExpOld entry = new ExpOld("entry","^\\s*(?<key>[^:\\s,\\]]+)\\s*").eat(Eat.Match).set(Merge.Entry);
+        ExpOld close = new ExpOld("close","^\\s*]")
                 .eat(Eat.Match)
                 .set(Rule.PostPopTarget)
                 .set(Rule.PostPopTarget);
 
-        Parser p = new Parser();
+        ParserOld p = new ParserOld();
         p.add(open.clone().set(Rule.RepeatChildren)
                 .add(comma)
                 .add(open.clone())
@@ -442,17 +462,17 @@ public class ExpTest {
     @Test
     public void repeat(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("num","(?<num>\\d+)").set(Rule.Repeat);
-        p.apply(new CheatChars("1 2 3 4"),b,null);
+        ExpOld p = new ExpOld("num","(?<num>\\d+)").set(Rule.Repeat);
+        p.apply(factory.apply("1 2 3 4"),b,null);
         assertEquals("num should be an array with 4 elements",4,b.getRoot().getJson("num").size());
     }
     @Test
     public void pushTarget(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("num","(?<num>\\d+)").group("pushed").set(Rule.PushTarget).set(Merge.Entry);
-        p.apply(new CheatChars(" 1 "), b, null);
-        p.apply(new CheatChars(" 2 "), b, null);
-        p.apply(new CheatChars(" 3 "), b, null);
+        ExpOld p = new ExpOld("num","(?<num>\\d+)").group("pushed").set(Rule.PushTarget).set(Merge.Entry);
+        p.apply(factory.apply(" 1 "), b, null);
+        p.apply(factory.apply(" 2 "), b, null);
+        p.apply(factory.apply(" 3 "), b, null);
 
         assertTrue("context should not equal root",b.getRoot()!=b.getTarget());
     }
@@ -462,9 +482,8 @@ public class ExpTest {
         Json lost = new Json();
         lost.set("lost","lost");
         b.pushTarget(lost);
-        Exp p = new Exp("num","(?<num>\\d+)").group("pushed").set(Rule.PostPopTarget);
-        p.apply(new CheatChars(" 1 "),b,null);
-
+        ExpOld p = new ExpOld("num","(?<num>\\d+)").group("pushed").set(Rule.PostPopTarget);
+        p.apply(factory.apply(" 1 "),b,null);
         assertTrue("context should not equal starting context", lost != b.getTarget());
         assertTrue("fields should be applied to context before pop",lost.has("pushed"));
     }
@@ -474,9 +493,8 @@ public class ExpTest {
         Json lost = new Json();
         lost.set("lost","lost");
         b.pushTarget(lost);
-        Exp p = new Exp("num","(?<num>\\d+)").group("pushed").set(Rule.PrePopTarget);
-        p.apply(new CheatChars(" 1 "), b, null);
-
+        ExpOld p = new ExpOld("num","(?<num>\\d+)").group("pushed").set(Rule.PrePopTarget);
+        p.apply(factory.apply(" 1 "), b, null);
         assertTrue("context should not equal starting context",lost!=b.getTarget());
         assertTrue("fields should be applied to context before pop", b.getTarget().has("pushed"));
     }
@@ -489,8 +507,8 @@ public class ExpTest {
         second.set("ctx","second");
         b.pushTarget(first);
         b.pushTarget(second);
-        Exp p = new Exp("num","(?<num>\\d+)").group("pushed").set(Rule.PostClearTarget);
-        p.apply(new CheatChars(" 1 "),b,null);
+        ExpOld p = new ExpOld("num","(?<num>\\d+)").group("pushed").set(Rule.PostClearTarget);
+        p.apply(factory.apply(" 1 "),b,null);
         assertTrue("context should not equal starting context",b.getRoot()==b.getTarget());
         assertTrue("fields should be applied to context before pop", second.has("pushed"));
     }
@@ -498,10 +516,9 @@ public class ExpTest {
     @Test
     public void newStart(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("num","(?<num>\\d+)").set(Merge.PreClose);
-        p.apply(new CheatChars(" 1 "),b,null);
-        p.apply(new CheatChars(" 2 "), b, null);
-
+        ExpOld p = new ExpOld("num","(?<num>\\d+)").set(Merge.PreClose);
+        p.apply(factory.apply(" 1 "),b,null);
+        p.apply(factory.apply(" 2 "), b, null);
         assertEquals("matches should not be combined", 2, b.getRoot().getLong("num"));
         assertTrue("previous match should be moved to a closed root",b.wasClosed());
     }
@@ -510,39 +527,34 @@ public class ExpTest {
     @Test
     public void extend_entry(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("num","(?<num>\\d+)").extend("nums").set(Merge.Entry);
-        p.apply(new CheatChars(" 1 "),b,null);
-        p.apply(new CheatChars(" 2 "), b, null);
-
+        ExpOld p = new ExpOld("num","(?<num>\\d+)").extend("nums").set(Merge.Entry);
+        p.apply(factory.apply(" 1 "),b,null);
+        p.apply(factory.apply(" 2 "), b, null);
         assertEquals("nums should have 2 entries",2,b.getRoot().getJson("nums").size());
     }
     @Test
     public void group_entry(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("num","(?<num>\\d+)").group("nums").set(Merge.Entry);
-        p.apply(new CheatChars(" 1 "),b,null);
-        p.apply(new CheatChars(" 2 "), b, null);
-
+        ExpOld p = new ExpOld("num","(?<num>\\d+)").group("nums").set(Merge.Entry);
+        p.apply(factory.apply(" 1 "),b,null);
+        p.apply(factory.apply(" 2 "), b, null);
         assertEquals("nums should have 2 entries",2,b.getRoot().getJson("nums").size());
 
     }
     @Test
     public void group_extend(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv", "(?<key>\\w+)=(?<value>\\w+)").set("key","value").group("kv").set(Merge.Extend);
-        p.apply(new CheatChars(" age=23 "),b,null);
-        p.apply(new CheatChars(" size=small "),b,null);
+        ExpOld p = new ExpOld("kv", "(?<key>\\w+)=(?<value>\\w+)").set("key","value").group("kv").set(Merge.Extend);
+        p.apply(factory.apply(" age=23 "),b,null);
+        p.apply(factory.apply(" size=small "),b,null);
         assertEquals("<kv> should be and array of length 1",1,b.getRoot().getJson("kv").size());
-
-
-
     }
     @Test
     public void collection(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("kv", "(?<key>\\w+)=(?<value>\\w+)").set("key","value").group("kv").set(Merge.Collection);
-        p.apply(new CheatChars(" age=23 "),b,null);
-        p.apply(new CheatChars(" size=small "),b,null);
+        ExpOld p = new ExpOld("kv", "(?<key>\\w+)=(?<value>\\w+)").set("key","value").group("kv").set(Merge.Collection);
+        p.apply(factory.apply(" age=23 "),b,null);
+        p.apply(factory.apply(" size=small "),b,null);
 
         assertTrue("<kv> should have kv.size",b.getRoot().getJson("kv").has("size"));
         assertTrue("<kv> should have kv.age",b.getRoot().getJson("kv").has("age"));
@@ -552,19 +564,18 @@ public class ExpTest {
     @Test
     public void childOrder(){
         JsonBuilder b = new JsonBuilder();
-        Exp p = new Exp("start","\\[").eat(Eat.Match)
-                .add(new Exp("quoted","^\\s*,?\\s*\"(?<value>[^\"]+)\"")
+        ExpOld p = new ExpOld("start","\\[").eat(Eat.Match)
+                .add(new ExpOld("quoted","^\\s*,?\\s*\"(?<value>[^\"]+)\"")
                     .group("child").set(Merge.Entry).eat(Eat.Match)
                 )
-                .add(new Exp("normal","^\\s*,?\\s*(?<value>[^,\\]]*[^\\s,\\]])")
+                .add(new ExpOld("normal","^\\s*,?\\s*(?<value>[^,\\]]*[^\\s,\\]])")
                     .group("child").set(Merge.Entry).eat(Eat.Match)
                 )
                 .set(Rule.RepeatChildren);
 
-        p.apply(new CheatChars("[ aa, \"bb,bb]bb\" ,cc]"),b,null);
+        p.apply(factory.apply("[ aa, \"bb,bb]bb\" ,cc]"),b,null);
 
         Json json = b.getRoot();
-
         assertTrue("match should contain a child entry",json.has("child"));
         assertEquals("child should contain 3 entires",3,json.getJson("child").size());
 

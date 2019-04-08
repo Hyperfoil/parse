@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import perf.parse.Eat;
+import perf.parse.MatchRule;
 import perf.parse.Rule;
 import perf.parse.internal.CheatChars;
 import perf.parse.internal.JsonBuilder;
@@ -35,13 +36,13 @@ public class XanFactoryTest {
     @Test
     public void header(){
         Json root = f.header()
-                .set(Rule.Repeat)
+                .setRule(MatchRule.Repeat)
                 .eat(Eat.Line)
                 .apply("Name     Value");
         assertEquals("expect 2 headers:\n"+root.toString(2),2,root.getJson("header").size());
 
         root = f.header()
-                .set(Rule.Repeat)
+                .setRule(MatchRule.Repeat)
                 .eat(Eat.Line)
                 .apply("Time (s)  CreateVehicleEJB  CreateVehicleWS");
         assertEquals("expect 3 headers",3,root.getJson("header").size());
