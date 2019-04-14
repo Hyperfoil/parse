@@ -1,14 +1,17 @@
 package perf.parse.factory;
 
 import perf.parse.Exp;
+import perf.parse.ExpMerge;
+import perf.parse.MatchRule;
+import perf.parse.Parser;
 
-public class SubsrateGcFactory {
+public class SubstrateGcFactory implements ParseFactory{
 
 //PrintGC
 
 //[Incremental GC (CollectOnAllocation.Sometimes) 261108K->1019K, 0.0055645 secs]
    public Exp incrementalGc(){
-      return new Exp("incremental","\\[Incremental GC \\((?<cause>[^\\)]+\\) (?<before:kmg>\\d+[kKmMgG])->(?<after:kmg>\\d+[kKmMgG]), (?<seconds>//d+\\.\\d{7}) secs");
+      return new Exp("incremental","\\[Incremental GC \\((?<cause>[^\\)]+)\\) (?<before:kmg>\\d+[kKmMgG])->(?<after:kmg>\\d+[kKmMgG]), (?<seconds>\\d+\\.\\d{7}) secs\\]");
 
    }
 
@@ -17,16 +20,44 @@ public class SubsrateGcFactory {
       return new Exp("policyParametersHeader", "\\[Heap policy parameters:");
    }
    public Exp policyParameter(){
-      return new Exp("policyParameeter","\\s+(?<policy>[^:]+): (?<value>\\d+)");
+      return new Exp("policyParameter","\\s+(?<policy>[^:]+): (?<value>\\d+)");
    }
    public Exp collectionTime(){
-      return new Exp("collectionTime","  collection time: (?<nanoSeconds>\\d+)\\]\\]");
+      return new Exp("collectionTime","  collection time: (?<nanoSeconds>\\d+) nanoSeconds\\]\\]");
    }
    public Exp gcPhase(){
-      return new Exp("timestamp","\\[(?<timestamp>\\d{14}) GC: (?<phase>\\S+)\\s{2,}+epoch: (?<epoch>\\d+)\\s+{2,}")
-         .add(new Exp("cause","cause: (?<cause>.*?)\\s+{2,}"))
-         .add(new Exp("policy","policy: (?<policy>.*?)\\s+{2,}"))
-         .add(new Exp("type","type: (?<type>.*?)\\s+{2,}"));
+      return new Exp("timestamp","\\[(?<timestamp>\\d{15,}) GC: (?<phase>\\S+)\\s{2,}+epoch: (?<epoch:targetId>\\d+)\\s+{2,}")
+         .add(new Exp("cause","cause: (?<cause>.*?)(?:\\s{2,}|\\])"))
+         .add(new Exp("policy","policy: (?<policy>.*?)(?:\\s{2,}|\\])"))
+         .add(new Exp("type","type: (?<type>.*?)(?:\\s{2,}|\\]|$)"));
+   }
+
+   @Override
+   public void addToParser(Parser p) {
+      p.add(policyParametersHeader().enables("policyParameter"));
+      p.add(policyParameter()
+         .requires("policyParameter")
+         .group("parameters")
+         .setMerge(ExpMerge.AsEntry)
+         .add(new Exp("closeBracket","]").disables("policyParameter"))
+      );
+      p.add(gcPhase()
+         .group("phase")
+         .setMerge(ExpMerge.AsEntry)
+      );
+      p.add(incrementalGc()
+         .setRule(MatchRule.PreClose,"cause")
+      );
+      p.add(collectionTime()
+         .setRule(MatchRule.PostClose)
+      );
+   }
+
+   @Override
+   public Parser newParser() {
+      Parser parser = new Parser();
+      addToParser(parser);
+      return parser;
    }
 
 //VerboseGC

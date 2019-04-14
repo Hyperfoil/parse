@@ -7,13 +7,39 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public enum MatchRule {
+   /**
+    * Repeat the Exp and it's children until it no longer matches the input
+    */
    Repeat,
+   /**
+    * Repeat all of the children until no children match the input
+    */
    RepeatChildren,
+   /**
+    * Change the target json object to the current json object created from merging the Exp
+    */
    PushTarget,
+   /**
+    * Close the current json objects and start a new json object before merging the Exp values.
+    * A rule object changes the rule to first check if the current json object has the rule object as a key before closing
+    */
    PreClose,
+   /**
+    * Close the current json objects and start a new json object after merging the Exp values
+    * A rule object changes the rule to first check if the current json object has the rule object as a key before closing
+    */
    PostClose,
+   /**
+    * Revert to the previous json target (or revert up to the named target) before merging the Exp values
+    */
    PrePopTarget,
+   /**
+    * Revert to the previous json target (or revert up to the named target) after merging the Exp values
+    */
    PostPopTarget,
+   /**
+    *
+    */
    PreClearTarget,
    PostClearTarget,
    TargetRoot;
@@ -24,8 +50,16 @@ public enum MatchRule {
       List<Object> filteredData = filterRules(data);
       switch (this){
          case PreClose:
-            builder.close();
-            changedTarget=true;
+            if(filteredData.isEmpty()){
+               builder.close();
+               changedTarget=true;
+            }else{
+               boolean shouldClose = filteredData.stream().filter(obj->builder.getTarget().has(obj)).findAny().isPresent();
+               if(shouldClose){
+                  builder.close();
+                  changedTarget=true;
+               }
+            }
             break;
          case PrePopTarget:
             if(filteredData.isEmpty()){
@@ -70,8 +104,18 @@ public enum MatchRule {
       List<Object> filteredData = filterRules(data);
       switch (this){
          case PostClose:
-            builder.close();
-            changedTarget = true;
+            if(filteredData.isEmpty()){
+               builder.close();
+               changedTarget=true;
+
+            }else{
+               boolean shouldClose = filteredData.stream().filter(obj->builder.getTarget().has(obj)).findAny().isPresent();
+               if(shouldClose){
+                  builder.close();
+                  changedTarget=true;
+               }
+
+            }
             break;
          case PostPopTarget:
             if(filteredData.isEmpty()){

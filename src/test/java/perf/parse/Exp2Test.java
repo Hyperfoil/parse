@@ -339,10 +339,10 @@ public class Exp2Test {
 //      p.apply(factory.apply("012345 age=23"),b,null);
 //      assertEquals("should equal the offset from start of line", 7, b.getRoot().getLong("key"));
    }
-   @Test @Ignore
-   public void valueString(){//TODO ExpOld would concat, do we really want that?
+   @Test
+   public void valueString(){//now have to explicitly set ValueMerge=ADD
       JsonBuilder b = new JsonBuilder();
-      Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").setType("value", ValueType.String);
+      Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").setType("value", ValueType.String).setMerge("value",ValueMerge.Add);
       p.apply(factory.apply("age=23"),b,null);
       p.apply(factory.apply("age=23"),b,null);
 

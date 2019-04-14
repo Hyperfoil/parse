@@ -1,12 +1,22 @@
 package perf.parse;
 
-import perf.parse.internal.*;
+import perf.parse.internal.CheatChars;
+import perf.parse.internal.DropString;
+import perf.parse.internal.IMatcher;
+import perf.parse.internal.JsonBuilder;
+import perf.parse.internal.RegexMatcher;
 import perf.yaup.HashedLists;
 import perf.yaup.StringUtil;
 import perf.yaup.json.Json;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 
@@ -382,7 +392,6 @@ public class Exp {
       return apply(line,builder,parser,line.reference(0));
    }
    protected boolean apply(DropString line, JsonBuilder builder, Parser parser, DropString.Ref startIndex){
-
       boolean rtrn = false;
       try {
          //cannot return for line.length==0 becausGe pattern may expect empty line
@@ -519,6 +528,9 @@ public class Exp {
             });
          }
       }catch(Exception e){
+         System.out.println(getName()+" caught exception on line "+line.getLine());
+         e.printStackTrace(System.out);
+         System.exit(1);
          throw new RuntimeException((e));
       }
 

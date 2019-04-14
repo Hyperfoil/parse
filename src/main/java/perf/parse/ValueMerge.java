@@ -47,17 +47,28 @@ public enum ValueMerge {
      */
     TargetId(true,(key,value,builder,data)->{
        AtomicBoolean rtrn = new AtomicBoolean(false);
+       Object existing = builder.getContext("TargetId:"+key,true,null);
+       if(existing==null){
+           //TODO does setting targetId on parent context make sense for uses other than substratevm?
+           builder.setContext("TargetId:"+key,value,1);
+           //builder.setContext("TargetId:"+key,value);
+       } else if (value.equals(existing)) {
+       }else{
+           builder.close();
+       }
        Json.chainAct(builder.getTarget(),key,value,(target,k,v)->{
-          if(!target.has(k)){
-             target.set(k,v);
-          }else if (v.equals(target.get(k))){//same event
+           if(!target.has(k)){
+               target.set(k,v);
+           }else if (v.equals(target.get(k))){//same event
 
-          }else{
-             builder.close();
-             Json.chainSet(builder.getTarget(),key,value);
-             rtrn.set(true);
-          }
+           }else{
+               builder.close();
+               Json.chainSet(builder.getTarget(),key,value);
+               rtrn.set(true);
+           }
        });
+
+
        return rtrn.get();
 //        boolean changedTarget = false;
 //        if(!builder.getTarget().has(key)){
@@ -91,8 +102,8 @@ public enum ValueMerge {
         Json.chainAct(builder.getTarget(),key,value,(target,k,v)->{
             if(v instanceof Number){
                 target.set(k, ((Number)v).doubleValue() + target.getDouble(k, 0.0));
-            } else if (v.toString().matches("\\d+\\.?\\d*")) {
-                target.set(k, Double.parseDouble(v.toString()) + target.getDouble(k, 0.0));
+//            } else if (v.toString().matches("\\d+\\.?\\d*")) {//removed because already converted by ValueType
+//                target.set(k, Double.parseDouble(v.toString()) + target.getDouble(k, 0.0));
             }else{
                 target.set(k,v.toString()+target.getString(k,""));
             }
