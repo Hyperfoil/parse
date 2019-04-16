@@ -2,7 +2,7 @@ package perf.parse.factory;
 
 import perf.parse.Exp;
 import perf.parse.ExpMerge;
-import perf.parse.MatchRule;
+import perf.parse.ExpRule;
 import perf.parse.Parser;
 
 public class SubstrateGcFactory implements ParseFactory{
@@ -46,10 +46,10 @@ public class SubstrateGcFactory implements ParseFactory{
          .setMerge(ExpMerge.AsEntry)
       );
       p.add(incrementalGc()
-         .setRule(MatchRule.PreClose,"cause")
+         .setRule(ExpRule.PreClose,"cause")
       );
       p.add(collectionTime()
-         .setRule(MatchRule.PostClose)
+         .setRule(ExpRule.PostClose)
       );
    }
 

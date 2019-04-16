@@ -6,7 +6,7 @@ import perf.yaup.json.Json;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public enum MatchRule {
+public enum ExpRule {
    /**
     * Repeat the Exp and it's children until it no longer matches the input
     */
@@ -145,6 +145,6 @@ public enum MatchRule {
    }
 
    public List<Object> filterRules(List<Object> data){
-      return data.stream().filter(v->!(v instanceof MatchRule) && v != null).collect(Collectors.toList());
+      return data.stream().filter(v->!(v instanceof ExpRule) && v != null).collect(Collectors.toList());
    }
 }

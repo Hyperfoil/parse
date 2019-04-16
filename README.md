@@ -39,7 +39,7 @@ After the Exp pattern is found in the line the Exp will "eat" (remove) part of t
 
 The next step is to update the result json with the captured name-value pairs. The default is to collect each name-value pair. This means the first match with set `{name : value}` and a second match will change it to `{name : [value,value2]}`. See `perf.parse.Merge`
 
-There are several other configuration options for shaping the result json. The API is not static and can certainly be improved. If you are trying to create a certain json shape then take a look at `perf.parse.MatchRule` which list all the existing actions that can occur after the match and before the result json is updated.
+There are several other configuration options for shaping the result json. The API is not static and can certainly be improved. If you are trying to create a certain json shape then take a look at `perf.parse.ExpRule` which list all the existing actions that can occur after the match and before the result json is updated.
 
 ## Values
 One of the first json shaping issues is wanting to change the value type for the name-value pair. The default is to treat the value as a Number if `\\d+` or `\\d+\\.\\d+` match the value, otherwise it is a `String`. Check `perf.parse.ValueType` for the currently supported value types. There are 2 ways to set the Value type for a named capture:

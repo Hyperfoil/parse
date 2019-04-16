@@ -2,7 +2,6 @@ package perf.parse;
 
 import perf.parse.internal.CheatChars;
 import perf.parse.internal.JsonBuilder;
-import perf.yaup.file.FileUtility;
 import perf.yaup.json.Json;
 
 import java.util.*;
@@ -106,7 +105,7 @@ public class Parser {
 
     public boolean test(CharSequence line){
         for(Exp pattern : patterns){
-            if(pattern.hasRule(MatchRule.PreClose)){
+            if(pattern.hasRule(ExpRule.PreClose)){
                 if(pattern.test(line)){
                     return true;
                 }

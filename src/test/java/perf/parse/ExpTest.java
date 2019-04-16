@@ -20,7 +20,7 @@ public class ExpTest {
       DropString input = factory.apply("a=apple b=ball c=cat");
       Exp exp = new Exp("foo","(?<key>\\w+)=(?<value>\\w+)")
          .eat(Eat.Match)
-         .setRule(MatchRule.Repeat);
+         .setRule(ExpRule.Repeat);
 
       JsonBuilder builder = new JsonBuilder();
       exp.apply(input,builder,null);
@@ -65,9 +65,9 @@ public class ExpTest {
    @Test
    public void testInsuranceDriverStat(){
       Exp test = new Exp("InsuranceDriver","(?<seconds>\\d+\\.\\d{2})s - InsuranceDriver: ")
-         .add(new Exp("stat"," (?<key>[^\\s=]+)=").setRule(MatchRule.Repeat).group("stat").setMerge(ExpMerge.AsEntry)
-            .add(new Exp("value","^/?(?<value>-|\\d+\\.\\d{3})").setRule(MatchRule.Repeat)))
-         .add(new Exp("group","(?<group>[^/]+)[/|$]").setRule(MatchRule.Repeat))
+         .add(new Exp("stat"," (?<key>[^\\s=]+)=").setRule(ExpRule.Repeat).group("stat").setMerge(ExpMerge.AsEntry)
+            .add(new Exp("value","^/?(?<value>-|\\d+\\.\\d{3})").setRule(ExpRule.Repeat)))
+         .add(new Exp("group","(?<group>[^/]+)[/|$]").setRule(ExpRule.Repeat))
          ;
 
       DropString input = factory.apply("1800.02s - InsuranceDriver: REST - Accept Quote/REST - Add Vehicle/REST - Delete Vehicle/REST - Login/REST - Logout/REST - Register/REST - Register Invalid/REST - Unregister/REST - Update User/REST - View Insurance/REST - View Quote/REST - View User/REST - View Vehicle CThru=114.592/130.791/50.430/427.272/424.505/41.431/11.166/27.232/52.030/51.597/132.058/78.661/170.655 OThru=114.527/132.157/51.557/427.414/427.291/42.737/10.774/26.162/52.975/49.549/132.237/79.503/164.191 CErr=0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000 CResp=0.009/0.003/0.004/0.001/0.000/0.002/0.003/0.003/0.004/0.001/0.002/0.002/0.001 OResp=0.011/0.005/0.006/0.002/0.000/0.003/0.006/0.004/0.005/0.003/0.004/0.003/0.003 CSD=0.004/0.003/0.000/0.000/0.000/0.000/0.000/0.000/0.050/0.000/0.003/0.000/0.002 OSD=0.038/0.033/0.036/0.029/0.000/0.031/0.057/0.029/0.033/0.027/0.028/0.030/0.028 C90%Resp=0.020/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010 O90%Resp=0.020/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010");
@@ -79,7 +79,7 @@ public class ExpTest {
    }
    @Test
    public void pushTarget_named(){
-      Exp push = new Exp("push","(?<a>a)").setRule(MatchRule.PushTarget,"a");
+      Exp push = new Exp("push","(?<a>a)").setRule(ExpRule.PushTarget,"a");
 
       JsonBuilder b = new JsonBuilder();
       push.apply(factory.apply("a"),b,null);
@@ -88,7 +88,7 @@ public class ExpTest {
    }
    @Test
    public void prePopTarget_named(){
-      Exp a = new Exp("a","(?<a>a)").setRule(MatchRule.PrePopTarget,"popMe");
+      Exp a = new Exp("a","(?<a>a)").setRule(ExpRule.PrePopTarget,"popMe");
 
       JsonBuilder b = new JsonBuilder();
       b.getTarget().set("Name",0);
@@ -103,8 +103,8 @@ public class ExpTest {
    @Test
    public void rootTarget(){
       Exp group = new Exp("group","(?<a>a)").group("one").group("two");
-      Exp root = new Exp("root","(?<b>b)").setRule(MatchRule.TargetRoot);
-      Exp close = new Exp("close","c").setRule(MatchRule.PreClose);
+      Exp root = new Exp("root","(?<b>b)").setRule(ExpRule.TargetRoot);
+      Exp close = new Exp("close","c").setRule(ExpRule.PreClose);
       Parser p = new Parser();
       p.add(group);
       p.add(root);
@@ -116,8 +116,8 @@ public class ExpTest {
    @Test
    public void rootTarget_group(){
       Exp group = new Exp("group","(?<a>a)").group("one").group("two");
-      Exp root = new Exp("root","(?<b>b)").group("uno").group("dos").setRule(MatchRule.TargetRoot);
-      Exp close = new Exp("close","c").setRule(MatchRule.PreClose);
+      Exp root = new Exp("root","(?<b>b)").group("uno").group("dos").setRule(ExpRule.TargetRoot);
+      Exp close = new Exp("close","c").setRule(ExpRule.PreClose);
       Parser p = new Parser();
       p.add(group);
       p.add(root);
@@ -403,7 +403,7 @@ public class ExpTest {
    @Test
    public void repeat_orig(){
       JsonBuilder b = new JsonBuilder();
-      Exp p = new Exp("num","(?<num>\\d+)").setRule(MatchRule.Repeat);
+      Exp p = new Exp("num","(?<num>\\d+)").setRule(ExpRule.Repeat);
       p.apply(factory.apply("1 2 3 4"),b,null);
       assertEquals("num should be an array with 4 elements",4,b.getRoot().getJson("num").size());
    }
@@ -411,7 +411,7 @@ public class ExpTest {
    @Test
    public void pushTarget(){
       JsonBuilder b = new JsonBuilder();
-      Exp p = new Exp("num","(?<num>\\d+)").group("pushed").setRule(MatchRule.PushTarget).setMerge(ExpMerge.AsEntry);
+      Exp p = new Exp("num","(?<num>\\d+)").group("pushed").setRule(ExpRule.PushTarget).setMerge(ExpMerge.AsEntry);
       p.apply(factory.apply(" 1 "), b, null);
       p.apply(factory.apply(" 2 "), b, null);
       p.apply(factory.apply(" 3 "), b, null);
@@ -425,7 +425,7 @@ public class ExpTest {
       Json lost = new Json();
       lost.set("lost","lost");
       b.pushTarget(lost);
-      Exp p = new Exp("num","(?<num>\\d+)").group("pushed").setRule(MatchRule.PostPopTarget);
+      Exp p = new Exp("num","(?<num>\\d+)").group("pushed").setRule(ExpRule.PostPopTarget);
       p.apply(factory.apply(" 1 "),b,null);
       assertTrue("context should not equal starting context", lost != b.getTarget());
       assertTrue("fields should be applied to context before pop",lost.has("pushed"));
@@ -436,7 +436,7 @@ public class ExpTest {
       Json lost = new Json();
       lost.set("lost","lost");
       b.pushTarget(lost);
-      Exp p = new Exp("num","(?<num>\\d+)").group("pushed").setRule(MatchRule.PrePopTarget);
+      Exp p = new Exp("num","(?<num>\\d+)").group("pushed").setRule(ExpRule.PrePopTarget);
       p.apply(factory.apply(" 1 "), b, null);
       assertTrue("context should not equal starting context",lost!=b.getTarget());
       assertTrue("fields should be applied to context before pop", b.getTarget().has("pushed"));
@@ -450,7 +450,7 @@ public class ExpTest {
       second.set("ctx","second");
       b.pushTarget(first);
       b.pushTarget(second);
-      Exp p = new Exp("num","(?<num>\\d+)").group("pushed").setRule(MatchRule.PostClearTarget);
+      Exp p = new Exp("num","(?<num>\\d+)").group("pushed").setRule(ExpRule.PostClearTarget);
       p.apply(factory.apply(" 1 "),b,null);
       assertTrue("context should not equal starting context",b.getRoot()==b.getTarget());
       assertTrue("fields should be applied to context before pop", second.has("pushed"));
@@ -458,7 +458,7 @@ public class ExpTest {
    @Test
    public void newStart(){
       JsonBuilder b = new JsonBuilder();
-      Exp p = new Exp("num","(?<num>\\d+)").setRule(MatchRule.PreClose);
+      Exp p = new Exp("num","(?<num>\\d+)").setRule(ExpRule.PreClose);
       p.apply(factory.apply(" 1 "),b,null);
       p.apply(factory.apply(" 2 "), b, null);
       assertEquals("matches should not be combined", 2, b.getRoot().getLong("num"));
@@ -515,7 +515,7 @@ public class ExpTest {
          .add(new Exp("normal","^\\s*,?\\s*(?<value>[^,\\]]*[^\\s,\\]])")
             .group("child").setMerge(ExpMerge.AsEntry).eat(Eat.Match)
          )
-         .setRule(MatchRule.RepeatChildren);
+         .setRule(ExpRule.RepeatChildren);
 
       p.apply(factory.apply("[ aa, \"bb,bb]bb\" ,cc]"),b,null);
 

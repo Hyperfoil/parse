@@ -3,7 +3,7 @@ package perf.parse.factory;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import perf.parse.MatchRule;
+import perf.parse.ExpRule;
 import perf.parse.Parser;
 import perf.parse.reader.TextLineReader;
 import perf.yaup.Sets;
@@ -685,7 +685,7 @@ public class PrintGcFactoryTest {
 
     @Test @Ignore
     public void gcG1DetailsNestHeapResize(){
-        Json root = f.gcG1DetailsNestHeapResize().setRule(MatchRule.Repeat).apply("Eden: 1024.0K(16.0M)->0.0B(183.0M) Survivors: 1024.0K->1024.0K Heap: 3666.8M(3682.0M)->936.5M(3682.0M)]");
+        Json root = f.gcG1DetailsNestHeapResize().setRule(ExpRule.Repeat).apply("Eden: 1024.0K(16.0M)->0.0B(183.0M) Survivors: 1024.0K->1024.0K Heap: 3666.8M(3682.0M)->936.5M(3682.0M)]");
     }
 
     @Test

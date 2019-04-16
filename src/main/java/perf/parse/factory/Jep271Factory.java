@@ -14,7 +14,7 @@ public class Jep271Factory implements ParseFactory{
     public void addToParser(Parser p,boolean strict){
         //thankfully level is always the 2nd to last decorator
         p.add(gcId()
-                .setRule(MatchRule.TargetRoot)//so that gcId is always on the root
+                .setRule(ExpRule.TargetRoot)//so that gcId is always on the root
                 //Expanding does not occur under GC(#) but that might be a bug. In 11.0.1 it is now under gcId
                 .add(gcExpanding().group("resize").setMerge(ExpMerge.AsEntry))
                 .add(gcShrinking().group("resize").setMerge(ExpMerge.AsEntry))
@@ -39,7 +39,7 @@ public class Jep271Factory implements ParseFactory{
 
                 //gc+age
                 .add(gcAge())
-                .add(gcAgeTableHeader().setRule(MatchRule.PushTarget))//G1
+                .add(gcAgeTableHeader().setRule(ExpRule.PushTarget))//G1
                 .add(gcAgeTableEntry()
                     .group("table")
                     .key("age")
@@ -50,51 +50,51 @@ public class Jep271Factory implements ParseFactory{
                 .add(gcHeapHeader()
                     .group("heap")
                     .setMerge(ExpMerge.AsEntry)
-                    .setRule(MatchRule.PreClearTarget)
+                    .setRule(ExpRule.PreClearTarget)
 
                         .add(gcHeapRegion()
                             .group("region")
                               .setMerge(ExpMerge.AsEntry)
 
-                            .setRule(MatchRule.PreClearTarget)//gcId targets root
-                            //.set(Rule.PushTarget,"region")
+                            .setRule(ExpRule.PreClearTarget)//gcId targets root
+                            //.set(ExpRule.PushTarget,"region")
                         )//oracle-10 puts it on the same line as "Heap (before|after)..."
-                        .add(gcHeapRegionG1().requires("gc-g1").setRule(MatchRule.PushTarget))
+                        .add(gcHeapRegionG1().requires("gc-g1").setRule(ExpRule.PushTarget))
                 )
                 .add(gcHeapRegion()
                     .group("region")
                     .setMerge(ExpMerge.AsEntry)
-                    .setRule(MatchRule.PreClearTarget)//gcId targets root
+                    .setRule(ExpRule.PreClearTarget)//gcId targets root
                 )
                 .add(gcHeapSpace()
                     .extend("region")
                     .group("space")
                     .setMerge(ExpMerge.AsEntry)
-                    .setRule(MatchRule.PrePopTarget)//gcId targets root
+                    .setRule(ExpRule.PrePopTarget)//gcId targets root
                 )
                 .add(gcHeapSpaceG1().requires("gc-g1"))
                 .add(gcHeapMetaRegion()
                     .group("region")
                     .setMerge(ExpMerge.AsEntry)
-                    .setRule(MatchRule.PreClearTarget)//gcId target and previous region
+                    .setRule(ExpRule.PreClearTarget)//gcId target and previous region
                 )
                 .add(gcHeapMetaSpace()
                     .extend("region")
                     .group("space")
                     .setMerge(ExpMerge.AsEntry)
-                    .setRule(MatchRule.PrePopTarget)//gcId targets root
+                    .setRule(ExpRule.PrePopTarget)//gcId targets root
                 )
                 .add(gcHeapRegionResize()
                     .group("resize")
                     .setMerge(ExpMerge.AsEntry)
-                    .setRule(MatchRule.PreClearTarget)
+                    .setRule(ExpRule.PreClearTarget)
                 )
                 .add(gcHeapRegionResizeG1()
                     .requires("gc-g1")
                     .group("resize")
                     .setMerge(ExpMerge.AsEntry)
-                    .setRule(MatchRule.PreClearTarget)
-                    .setRule(MatchRule.PushTarget)
+                    .setRule(ExpRule.PreClearTarget)
+                    .setRule(ExpRule.PushTarget)
                 )
                 .add(gcHeapRegionResizeG1UsedWaste().requires("gc-g1"))
 
@@ -108,7 +108,7 @@ public class Jep271Factory implements ParseFactory{
         );
 
         //before level so it can PreClose the previous trigger
-        p.add(shenandoahTrigger().group("trigger").requires("gc-shenandoah").setRule(MatchRule.PreClose));
+        p.add(shenandoahTrigger().group("trigger").requires("gc-shenandoah").setRule(ExpRule.PreClose));
 
         p.add(gcLevel().enables("jep271-decorator")
                 .add(time().setRange(MatchRange.BeforeParent))
@@ -130,11 +130,11 @@ public class Jep271Factory implements ParseFactory{
         //p.add(gcKeyValue());
         p.add(g1MarkStack().requires("gc-g1"));
 
-        p.add(usingSerial().setRule(MatchRule.PostClose));
-        p.add(usingParallel().setRule(MatchRule.PostClose));
-        p.add(usingCms().setRule(MatchRule.PostClose));
-        p.add(usingG1().setRule(MatchRule.PostClose));
-        p.add(usingShenandoah().setRule(MatchRule.PostClose));
+        p.add(usingSerial().setRule(ExpRule.PostClose));
+        p.add(usingParallel().setRule(ExpRule.PostClose));
+        p.add(usingCms().setRule(ExpRule.PostClose));
+        p.add(usingG1().setRule(ExpRule.PostClose));
+        p.add(usingShenandoah().setRule(ExpRule.PostClose));
 
         p.add(gcExpanding());//included here to match output from openjdk10+46
 
@@ -194,10 +194,10 @@ public class Jep271Factory implements ParseFactory{
 
     public Exp gcTags(){
         return new Exp("tags","\\[(?<tags:set>[^\\s,\\]]+)")
-                .setRule(MatchRule.TargetRoot)
+                .setRule(ExpRule.TargetRoot)
                 .add(new Exp("otherTags","^,(?<tags:set>[^\\s,\\]]+)")
-                    .setRule(MatchRule.Repeat)
-                    .setRule(MatchRule.TargetRoot)
+                    .setRule(ExpRule.Repeat)
+                    .setRule(ExpRule.TargetRoot)
                 )
                 .add(new Exp("tagsEnd","\\s*\\]")
                 )
@@ -209,7 +209,7 @@ public class Jep271Factory implements ParseFactory{
     }
     public Exp gcLevel(){//"[info ]"
         return new Exp("level","\\[(?<level:last>error|warning|info|debug|trace|develop)\\s*\\]")
-                .setRule(MatchRule.TargetRoot)
+                .setRule(ExpRule.TargetRoot)
                 .eat(Eat.ToMatch);
     }
 
@@ -419,37 +419,37 @@ public class Jep271Factory implements ParseFactory{
     //
     public Exp time(){ //[2018-04-12T09:24:30.397-0500]
         return new Exp("time","\\[(?<time:first>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}-\\d{4})\\]")
-                .setRule(MatchRule.TargetRoot)
+                .setRule(ExpRule.TargetRoot)
                 ;
     }
     public Exp utcTime(){ //[2018-04-12T14:24:30.397+0000]
         return new Exp("utcTime","\\[(?<utcTime:first>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\+\\d{4})\\]")
-                .setRule(MatchRule.TargetRoot)
+                .setRule(ExpRule.TargetRoot)
                 ;
     }
     public Exp uptime(){ //[0.179s]
         return new Exp("uptime","\\[(?<uptime:first>\\d+\\.\\d{3})s\\]")
-                .setRule(MatchRule.TargetRoot)
+                .setRule(ExpRule.TargetRoot)
                 ;
     }
     public Exp timeMillis(){ //[1523543070397ms]
         return new Exp("timeMillis","\\[(?<timeMillis:first>\\d{13})ms\\]")
-                .setRule(MatchRule.TargetRoot)
+                .setRule(ExpRule.TargetRoot)
                 ;
     }
     public Exp uptimeMillis(){ //[15ms]
         return new Exp("uptimeMillis","\\[(?<uptimeMillis:first>\\d{1,12})ms\\]")
-                .setRule(MatchRule.TargetRoot)
+                .setRule(ExpRule.TargetRoot)
                 ;
     }
     public Exp timeNanos(){ //[6267442276019ns]
         return new Exp("timeNanos","\\[(?<timeNanos:first>\\d{13,})ns\\]")
-                .setRule(MatchRule.TargetRoot)
+                .setRule(ExpRule.TargetRoot)
                 ;
     }
     public Exp uptimeNanos(){ //[10192976ns]
         return new Exp("uptimeNanos","\\[(?<uptimeNanos:first>\\d{1,12})ns\\]")
-                .setRule(MatchRule.TargetRoot)
+                .setRule(ExpRule.TargetRoot)
                 ;
     }
     //TODO hostname,pid,tid,

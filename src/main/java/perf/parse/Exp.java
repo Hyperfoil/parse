@@ -155,7 +155,7 @@ public class Exp {
    private LinkedHashMap<String,Object> with = new LinkedHashMap<>();
 
    private LinkedList<Exp> children = new LinkedList<>();
-   private HashedLists<MatchRule,Object> rules = new HashedLists<>();
+   private HashedLists<ExpRule,Object> rules = new HashedLists<>();
 
    private LinkedHashSet<String> enables = new LinkedHashSet<>();
    private LinkedHashSet<String> disables = new LinkedHashSet<>();
@@ -202,7 +202,7 @@ public class Exp {
    public boolean hasRules(){
       return !rules.isEmpty();
    }
-   public void eachRule(BiConsumer<MatchRule,List<Object>> action){
+   public void eachRule(BiConsumer<ExpRule,List<Object>> action){
       rules.forEach(action);
    }
 
@@ -279,11 +279,11 @@ public class Exp {
       this.matchRange = range;
       return this;
    }
-   public Exp setRule(MatchRule rule){
+   public Exp setRule(ExpRule rule){
       this.rules.put(rule,null);
       return this;
    }
-   public Exp setRule(MatchRule rule, Object value){
+   public Exp setRule(ExpRule rule, Object value){
       this.rules.put(rule,value);
       return this;
    }
@@ -293,7 +293,7 @@ public class Exp {
       return this;
    }
 
-   public boolean hasRule(MatchRule rule){
+   public boolean hasRule(ExpRule rule){
       return this.rules.containsKey(rule);
    }
    public Json getNestedTarget(Json currentTarget,JsonBuilder builder){
@@ -518,7 +518,7 @@ public class Exp {
                            childMatched = matched || childMatched;
                         }
                      }
-                  } while (childMatched && hasRule(MatchRule.RepeatChildren));
+                  } while (childMatched && hasRule(ExpRule.RepeatChildren));
                }
 
                if (needPop) {
@@ -533,7 +533,7 @@ public class Exp {
                this.matchRange.apply(this.matcher, line, matcherEnd.get());
 
 
-            } while (hasRule(MatchRule.Repeat) && this.matcher.find());
+            } while (hasRule(ExpRule.Repeat) && this.matcher.find());
             if (rtrn) {//TODO also support pre-child match actions and call this postMatch?
                for (MatchAction action : callbacks) {
                   action.onMatch(line.getLine(), currentTarget, null /*TODO matchAction Exp*/, parser);
