@@ -17,9 +17,9 @@ public class CompareDropStringSimple {
    @Param({"a=apple b=ball c=cat"})
    public String input;
 
-   public ExpOld exp = new ExpOld("foo","(?<foo.key>\\w+)=(?<foo.value>\\w+)").eat(Eat.Match)
-         .add(new ExpOld("bar","(?<bar.key>\\w+)=(?<bar.value>=\\w+)").eat(Eat.Match))
-         .add(new ExpOld("buz","(?<buz.key>\\w+)=(?<buz.value>=\\w+)").eat(Eat.Match));
+   public Exp exp = new Exp("foo","(?<foo.key>\\w+)=(?<foo.value>\\w+)").eat(Eat.Match)
+         .add(new Exp("bar","(?<bar.key>\\w+)=(?<bar.value>=\\w+)").eat(Eat.Match))
+         .add(new Exp("buz","(?<buz.key>\\w+)=(?<buz.value>=\\w+)").eat(Eat.Match));
 
 
    public Exp exp2 = new Exp("foo","(?<foo.key>\\w+)=(?<foo.value>\\w+)").eat(Eat.Match)

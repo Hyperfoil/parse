@@ -111,13 +111,13 @@ public class Jep271Factory implements ParseFactory{
         p.add(shenandoahTrigger().group("trigger").requires("gc-shenandoah").setRule(MatchRule.PreClose));
 
         p.add(gcLevel().enables("jep271-decorator")
-                .add(time().setTarget(MatchTarget.BeforeParent))
-                .add(utcTime().setTarget(MatchTarget.BeforeParent))
-                .add(uptime().setTarget(MatchTarget.BeforeParent))
-                .add(timeMillis().setTarget(MatchTarget.BeforeParent))
-                .add(uptimeMillis().setTarget(MatchTarget.BeforeParent))
-                .add(timeNanos().setTarget(MatchTarget.BeforeParent))
-                .add(uptimeNanos().setTarget(MatchTarget.BeforeParent))
+                .add(time().setRange(MatchRange.BeforeParent))
+                .add(utcTime().setRange(MatchRange.BeforeParent))
+                .add(uptime().setRange(MatchRange.BeforeParent))
+                .add(timeMillis().setRange(MatchRange.BeforeParent))
+                .add(uptimeMillis().setRange(MatchRange.BeforeParent))
+                .add(timeNanos().setRange(MatchRange.BeforeParent))
+                .add(uptimeNanos().setRange(MatchRange.BeforeParent))
         );
 
         //moved to after gcId to avoid appending to previous event

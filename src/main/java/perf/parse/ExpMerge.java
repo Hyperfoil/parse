@@ -7,12 +7,12 @@ public enum ExpMerge {
     */
    ByKey,
    /**
-    * creates a new Json object from all the values in the current ExpOld and merges them together into
-    * an array under the ExpOld nesting or just the first array in the current json's parent path.
+    * creates a new Json object from all the values in the current Exp and merges them together into
+    * an array under the Exp nesting or just the first array in the current json's parent path.
     */
    AsEntry,
    /**
-    * Merges all the Exps values into the last instance of the ExpOld grouping or the last value from
+    * Merges all the Exps values into the last instance of the Exp grouping or the last value from
     * the closest array in the current Json objects parent structure.
     */
    Extend;

@@ -3,9 +3,9 @@ package perf.parse.factory;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import perf.parse.ExpOld;
 import perf.parse.Parser;
 import perf.yaup.Sets;
+import perf.yaup.StringUtil;
 import perf.yaup.json.Json;
 
 import java.util.Arrays;
@@ -16,13 +16,8 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-
-
-
 public class Jep271FactoryTest {
     private static Jep271Factory f;
-
-
 
     @BeforeClass
     public static void staticInit(){
@@ -214,15 +209,15 @@ public class Jep271FactoryTest {
 
         assertEquals("phase[0].phase","Pause Remark",phases.getJson(0).getString("phase"));
         assertEquals("phase[0].milliseconds",1.125,phases.getJson(0).getDouble("milliseconds"),0.00000001);
-        assertEquals("phase[0].before", ExpOld.parseKMG("40M"),phases.getJson(0).getLong("before"));
-        assertEquals("phase[0].after", ExpOld.parseKMG("40M"),phases.getJson(0).getLong("after"));
-        assertEquals("phase[0].capacity", ExpOld.parseKMG("250M"),phases.getJson(0).getLong("capacity"));
+        assertEquals("phase[0].before", StringUtil.parseKMG("40M"),phases.getJson(0).getLong("before"));
+        assertEquals("phase[0].after", StringUtil.parseKMG("40M"),phases.getJson(0).getLong("after"));
+        assertEquals("phase[0].capacity", StringUtil.parseKMG("250M"),phases.getJson(0).getLong("capacity"));
 
         assertEquals("phase[1].phase","Pause Cleanup",phases.getJson(1).getString("phase"));
         assertEquals("phase[1].milliseconds",0.131,phases.getJson(1).getDouble("milliseconds"),0.00000001);
-        assertEquals("phase[1].before", ExpOld.parseKMG("40M"),phases.getJson(1).getLong("before"));
-        assertEquals("phase[1].after", ExpOld.parseKMG("40M"),phases.getJson(1).getLong("after"));
-        assertEquals("phase[1].capacity", ExpOld.parseKMG("250M"),phases.getJson(1).getLong("capacity"));
+        assertEquals("phase[1].before", StringUtil.parseKMG("40M"),phases.getJson(1).getLong("before"));
+        assertEquals("phase[1].after", StringUtil.parseKMG("40M"),phases.getJson(1).getLong("after"));
+        assertEquals("phase[1].capacity", StringUtil.parseKMG("250M"),phases.getJson(1).getLong("capacity"));
 
         assertEquals("phase[2].phase","Concurrent Cycle",phases.getJson(2).getString("phase"));
         assertEquals("phase[2].milliseconds",7.309,phases.getJson(2).getDouble("milliseconds"),0.00000001);
@@ -360,8 +355,8 @@ public class Jep271FactoryTest {
     public void shenandoahTrigger_allocationThreshold(){
         Json root = f.shenandoahTrigger().apply("Trigger: Allocated since last cycle (51M) is larger than allocation threshold (51M)");
         assertEquals("cause\n"+root.toString(2),"allocation threshold",root.getString("cause"));
-        assertEquals("allocated\n"+root.toString(2), ExpOld.parseKMG("51M"),root.getLong("allocated"));
-        assertEquals("threshold\n"+root.toString(2), ExpOld.parseKMG("51M"),root.getLong("threshold"));
+        assertEquals("allocated\n"+root.toString(2), StringUtil.parseKMG("51M"),root.getLong("allocated"));
+        assertEquals("threshold\n"+root.toString(2), StringUtil.parseKMG("51M"),root.getLong("threshold"));
     }
 
 
@@ -402,9 +397,9 @@ public class Jep271FactoryTest {
         Json root = f.shenandoahPhase().apply("Concurrent reset 50M->50M(512M) 0.381ms");
         assertEquals("lock","Concurrent",root.getString("lock"));
         assertEquals("phase","reset",root.getString("phase"));
-        assertEquals("usedBefore", ExpOld.parseKMG("50M"),root.getLong("usedBefore"));
-        assertEquals("usedAfter", ExpOld.parseKMG("50M"),root.getLong("usedAfter"));
-        assertEquals("capacity", ExpOld.parseKMG("512M"),root.getLong("capacity"));
+        assertEquals("usedBefore", StringUtil.parseKMG("50M"),root.getLong("usedBefore"));
+        assertEquals("usedAfter", StringUtil.parseKMG("50M"),root.getLong("usedAfter"));
+        assertEquals("capacity", StringUtil.parseKMG("512M"),root.getLong("capacity"));
         assertEquals("milliseconds",0.381,root.getDouble("milliseconds"),0.000001);
     }
     @Test
@@ -413,9 +408,9 @@ public class Jep271FactoryTest {
         assertEquals("lock","Concurrent",root.getString("lock"));
         assertEquals("phase","marking",root.getString("phase"));
         assertEquals("task","process weakrefs",root.getString("task"));
-        assertEquals("usedBefore", ExpOld.parseKMG("50M"),root.getLong("usedBefore"));
-        assertEquals("usedAfter", ExpOld.parseKMG("51M"),root.getLong("usedAfter"));
-        assertEquals("capacity", ExpOld.parseKMG("512M"),root.getLong("capacity"));
+        assertEquals("usedBefore", StringUtil.parseKMG("50M"),root.getLong("usedBefore"));
+        assertEquals("usedAfter", StringUtil.parseKMG("51M"),root.getLong("usedAfter"));
+        assertEquals("capacity", StringUtil.parseKMG("512M"),root.getLong("capacity"));
         assertEquals("milliseconds",6.146,root.getDouble("milliseconds"),0.000001);
     }
     @Test
@@ -423,9 +418,9 @@ public class Jep271FactoryTest {
         Json root;
         root = f.gcPause().apply("Pause Young (Allocation Failure) 62M->15M(241M) 9.238ms");
         assertEquals("reason","Allocation Failure",root.getString("reason"));
-        assertEquals("usedBefore", ExpOld.parseKMG("62M"),root.getLong("usedBefore"));
-        assertEquals("usedAfter", ExpOld.parseKMG("15M"),root.getLong("usedAfter"));
-        assertEquals("capacity", ExpOld.parseKMG("241M"),root.getLong("capacity"));
+        assertEquals("usedBefore", StringUtil.parseKMG("62M"),root.getLong("usedBefore"));
+        assertEquals("usedAfter", StringUtil.parseKMG("15M"),root.getLong("usedAfter"));
+        assertEquals("capacity", StringUtil.parseKMG("241M"),root.getLong("capacity"));
         assertEquals("milliseconds",9.238,root.getDouble("milliseconds"),0.00000001);
     }
     @Test
@@ -447,9 +442,9 @@ public class Jep271FactoryTest {
         Json root;
         root = f.gcResize().apply("61852K->15323K(247488K)");
 
-        assertEquals("usedBefore", ExpOld.parseKMG("61852K"),root.getLong("usedBefore"));
-        assertEquals("usedAfter", ExpOld.parseKMG("15323K"),root.getLong("usedAfter"));
-        assertEquals("capacity", ExpOld.parseKMG("247488K"),root.getLong("capacity"));
+        assertEquals("usedBefore", StringUtil.parseKMG("61852K"),root.getLong("usedBefore"));
+        assertEquals("usedAfter", StringUtil.parseKMG("15323K"),root.getLong("usedAfter"));
+        assertEquals("capacity", StringUtil.parseKMG("247488K"),root.getLong("capacity"));
     }
     @Test
     public void gcLevel(){
@@ -466,8 +461,8 @@ public class Jep271FactoryTest {
         Json root;
         root = f.parallelSizeChanged().apply("PSYoung generation size changed: 1358848K->1356800K");
         assertEquals("region","PSYoung",root.getString("region"));
-        assertEquals("before", ExpOld.parseKMG("1358848K"),root.getLong("before"));
-        assertEquals("after", ExpOld.parseKMG("1356800K"),root.getLong("after"));
+        assertEquals("before", StringUtil.parseKMG("1358848K"),root.getLong("before"));
+        assertEquals("after", StringUtil.parseKMG("1356800K"),root.getLong("after"));
     }
 
     @Test
@@ -476,8 +471,8 @@ public class Jep271FactoryTest {
         root = f.g1MarkStack().apply("MarkStackSize: 4096k  MarkStackSizeMax: 524288k");
         assertTrue("markStack",root.has("markStack") && root.get("markStack") instanceof Json);
         root = root.getJson("markStack");
-        assertEquals("size\n"+root.toString(2), ExpOld.parseKMG("4096k"),root.getLong("size"));
-        assertEquals("max\n"+root.toString(2), ExpOld.parseKMG("524288k"),root.getLong("max"));
+        assertEquals("size\n"+root.toString(2), StringUtil.parseKMG("4096k"),root.getLong("size"));
+        assertEquals("max\n"+root.toString(2), StringUtil.parseKMG("524288k"),root.getLong("max"));
     }
 
     @Test
@@ -489,9 +484,9 @@ public class Jep271FactoryTest {
         root = root.getJson("phases");
         assertEquals("phase","Pause Remark",root.getString("phase"));
         assertEquals("milliseconds",1.611,root.getDouble("milliseconds"),0.00000001);
-        assertEquals("before", ExpOld.parseKMG("40M"),root.getLong("before"));
-        assertEquals("after", ExpOld.parseKMG("40M"),root.getLong("after"));
-        assertEquals("capacity", ExpOld.parseKMG("250M"),root.getLong("capacity"));
+        assertEquals("before", StringUtil.parseKMG("40M"),root.getLong("before"));
+        assertEquals("after", StringUtil.parseKMG("40M"),root.getLong("after"));
+        assertEquals("capacity", StringUtil.parseKMG("250M"),root.getLong("capacity"));
 
     }
     @Test
@@ -579,8 +574,8 @@ public class Jep271FactoryTest {
         Json root;
         root = f.gcHeapRegion().apply(" def new generation   total 76800K, used 63648K [0x00000006c7200000, 0x00000006cc550000, 0x000000071a150000)");
         assertEquals("name","def new generation",root.getString("name"));
-        assertEquals("total", ExpOld.parseKMG("76800K"),root.getLong("total"));
-        assertEquals("used", ExpOld.parseKMG("63648K"),root.getLong("used"));
+        assertEquals("total", StringUtil.parseKMG("76800K"),root.getLong("total"));
+        assertEquals("used", StringUtil.parseKMG("63648K"),root.getLong("used"));
         assertEquals("start","0x00000006c7200000",root.getString("start"));
         assertEquals("current","0x00000006cc550000",root.getString("current"));
         assertEquals("end","0x000000071a150000",root.getString("end"));
@@ -588,8 +583,8 @@ public class Jep271FactoryTest {
         root = f.gcHeapRegion().apply("garbage-first heap   total 256000K, used 110592K [0x00000006c7200000, 0x00000006c73007d0, 0x00000007c0000000)");
 
         assertEquals("name\n"+root.toString(2),"garbage-first heap",root.getString("name"));
-        assertEquals("total", ExpOld.parseKMG("256000K"),root.getLong("total"));
-        assertEquals("used", ExpOld.parseKMG("110592K"),root.getLong("used"));
+        assertEquals("total", StringUtil.parseKMG("256000K"),root.getLong("total"));
+        assertEquals("used", StringUtil.parseKMG("110592K"),root.getLong("used"));
         assertEquals("start","0x00000006c7200000",root.getString("start"));
         assertEquals("current","0x00000006c73007d0",root.getString("current"));
         assertEquals("end","0x00000007c0000000",root.getString("end"));
@@ -611,10 +606,10 @@ public class Jep271FactoryTest {
 
         root = f.gcHeapMetaRegion().apply(" Metaspace       used 4769K, capacity 4862K, committed 5120K, reserved 1056768K");
         assertEquals("region","Metaspace",root.getString("name"));
-        assertEquals("committed", ExpOld.parseKMG("5120K"),root.getLong("committed"));
-        assertEquals("reserved", ExpOld.parseKMG("1056768K"),root.getLong("reserved"));
-        assertEquals("used", ExpOld.parseKMG("4769K"),root.getLong("used"));
-        assertEquals("capacity", ExpOld.parseKMG("4862K"),root.getLong("capacity"));
+        assertEquals("committed", StringUtil.parseKMG("5120K"),root.getLong("committed"));
+        assertEquals("reserved", StringUtil.parseKMG("1056768K"),root.getLong("reserved"));
+        assertEquals("used", StringUtil.parseKMG("4769K"),root.getLong("used"));
+        assertEquals("capacity", StringUtil.parseKMG("4862K"),root.getLong("capacity"));
 
     }
 
@@ -624,9 +619,9 @@ public class Jep271FactoryTest {
         root = f.gcHeapRegionResize().apply("ParOldGen: 145286K->185222K(210944K)");
 
         assertEquals("region","ParOldGen",root.getString("region"));
-        assertEquals("size", ExpOld.parseKMG("210944K"),root.getLong("size"));
-        assertEquals("before", ExpOld.parseKMG("145286K"),root.getLong("before"));
-        assertEquals("after", ExpOld.parseKMG("185222K"),root.getLong("after"));
+        assertEquals("size", StringUtil.parseKMG("210944K"),root.getLong("size"));
+        assertEquals("before", StringUtil.parseKMG("145286K"),root.getLong("before"));
+        assertEquals("after", StringUtil.parseKMG("185222K"),root.getLong("after"));
 
     }
     @Test
@@ -644,8 +639,8 @@ public class Jep271FactoryTest {
         Json root;
         root = f.gcHeapRegionResizeG1UsedWaste().apply(" Used: 20480K, Waste: 0K");
 
-        assertEquals("used", ExpOld.parseKMG("20480K"),root.getLong("used"));
-        assertEquals("waste", ExpOld.parseKMG("0K"),root.getLong("waste"));
+        assertEquals("used", StringUtil.parseKMG("20480K"),root.getLong("used"));
+        assertEquals("waste", StringUtil.parseKMG("0K"),root.getLong("waste"));
     }
 
     @Test
@@ -653,10 +648,10 @@ public class Jep271FactoryTest {
         Json root;
         root = f.gcHeapMetaSpace().apply("  class space    used 388K, capacity 390K, committed 512K, reserved 1048576K");
         assertEquals("space","class",root.getString("space"));
-        assertEquals("committed", ExpOld.parseKMG("512K"),root.getLong("committed"));
-        assertEquals("reserved", ExpOld.parseKMG("1048576K"),root.getLong("reserved"));
-        assertEquals("used", ExpOld.parseKMG("388K"),root.getLong("used"));
-        assertEquals("capcaity", ExpOld.parseKMG("390K"),root.getLong("capacity"));
+        assertEquals("committed", StringUtil.parseKMG("512K"),root.getLong("committed"));
+        assertEquals("reserved", StringUtil.parseKMG("1048576K"),root.getLong("reserved"));
+        assertEquals("used", StringUtil.parseKMG("388K"),root.getLong("used"));
+        assertEquals("capcaity", StringUtil.parseKMG("390K"),root.getLong("capacity"));
     }
 
     @Test
@@ -665,7 +660,7 @@ public class Jep271FactoryTest {
         root = f.gcHeapSpace().apply("   eden space 68288K,  93% used [0x00000006c7200000, 0x00000006cb076880, 0x00000006cb4b0000)");
 
         assertEquals("space","eden",root.getString("space"));
-        assertEquals("size", ExpOld.parseKMG("68288K"),root.getLong("size"));
+        assertEquals("size", StringUtil.parseKMG("68288K"),root.getLong("size"));
         assertEquals("used",93,root.getLong("used"));
         assertEquals("start","0x00000006c7200000",root.getString("start"));
         assertEquals("end","0x00000006cb4b0000",root.getString("end"));
@@ -678,11 +673,11 @@ public class Jep271FactoryTest {
         Json root;
         root = f.gcHeapSpaceG1().apply("   region size 1024K, 5 young (5120K), 0 survivors (0K)");
 
-        assertEquals("regionSize", ExpOld.parseKMG("1024K"),root.getLong("regionSize"));
+        assertEquals("regionSize", StringUtil.parseKMG("1024K"),root.getLong("regionSize"));
         assertEquals("youngCount",5,root.getLong("youngCount"));
-        assertEquals("youngSize", ExpOld.parseKMG("5120K"),root.getLong("youngSize"));
+        assertEquals("youngSize", StringUtil.parseKMG("5120K"),root.getLong("youngSize"));
         assertEquals("survivorCount",0,root.getLong("survivorCount"));
-        assertEquals("survivorSize", ExpOld.parseKMG("0K"),root.getLong("survivorSize"));
+        assertEquals("survivorSize", StringUtil.parseKMG("0K"),root.getLong("survivorSize"));
     }
 
     @Test
@@ -779,28 +774,28 @@ public class Jep271FactoryTest {
     public void gcExpanding(){
         Json root = f.gcExpanding().apply("Expanding tenured generation from 170688K by 39936K to 210624K");
         assertEquals("region","tenured generation",root.getString("region"));
-        assertEquals("from", ExpOld.parseKMG("170688K"),root.getLong("from"));
-        assertEquals("by", ExpOld.parseKMG("39936K"),root.getLong("by"));
-        assertEquals("to", ExpOld.parseKMG("210624K"),root.getLong("to"));
+        assertEquals("from", StringUtil.parseKMG("170688K"),root.getLong("from"));
+        assertEquals("by", StringUtil.parseKMG("39936K"),root.getLong("by"));
+        assertEquals("to", StringUtil.parseKMG("210624K"),root.getLong("to"));
     }
     @Test
     public void gcShrinking(){
         Json root = f.gcShrinking().apply("Shrinking tenured generation from 880164K to 720420K");
         assertEquals("region","tenured generation",root.getString("region"));
-        assertEquals("from", ExpOld.parseKMG("880164K"),root.getLong("from"));
-        assertEquals("to", ExpOld.parseKMG("720420K"),root.getLong("to"));
+        assertEquals("from", StringUtil.parseKMG("880164K"),root.getLong("from"));
+        assertEquals("to", StringUtil.parseKMG("720420K"),root.getLong("to"));
 
         root = f.gcShrinking().apply("Shrinking ParOldGen from 319488K by 56832K to 262656K");
         assertEquals("region","ParOldGen",root.getString("region"));
-        assertEquals("from", ExpOld.parseKMG("319488K"),root.getLong("from"));
-        assertEquals("by", ExpOld.parseKMG("56832K"),root.getLong("by"));
-        assertEquals("to", ExpOld.parseKMG("262656K"),root.getLong("to"));
+        assertEquals("from", StringUtil.parseKMG("319488K"),root.getLong("from"));
+        assertEquals("by", StringUtil.parseKMG("56832K"),root.getLong("by"));
+        assertEquals("to", StringUtil.parseKMG("262656K"),root.getLong("to"));
 
     }
     @Test
     public void gcAge(){
         Json root = f.gcAge().apply("Desired survivor size 4358144 bytes, new threshold 1 (max threshold 6)");
-        assertEquals("survivorSize", ExpOld.parseKMG("4358144"),root.getLong("survivorSize"));
+        assertEquals("survivorSize", StringUtil.parseKMG("4358144"),root.getLong("survivorSize"));
         assertEquals("threshold",1,root.getLong("threshold"));
         assertEquals("maxThreshold",6,root.getLong("maxThreshold"));
     }

@@ -4,7 +4,7 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.nodes.*;
 import org.yaml.snakeyaml.representer.Represent;
 import perf.parse.Eat;
-import perf.parse.ExpOld;
+import perf.parse.Exp;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -20,19 +20,19 @@ public class ExpRepresent implements Represent {
             );
         };
         List<NodeTuple> tupleList = new LinkedList<>();
-        if(data instanceof ExpOld){
-            ExpOld exp = (ExpOld)data;
+        if(data instanceof Exp){
+            Exp exp = (Exp)data;
             tupleList.add(stringTuple.apply("Name",exp.getName()));
             tupleList.add(stringTuple.apply("pattern",exp.getPattern()));
-            tupleList.add(stringTuple.apply("merge",exp.getMerge().name()));
+            tupleList.add(stringTuple.apply("merge",exp.getExpMerge().name()));
             if(Eat.Width.equals(Eat.from(exp.getEat()))){
                 tupleList.add(stringTuple.apply("eat",""+exp.getEat()));
             }else{
                 tupleList.add(stringTuple.apply("eat",Eat.from(exp.getEat()).name()));
             }
 
-            if(exp.isGrouped()){
-                exp.eachGroup((k,v)->{
+            if(exp.isNested()){
+                exp.eachNest((k,v)->{
                     switch (v){
                         case Name:
                             tupleList.add(stringTuple.apply("group",k));

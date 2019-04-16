@@ -87,10 +87,7 @@ public class SharedString extends DropString implements CharSequence {
       int relativeStart = getRelativeIndex(start);
       int relativeEnd = getRelativeIndex(end);
       this.drop(relativeStart,relativeEnd);
-
    }
-
-
    public String debug(){
       StringBuffer chars = new StringBuffer();
       StringBuffer bits = new StringBuffer();
@@ -120,7 +117,6 @@ public class SharedString extends DropString implements CharSequence {
       int endIndex = getAbsoluteIndex(end);//+1?
 
       return new SharedString(getLine(),startIndex,endIndex,this);
-
 //      int sum = end-start;
 //      while(sum>0 && startIndex<line.length()){
 //         if(bits.get(startIndex)){

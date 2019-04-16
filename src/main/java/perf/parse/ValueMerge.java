@@ -50,9 +50,10 @@ public enum ValueMerge {
        Object existing = builder.getContext("TargetId:"+key,true,null);
        if(existing==null){
            //TODO does setting targetId on parent context make sense for uses other than substratevm?
-           builder.setContext("TargetId:"+key,value,1);
-           //builder.setContext("TargetId:"+key,value);
+           //should the context be set on the target before grouping?
+           builder.setContext("TargetId:"+key,value,-1);
        } else if (value.equals(existing)) {
+           //same target, don't mutate
        }else{
            builder.close();
        }
@@ -67,20 +68,7 @@ public enum ValueMerge {
                rtrn.set(true);
            }
        });
-
-
        return rtrn.get();
-//        boolean changedTarget = false;
-//        if(!builder.getTarget().has(key)){
-//            builder.getTarget().set(key,value);
-//        }else if (value.equals(builder.getTarget().get(key))){//same event
-//
-//        }else{
-//            builder.close();
-//            builder.getTarget().set(key,value);
-//            changedTarget = true;
-//        }
-//        return changedTarget;
     }),
     /**
      * sets key = the number of times the patter has matched while building the current json object
@@ -102,8 +90,6 @@ public enum ValueMerge {
         Json.chainAct(builder.getTarget(),key,value,(target,k,v)->{
             if(v instanceof Number){
                 target.set(k, ((Number)v).doubleValue() + target.getDouble(k, 0.0));
-//            } else if (v.toString().matches("\\d+\\.?\\d*")) {//removed because already converted by ValueType
-//                target.set(k, Double.parseDouble(v.toString()) + target.getDouble(k, 0.0));
             }else{
                 target.set(k,v.toString()+target.getString(k,""));
             }
@@ -190,7 +176,7 @@ public enum ValueMerge {
     TreeMerging(true,new TreeMerger(true));
 
     private interface Merger {
-        public boolean merge(String key,Object value,JsonBuilder builder,Object data);
+        boolean merge(String key,Object value,JsonBuilder builder,Object data);
     }
     private static class TreeMerger implements Merger {
 

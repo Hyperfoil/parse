@@ -5,10 +5,7 @@ import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.SequenceNode;
-import perf.parse.Eat;
-import perf.parse.ExpOld;
-import perf.parse.Merge;
-import perf.parse.Rule;
+import perf.parse.*;
 import perf.yaup.StringUtil;
 import perf.yaup.json.Json;
 import perf.yaup.yaml.DeferableConstruct;
@@ -23,14 +20,14 @@ public class ExpConstruct extends DeferableConstruct {
     @Override
     public Object construct(Node node) {
 
-        BiConsumer<ExpOld,ScalarNode> ruleScalar = (e, n)->{
+        BiConsumer<Exp,ScalarNode> ruleScalar = (e, n)->{
             try {
-                e.set(StringUtil.getEnum(n.getValue(),Rule.class,null));
+                e.setRule(StringUtil.getEnum(n.getValue(),MatchRule.class,null));
             }catch(IllegalArgumentException iae){
                 throw new YAMLException("invalid rule value"+n.getStartMark());
             }
         };
-        BiConsumer<ExpOld,MappingNode> ruleMap = (e, n)->{
+        BiConsumer<Exp,MappingNode> ruleMap = (e, n)->{
             n.getValue().forEach(rule->{
                 if( !(rule.getKeyNode() instanceof ScalarNode) ){
                     throw new YAMLException("rule mapping requires a scalar key"+rule.getKeyNode().getStartMark());
@@ -41,7 +38,7 @@ public class ExpConstruct extends DeferableConstruct {
                 String key = ((ScalarNode)rule.getKeyNode()).getValue();
                 String value = ((ScalarNode)rule.getValueNode()).getValue();
                 try{
-                    e.set(StringUtil.getEnum(key,Rule.class,null),value);
+                    e.setRule(StringUtil.getEnum(key,MatchRule.class,null),value);
                 }catch (IllegalArgumentException iae){
                     throw new YAMLException("invalid rule mapping key"+rule.getKeyNode().getStartMark());
                 }
@@ -49,27 +46,27 @@ public class ExpConstruct extends DeferableConstruct {
         };
         if(node instanceof ScalarNode){
             String pattern = ((ScalarNode)node).getValue();
-            return new ExpOld("exp-"+System.currentTimeMillis(),pattern);
+            return new Exp("exp-"+System.currentTimeMillis(),pattern);
         }else if(node instanceof MappingNode){
             MappingNode mappingNode = (MappingNode)node;
             Json json = json(node);
-            ExpOld rtrn = null;
+            Exp rtrn = null;
             if(json.has("name") && json.has("pattern")){
-                rtrn = new ExpOld(json.getString("name"),json.getString("pattern"));
+                rtrn = new Exp(json.getString("name"),json.getString("pattern"));
             }else{
-                throw new YAMLException("ExpOld requires Name and pattern"+node.getStartMark());
+                throw new YAMLException("Exp requires Name and pattern"+node.getStartMark());
             }
             if(rtrn!=null){
-                final ExpOld exp = rtrn;
+                final Exp exp = rtrn;
                 mappingNode.getValue().forEach(nodeTuple -> {
                     if(!( nodeTuple.getKeyNode() instanceof ScalarNode) ){
-                        throw new YAMLException("ExpOld keys must be scalar "+nodeTuple.getKeyNode().getStartMark());
+                        throw new YAMLException("Exp keys must be scalar "+nodeTuple.getKeyNode().getStartMark());
                     }
                     String key = ((ScalarNode)nodeTuple.getKeyNode()).getValue();
                     Node valueNode = nodeTuple.getValueNode();
                     switch (key){
                         case "debug":
-                            exp.debug();
+                            //exp.debug();
                             break;
                         case "name":
                         case "pattern":
@@ -86,19 +83,17 @@ public class ExpConstruct extends DeferableConstruct {
                                         throw new YAMLException("invalid eat value"+valueNode.getStartMark());
                                     }
                                 }
-
                             }else{
                                 throw new YAMLException("eat must be a scalar"+valueNode.getStartMark());
                             }
-
                             break;
                         case "children":
                             if(valueNode instanceof SequenceNode){
                                 SequenceNode children = (SequenceNode)valueNode;
                                 children.getValue().forEach((child)->{
                                     Object childExp = construct(child);
-                                    if(childExp!=null && childExp instanceof ExpOld){
-                                        exp.add((ExpOld)childExp);
+                                    if(childExp!=null && childExp instanceof Exp){
+                                        exp.add((Exp)childExp);
                                     }
                                 });
 
@@ -109,8 +104,8 @@ public class ExpConstruct extends DeferableConstruct {
                         case "merge":
                             if(valueNode instanceof ScalarNode){
                                 try {
-                                    Merge m = StringUtil.getEnum(((ScalarNode) valueNode).getValue(),Merge.class,Merge.Collection);
-                                    exp.set(m);
+                                    ExpMerge m = StringUtil.getEnum(((ScalarNode) valueNode).getValue(),ExpMerge.class, ExpMerge.ByKey);
+                                    exp.setMerge(m);
                                 }catch(IllegalArgumentException e){
                                     throw new YAMLException("invalid merge value"+valueNode.getStartMark());
                                 }
@@ -250,7 +245,7 @@ public class ExpConstruct extends DeferableConstruct {
             }
             return rtrn;
         }else{
-            throw new YAMLException("ExpOld requires a mapping node"+node.getStartMark());
+            throw new YAMLException("Exp requires a mapping node"+node.getStartMark());
         }
     }
 }

@@ -14,7 +14,7 @@ import java.util.Map;
  */
 public enum Eat {
     /**
-     * Eat a fixed with of the input each time the perf.parse.ExpOld matches
+     * Eat a fixed with of the input each time the perf.parse.Exp matches
      */
     Width(1),
     /**
@@ -30,8 +30,8 @@ public enum Eat {
      */
     ToMatch(-2),
     /**
-     * If the perf.parse.ExpOld matches any part of the line then consume the entire line
-     * preventing other perf.parse.ExpOld from matching
+     * If the perf.parse.Exp matches any part of the line then consume the entire line
+     * preventing other perf.parse.Exp from matching
      */
     Line(-3);
 

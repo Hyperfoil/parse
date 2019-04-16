@@ -17,6 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 
@@ -73,7 +74,7 @@ public class Exp {
          this.merge = merge;
       }
    }
-   private enum NestType {Extend,Field,Name}
+   public enum NestType {Extend,Field,Name}
    private class NestPair{
 
       final String value;
@@ -163,7 +164,7 @@ public class Exp {
    private Map<String,ValueInfo> fields;
    private LinkedList<NestPair> nesting = new LinkedList<>();
 
-   private MatchTarget matchTarget = MatchTarget.AfterParent;
+   private MatchRange matchRange = MatchRange.AfterParent;
    private ExpMerge expMerge = ExpMerge.ByKey;
 
    private int eat = Eat.Match.getId();
@@ -184,9 +185,25 @@ public class Exp {
       this.matcher = new RegexMatcher(safePattern);
    }
 
+   public String getPattern(){return pattern;}
+   public int getEat(){return eat;}
+
    public Exp with(String key, Object value){
       with.putIfAbsent(key,value);
       return this;
+   }
+   public boolean isNested(){
+      return !nesting.isEmpty();
+   }
+   public ExpMerge getExpMerge(){return expMerge;}
+   public void eachNest(BiConsumer<String,NestType> action){
+      nesting.forEach(np->action.accept(np.value,np.type));
+   }
+   public boolean hasRules(){
+      return !rules.isEmpty();
+   }
+   public void eachRule(BiConsumer<MatchRule,List<Object>> action){
+      rules.forEach(action);
    }
 
    public boolean isTargeting(){
@@ -258,12 +275,12 @@ public class Exp {
       fields.get(fieldName).setMerge(merge);
       return this;
    }
-   public Exp setTarget(MatchTarget target){
-      this.matchTarget = target;
+   public Exp setRange(MatchRange range){
+      this.matchRange = range;
       return this;
    }
    public Exp setRule(MatchRule rule){
-      this.rules.put(rule,rule);
+      this.rules.put(rule,null);
       return this;
    }
    public Exp setRule(MatchRule rule, Object value){
@@ -395,7 +412,7 @@ public class Exp {
       boolean rtrn = false;
       try {
          //cannot return for line.length==0 becausGe pattern may expect empty line
-         if (startIndex.get() > line.length() && this.matchTarget.equals(MatchTarget.AfterParent)) {
+         if (startIndex.get() > line.length() && this.matchRange.equals(MatchRange.AfterParent)) {
 
             return false;
          }
@@ -412,7 +429,7 @@ public class Exp {
          }
 
 
-         int matchStart = this.matchTarget.apply(this.matcher, line, startIndex.get());
+         int matchStart = this.matchRange.apply(this.matcher, line, startIndex.get());
 
 
          if (this.matcher.find()) {
@@ -449,6 +466,11 @@ public class Exp {
                   builder.pushTarget(currentTarget, getName() + GROUPED_NAME);
                   needPop = true;
                }
+//               if(fields.values().stream().filter(v->v.getMerge().equals(ValueMerge.TargetId)).findAny().orElse(null) != null){
+//                  System.out.println("PrePopulate: startTarget:"+startTarget.toString());
+//                  System.out.println(builder.debug(true));
+//               }
+
                populate(builder);
                if (currentTarget != builder.getTarget()) {//populating changed the target
                   currentTarget = builder.getTarget();
@@ -460,7 +482,7 @@ public class Exp {
                DropString.Ref beforeMatchEnd = matcherEnd;
                if (hasChildren() &&
                   children.stream()
-                     .filter(child -> MatchTarget.BeforeParent.equals(child.matchTarget))
+                     .filter(child -> MatchRange.BeforeParent.equals(child.matchRange))
                      .findAny().orElse(null) != null) {
                   //preserve this range of the line if there are children that look behind
                   //beforeMatch = new SharedString(line.getLine(),0,line.getAbsoluteIndex(matcherStart.get()),line);//only create new CheatChar if we need it
@@ -487,7 +509,7 @@ public class Exp {
                   do {
                      childMatched = false;
                      for (Exp child : children) {
-                        if (MatchTarget.BeforeParent.equals(child.matchTarget)) {
+                        if (MatchRange.BeforeParent.equals(child.matchRange)) {
                            boolean matched = child.apply(beforeMatch, builder, parser, beforeMatchStart);
                            childMatched = matched || childMatched;
                         } else {
@@ -508,7 +530,7 @@ public class Exp {
                }
                //default is to loop from end of current match
                //TODO how does this work if the Exp is EntireLine and doesn't eat?
-               this.matchTarget.apply(this.matcher, line, matcherEnd.get());
+               this.matchRange.apply(this.matcher, line, matcherEnd.get());
 
 
             } while (hasRule(MatchRule.Repeat) && this.matcher.find());

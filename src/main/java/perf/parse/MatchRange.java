@@ -2,7 +2,7 @@ package perf.parse;
 
 import perf.parse.internal.IMatcher;
 
-public enum MatchTarget {
+public enum MatchRange {
    EntireLine,
    AfterParent,
    BeforeParent;
@@ -22,7 +22,6 @@ public enum MatchTarget {
             break;
          case AfterParent:
          default:
-
             matcher.region(startIndex,line.length());
       }
       return rtrn;

@@ -139,7 +139,7 @@ public class JsonBuilder {
         Json rtrn = null;
         synchronized (this){
             for(int i=0; i<count; i++){
-                if(targets.size()>1) {//TODO see which ExpOld are trying to pop root
+                if(targets.size()>1) {//TODO see which Exp are trying to pop root
                     rtrn = targets.pop().target;
                     //targetInfo.pop();
                 }
@@ -203,6 +203,9 @@ public class JsonBuilder {
             index--;
         }while(!rtrn && recursive && index >= 0);
         return rtrn;
+    }
+    public void setRootContext(String key,Object value){
+        setContext(key,value,-1);
     }
     public void setContext(String key,Object value,int offset){
         int index = targets.size()-1;

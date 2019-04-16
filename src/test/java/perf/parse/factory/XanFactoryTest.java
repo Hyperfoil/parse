@@ -5,7 +5,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import perf.parse.Eat;
 import perf.parse.MatchRule;
-import perf.parse.Rule;
 import perf.parse.internal.CheatChars;
 import perf.parse.internal.JsonBuilder;
 import perf.yaup.json.Json;

@@ -16,7 +16,6 @@ public class PrintGcFactory implements ParseFactory{
         p.add(gcCommandLine()
             .setRule(MatchRule.PreClose)
         );
-
         p.add(gcTenuringDistribution()
             .group("survivor")
             .setRule(MatchRule.TargetRoot,"survivor")
@@ -25,9 +24,7 @@ public class PrintGcFactory implements ParseFactory{
             .setRule(MatchRule.TargetRoot,"tenuring")
             .group("tenuring")
             .setMerge(ExpMerge.AsEntry)
-            //.key("age")
         );
-
         p.add(gcAdaptiveSizeStart()
             .group("adaptiveSize")
         );
@@ -56,7 +53,6 @@ public class PrintGcFactory implements ParseFactory{
         p.add(gcAdaptiveSizeStop()
             .group("adaptiveSize")
         );
-
         //-XX:+UseShenandoahGC
         p.add(gcShenandoahCancelConcurrent()
             .eat(Eat.Line)
@@ -105,7 +101,6 @@ public class PrintGcFactory implements ParseFactory{
         p.add(gcShenandoahStatisticsEntry());
         p.add(gcShenandoahAFStats());
         p.add(gcShenandoahSuccessDegenerated());
-
         //-XX:+UseG1GC
         p.add(gcG1DetailsNest()
             .eat(Eat.Line)
@@ -136,7 +131,6 @@ public class PrintGcFactory implements ParseFactory{
                 .add(gcG1DetailsNestClose())
             )
         );
-
         //heap at end of gc or PrintHeapAtGC
         //moved before GC line matching because of (full) matching a reason
         p.add(gcHeapAtGcHeader()//before gcDetailsHeap to match before "Heap" matches
@@ -179,7 +173,6 @@ public class PrintGcFactory implements ParseFactory{
         p.add(gcHeapAtGcSuffix()
             .disables("printGc-heap")
         );
-
         //Shenandoah heap at end of gc
         p.add(gcShenandoahDetailsHeapHeader()
             .enables("printGc-heap-shenandoah")
@@ -324,14 +317,14 @@ public class PrintGcFactory implements ParseFactory{
         //gc line start decorators (that also get strewn throughout the Serial collector gc but we only want the first one
         p.add(gcDateStamps()
             .setRule(MatchRule.TargetRoot)//in case we are in a gcDetailsRegionName that split into multiple lines
-            .setTarget(MatchTarget.EntireLine)
+            .setRange(MatchRange.EntireLine)
         );
         p.add(gcTimestamp()
-            .setTarget(MatchTarget.EntireLine)
+            .setRange(MatchRange.EntireLine)
             .setRule(MatchRule.TargetRoot)//in case we are in a gcDetailsRegionName that split into multiple lines
         );//after the other parser to avoid picking out incorrect #.###:
         p.add(gcId()
-            .setTarget(MatchTarget.EntireLine)
+            .setRange(MatchRange.EntireLine)
             .setRule(MatchRule.TargetRoot)//in case we are in a gcDetailsRegionName that split into multiple lines
         );
 
