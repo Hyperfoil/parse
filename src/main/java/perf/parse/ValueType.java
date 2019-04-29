@@ -14,6 +14,9 @@ public enum ValueType {
    Auto {
       @Override
       public Object apply(String a) {
+         if(a == null){
+            return "";
+         }
          if (IntegerPattern.matcher(a).matches()) {
             return Long.parseLong(a);
          } else if (DoublePattern.matcher(a).matches()) {
