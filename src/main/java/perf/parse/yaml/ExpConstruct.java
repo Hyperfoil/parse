@@ -22,7 +22,7 @@ public class ExpConstruct extends DeferableConstruct {
 
         BiConsumer<Exp,ScalarNode> ruleScalar = (e, n)->{
             try {
-                e.setRule(StringUtil.getEnum(n.getValue(), ExpRule.class,null));
+                e.addRule(StringUtil.getEnum(n.getValue(), ExpRule.class,null));
             }catch(IllegalArgumentException iae){
                 throw new YAMLException("invalid rule value"+n.getStartMark());
             }
@@ -38,7 +38,7 @@ public class ExpConstruct extends DeferableConstruct {
                 String key = ((ScalarNode)rule.getKeyNode()).getValue();
                 String value = ((ScalarNode)rule.getValueNode()).getValue();
                 try{
-                    e.setRule(StringUtil.getEnum(key, ExpRule.class,null),value);
+                    e.addRule(StringUtil.getEnum(key, ExpRule.class,null),value);
                 }catch (IllegalArgumentException iae){
                     throw new YAMLException("invalid rule mapping key"+rule.getKeyNode().getStartMark());
                 }

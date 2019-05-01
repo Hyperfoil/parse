@@ -279,11 +279,11 @@ public class Exp {
       this.matchRange = range;
       return this;
    }
-   public Exp setRule(ExpRule rule){
+   public Exp addRule(ExpRule rule){
       this.rules.put(rule,null);
       return this;
    }
-   public Exp setRule(ExpRule rule, Object value){
+   public Exp addRule(ExpRule rule, Object value){
       this.rules.put(rule,value);
       return this;
    }

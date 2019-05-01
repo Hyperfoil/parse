@@ -9,11 +9,11 @@ import perf.parse.Exp;
  */
 public class JStackFactory implements ParseFactory{
     public Exp threadDumpHeader(){
-        return new Exp("start", "Full thread dump (?<vm>[^\\(]+)\\((?<version>[^\\(]+)\\)").setRule(ExpRule.PreClose);
+        return new Exp("start", "Full thread dump (?<vm>[^\\(]+)\\((?<version>[^\\(]+)\\)").addRule(ExpRule.PreClose);
     }
     public Exp threadInfo(){
         return new Exp("tid", " tid=(?<tid>0x[0-9a-f]+) nid=(?<nid>0x[0-9a-f]+)")
-                .setRule(ExpRule.PreClose)
+                .addRule(ExpRule.PreClose)
                 .add(new Exp("os_prio", " os_prio=(?<osprio>\\d+)")
                     .setRange(MatchRange.EntireLine))
                 .add(new Exp("prio", " prio=(?<prio>\\d+)")

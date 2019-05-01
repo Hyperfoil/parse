@@ -25,7 +25,7 @@ public class ServerLogFactory implements ParseFactory{
     public Exp newStartEntryExp(){
         return new Exp("timestamp","(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3})")
             .eat(Eat.Match)
-            .setRule(ExpRule.PreClose)
+            .addRule(ExpRule.PreClose)
             .add(new Exp("level", " (?<level>[A-Z]+)\\s+")
                     .eat(Eat.Match))
             .add(new Exp("component","\\[(?<component>[^\\]]+)\\]\\s+")
@@ -55,7 +55,7 @@ public class ServerLogFactory implements ParseFactory{
         return new Exp("causedBy","Caused by: (?<exception>[^:]+): (?<message>.+\n?)")
             //.group("stack")
             .group("causedBy")
-            .setRule(ExpRule.PushTarget).eat(Eat.Line);
+            .addRule(ExpRule.PushTarget).eat(Eat.Line);
     }
     public Exp newStackRemainderExp(){
         return new Exp("more","\\s+\\.\\.\\. (?<stackRemainder>\\d+) more")

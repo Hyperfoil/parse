@@ -18,7 +18,7 @@ public class JmapHistoFactory implements ParseFactory{
     public void addToParser(Parser p){
         p.add(
             classEntry()
-            .setRule(ExpRule.PreClose)
+            .addRule(ExpRule.PreClose)
         );
     }
 }

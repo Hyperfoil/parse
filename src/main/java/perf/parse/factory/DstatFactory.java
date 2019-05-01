@@ -30,13 +30,13 @@ public class DstatFactory implements ParseFactory{
         final ArrayList<String> headers = new ArrayList<>();
         p.add(
             defaultMessage()
-           .setRule(ExpRule.PreClose)
+           .addRule(ExpRule.PreClose)
             .eat(Eat.Line)
         );
         p.add(
             headerGroup()
-            .setRule(ExpRule.PreClose)
-            .setRule(ExpRule.Repeat)
+            .addRule(ExpRule.PreClose)
+            .addRule(ExpRule.Repeat)
             .eat(Eat.Line)
             .execute((line, match, pattern, parser) -> {
                 Json arry = match.getJson("header");
@@ -65,8 +65,8 @@ public class DstatFactory implements ParseFactory{
         );
         p.add(
             columnGroup()
-            .setRule(ExpRule.PreClose)
-            .setRule(ExpRule.Repeat)
+            .addRule(ExpRule.PreClose)
+            .addRule(ExpRule.Repeat)
             .eat(Eat.Line)
             .execute((line, match, pattern, parser) -> {
                 Json arry = match.getJson("column");
@@ -101,7 +101,7 @@ public class DstatFactory implements ParseFactory{
                     sb.append("\\s*");
                 }
                 Exp entryExp = new Exp("dstat",sb.toString());
-                entryExp.setRule(ExpRule.PreClose);
+                entryExp.addRule(ExpRule.PreClose);
                 entryExp.eat(Eat.Line);
                 parser.addAhead(entryExp);
             })

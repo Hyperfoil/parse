@@ -47,12 +47,12 @@ public class XanFactory implements ParseFactory{
         p.add(
             title()
             .eat(Eat.Line)
-            .setRule(ExpRule.PreClose)
+            .addRule(ExpRule.PreClose)
         );
         p.add(
             section()
             .eat(Eat.Line)
-            .setRule(ExpRule.PreClose)
+            .addRule(ExpRule.PreClose)
         );
         p.add(
             display()
@@ -64,7 +64,7 @@ public class XanFactory implements ParseFactory{
         );
         p.add(
             header()
-            .setRule(ExpRule.Repeat)
+            .addRule(ExpRule.Repeat)
             .eat(Eat.Line)
             .execute((line, match, pattern, parser) -> {
                 Json arry = match.getJson("header");

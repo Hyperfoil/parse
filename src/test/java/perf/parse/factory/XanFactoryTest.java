@@ -35,13 +35,13 @@ public class XanFactoryTest {
     @Test
     public void header(){
         Json root = f.header()
-                .setRule(ExpRule.Repeat)
+                .addRule(ExpRule.Repeat)
                 .eat(Eat.Line)
                 .apply("Name     Value");
         assertEquals("expect 2 headers:\n"+root.toString(2),2,root.getJson("header").size());
 
         root = f.header()
-                .setRule(ExpRule.Repeat)
+                .addRule(ExpRule.Repeat)
                 .eat(Eat.Line)
                 .apply("Time (s)  CreateVehicleEJB  CreateVehicleWS");
         assertEquals("expect 3 headers",3,root.getJson("header").size());

@@ -46,10 +46,10 @@ public class SubstrateGcFactory implements ParseFactory{
          .setMerge(ExpMerge.AsEntry)
       );
       p.add(incrementalGc()
-         .setRule(ExpRule.PreClose,"cause")
+         .addRule(ExpRule.PreClose,"cause")
       );
       p.add(collectionTime()
-         .setRule(ExpRule.PostClose)
+         .addRule(ExpRule.PostClose)
       );
    }
 
