@@ -37,6 +37,11 @@ public class SubstrateGcFactoryTest {
       assertEquals("before\n"+json.toString(2), StringUtil.parseKMG("261108K"),json.getLong("before"));
       assertEquals("after\n"+json.toString(2),StringUtil.parseKMG("1019K"),json.getLong("after"));
       assertEquals("seconds\n"+ json.toString(2), 0.0062683,json.getDouble("seconds",0.0),0.000001);
+      json = p.onLine("[Full GC (CollectOnAllocation.Sometimes) 261108K->1019K, 0.0062683 secs]");
+      assertFalse("third line should close previous\n"+json,json==null);
+      json = p.getBuilder().getRoot();
+      //verifies gc type was parsed
+      assertEquals("gctype\n"+json.toString(2),"Full",json.getString("gctype"));
    }
    @Test
    public void newParser_verboseGc(){
@@ -107,7 +112,7 @@ public class SubstrateGcFactoryTest {
 
    @Test
    public void incrementalGc(){
-      Json json = f.incrementalGc().apply("[Incremental GC (CollectOnAllocation.Sometimes) 261108K->1019K, 0.0055645 secs]");
+      Json json = f.gc().apply("[Incremental GC (CollectOnAllocation.Sometimes) 261108K->1019K, 0.0055645 secs]");
       assertEquals("cause\n"+json.toString(2),"CollectOnAllocation.Sometimes",json.getString("cause"));
       assertEquals("before\n"+json.toString(2), StringUtil.parseKMG("261108K"),json.getLong("before"));
       assertEquals("after\n"+json.toString(2),StringUtil.parseKMG("1019K"),json.getLong("after"));

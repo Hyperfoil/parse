@@ -10,8 +10,9 @@ public class SubstrateGcFactory implements ParseFactory{
 //PrintGC
 
 //[Incremental GC (CollectOnAllocation.Sometimes) 261108K->1019K, 0.0055645 secs]
-   public Exp incrementalGc(){
-      return new Exp("incremental","\\[Incremental GC \\((?<cause>[^\\)]+)\\) (?<before:kmg>\\d+[kKmMgG])->(?<after:kmg>\\d+[kKmMgG]), (?<seconds>\\d+\\.\\d{7}) secs\\]");
+//[Full GC (CollectOnAllocation.Sometimes) 114234K->7139K, 0.0370194 secs]
+   public Exp gc(){
+      return new Exp("gcEvent","\\[(?<gctype>.*) GC \\((?<cause>[^\\)]+)\\) (?<before:kmg>\\d+[kKmMgG])->(?<after:kmg>\\d+[kKmMgG]), (?<seconds>\\d+\\.\\d{7}) secs\\]");
 
    }
 
@@ -45,7 +46,7 @@ public class SubstrateGcFactory implements ParseFactory{
          .group("phase")
          .setMerge(ExpMerge.AsEntry)
       );
-      p.add(incrementalGc()
+      p.add(gc()
          .addRule(ExpRule.PreClose,"cause")
       );
       p.add(collectionTime()
