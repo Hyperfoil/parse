@@ -107,7 +107,7 @@ public class SubstrateGcFactoryTest {
 
    @Test
    public void incrementalGc(){
-      Json json = f.incrementalGc().apply("[Incremental GC (CollectOnAllocation.Sometimes) 261108K->1019K, 0.0055645 secs]");
+      Json json = f.gc().apply("[Incremental GC (CollectOnAllocation.Sometimes) 261108K->1019K, 0.0055645 secs]");
       assertEquals("cause\n"+json.toString(2),"CollectOnAllocation.Sometimes",json.getString("cause"));
       assertEquals("before\n"+json.toString(2), StringUtil.parseKMG("261108K"),json.getLong("before"));
       assertEquals("after\n"+json.toString(2),StringUtil.parseKMG("1019K"),json.getLong("after"));
