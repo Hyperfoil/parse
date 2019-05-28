@@ -17,17 +17,216 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 
 public class Exp {
 
-   //final static XLogger logger = XLoggerFactory.getXLogger(MethodHandles.lookup().lookupClass());
+   public static Exp fromJson(Json json){
+      if(!json.has("pattern") || !(json.get("pattern") instanceof String)){
+         throw new IllegalArgumentException("exp requires a pattern");
+      }
+
+      String name = json.getString("name",json.getString("pattern"));
+      Exp rtrn = new Exp(name,json.getString("pattern"));
+      if(json.has("eat")){
+         rtrn.eat(Eat.from(json.get("eat").toString()));
+      }
+      if(json.has("range")){
+         rtrn.setRange(StringUtil.getEnum(json.getString("range"),MatchRange.class,MatchRange.AfterParent));
+      }
+      if(json.has("nest")){
+         rtrn.nest(json.getString("nest"));
+      }
+      if(json.has("requires")){
+         Object value = json.get("requires");
+         if(value instanceof String){
+            rtrn.requires(value.toString());
+         }else if (value instanceof Json){
+            ((Json)value).forEach(entry->rtrn.requires(entry.toString()));
+         }
+      }
+      if(json.has("enables")){
+         Object value = json.get("enables");
+         if(value instanceof String){
+            rtrn.requires(value.toString());
+         }else if (value instanceof Json){
+            ((Json)value).forEach(entry->rtrn.enables(entry.toString()));
+         }
+      }
+      if(json.has("enables")){
+         Object value = json.get("enables");
+         if(value instanceof String){
+            rtrn.requires(value.toString());
+         }else if (value instanceof Json){
+            ((Json)value).forEach(entry->rtrn.enables(entry.toString()));
+         }
+      }
+      if(json.has("disables")){
+         Object value = json.get("disables");
+         if(value instanceof String){
+            rtrn.requires(value.toString());
+         }else if (value instanceof Json){
+            ((Json)value).forEach(entry->rtrn.disables(entry.toString()));
+         }
+      }
+      rtrn.setMerge(StringUtil.getEnum(json.getString("merge",""),ExpMerge.class,ExpMerge.ByKey));
+      if(json.has("with")){
+         Object value = json.get("with");
+         if(value instanceof Json){
+            ((Json)value).forEach((k,v)->{
+               rtrn.with(k.toString(),v);
+            });
+         }else{
+            throw new IllegalArgumentException("unsupported with :"+value.getClass().getSimpleName()+" "+value.toString());
+         }
+      }
+      if(json.has("rules")){
+         Object value= json.get("rules");
+         if(value instanceof Json){
+            ((Json)value).forEach(rule->{
+               if(rule instanceof String){
+                  ExpRule newRule = StringUtil.getEnum(rule.toString(),ExpRule.class,null);
+                  if(newRule!=null) {
+                     rtrn.addRule(newRule);
+                  }else{
+                     throw new IllegalArgumentException("failed to parse rule from "+rule.toString());
+                  }
+               }else if (rule instanceof Json && ((Json)rule).size()==1 && !((Json)rule).isArray()){
+                  ((Json)rule).forEach((k,v)->{
+                     ExpRule newRule = StringUtil.getEnum(k.toString(),ExpRule.class,null);
+                     if(newRule != null){
+                        rtrn.addRule(newRule,v);
+                     }else{
+                        throw new IllegalArgumentException("failed to parse rule from "+k.toString());
+                     }
+                  });
+               }else{
+                  throw new IllegalArgumentException("could not create rule form "+rule.getClass().getSimpleName()+" "+rule);
+               }
+            });
+         }
+      }
+      if(json.has("fields")){
+         json.getJson("fields").forEach((fieldName,fieldValue)->{
+            if(fieldValue instanceof Json){
+               Json valueJson = (Json)fieldValue;
+               ValueType type = StringUtil.getEnum(valueJson.getString("type",""),ValueType.class,ValueType.Auto);
+               ValueMerge merge = StringUtil.getEnum(valueJson.getString("merge",""),ValueMerge.class,ValueMerge.Auto);
+               rtrn.setType(fieldName.toString(),type);
+               if(valueJson.has("target") && ValueMerge.Key.equals(merge)){
+                  rtrn.setKeyValue(fieldName.toString(),valueJson.getString("target"));
+               }else{
+                  rtrn.setMerge(fieldName.toString(),merge);
+               }
+            }else{
+               throw new IllegalArgumentException(fieldName+" value is not json "+fieldValue);
+            }
+         });
+      }
+      if(json.has("execute")){
+         Object value = json.get("execute");
+         if(value instanceof String){
+            rtrn.execute(new JsMatchAction(value.toString()));
+         }else if (value instanceof Json && ((Json)value).isArray()){
+            ((Json)value).forEach(entry->{
+               rtrn.execute(new JsMatchAction(entry.toString()));
+            });
+         }
+      }
+      if(json.has("children")){
+         json.getJson("children").forEach(child->{
+            if(child instanceof String){
+               rtrn.add(new Exp(child.toString()));
+            }else if (child instanceof Json && !((Json)child).isArray()){
+               rtrn.add(fromJson((Json)child));
+            }else{
+               throw new IllegalArgumentException("could not create child Exp from "+child);
+            }
+         });
+      }
+      return rtrn;
+   };
+
+   public static Json getSchema(){
+      Json rtrn = new Json();
+      rtrn.set("$schema","http://json-schema.org/draft-07/schema");
+      rtrn.set("definitions",new Json());
+      rtrn.getJson("definitions").set("exp",getSchemaDefinition("exp"));
+      rtrn.set("$ref","#/definitions/exp");
+      return rtrn;
+   }
+   public static Json getSchemaDefinition(String name){
+      return Json.fromJs("" +
+         "{" +
+         "  oneOf: [" +
+         "    {type: 'string'}," +
+         "    {" +
+         "      type: 'object'," +
+         "      properties: {" +
+         "        name: { type: 'string' }," +
+         "        pattern: { type: 'string' }," +
+         "        eat: { oneOf: [ { type: 'number' }, { enum: ['None','Match','ToMatch','Line'] } ] }," +
+         "        range: { enum: ['EntireLine','AfterParent','BeforeParent'] }," +
+         "        nest: { type: 'string' }," +
+         "        requires: { type: 'array', items: { type: 'string' } }," +
+         "        enables: { type: 'array', items: { type: 'string' } }," +
+         "        disables: { type: 'array', items: { type: 'string' } }," +
+         "        merge: { enum: ['ByKey','AsEntry','Extend'] }," +
+         "        with: { type: 'object' }," +
+         "        rules: {" +
+         "          type: 'array'," +
+         "          items: {" +
+         "            oneOf: [" +
+         "              { enum: ['Repeat','RepeatChildren','PushTarget','PreClose','PostClose','PrePopTarget','PostPopTarget','PreClearTarget','PostClearTarget','TargetRoot'] }," +
+         "              {" +
+         "                type: 'object'," +
+         "                properties: {" +
+         "                  PushTarget: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }," +
+         "                  PreClearTarget: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }," +
+         "                  PostClearTarget: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }," +
+         "                  PreClose: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }," +
+         "                  PostClose: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }," +
+         "                  TargetRoot: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }" +
+         "                }" +
+         "              }" +
+         "            ]" +
+         "          }" +
+         "        }," +
+         "        fields: { " +
+         "          type: 'object'," +
+         "          additionalProperties: {" +
+         "            type: 'object'," +
+         "            properties: {" +
+         "              type: { enum: ['Auto','String','KMG','Integer','Decimal','Json'] }," +
+         "              merge: { enum: ['Auto','BooleanKey','BooleanValue','TargetId','Count','Add','List','Key','Set','First','Last','TreeSibling','TreeMerging'] }," +
+         "            }," +
+         "            if: { properties: { merge: {enum: ['Key']} } }," +
+         "            then: { required: ['target'] }" +
+         "          }" +
+         "        }," +
+         "        execute: {oneOf: [ {type: 'string'}, {type: 'array',items: { type: 'string'} } ] }," +
+         "        children: { type: 'array', items: {$ref: '#/definitions/"+name+"' } }" +
+         "      }," +
+         "      required: ['pattern']," +
+         "      additionalProperties: false" +
+         "    }" +
+         "  ]" +
+         "}" +
+         "");
+   }
 
    static final String NEST_ARRAY = "_array";
    static final String NEST_VALUE = "_value";
 
+   public static final String NEST_KEY_PREFIX = "${{";
+   public static final String NEST_KEY_SUFFIX = "}}";
+   public static final String NEST_EXTEND_PREFIX = "$[[";
+   public static final String NEST_EXTEND_SUFFIX = "]]";
+   public static final String CAPTURE_PREFIX = "(?<";
+   public static final String CAPTURE_SUFFIX = ">";
    public static final String CAPTURE_GROUP_PATTERN = "\\(\\?<([^>]+)>";
    public static final String ROOT_TARGET_NAME = "_ROOT";
    public static final String GROUPED_NAME = "_GROUPED";
@@ -134,9 +333,10 @@ public class Exp {
             }else if(key.contains("=")){
                String type = key.substring(0,key.indexOf("="));
                String value = key.substring(key.indexOf("=")+1);
-               ValueType valueType = StringUtil.getEnum(type,ValueType.class);
-               if(valueType!=null){
-                  valueInfo.setType(valueType);
+               //changed from ValueType, why was it as ValueType?
+               ValueMerge valueMerge = StringUtil.getEnum(type,ValueMerge.class);
+               if(valueMerge!=null){
+                  valueInfo.setMerge(valueMerge);
                   valueInfo.setTarget(value);
                }else{
                   //TODO log the error for invalid type?
@@ -146,6 +346,27 @@ public class Exp {
                throw new IllegalArgumentException("cannot infer type info from "+key+" in "+fieldMatcher.group(1)+" of "+pattern);
             }
          }
+      }
+      return rtrn;
+   }
+   public String buildPattern(){
+      String rtrn = getPattern();
+      for(String key : fields.keySet()){
+         ValueInfo info = fields.get(key);
+         String replacement = key;
+         if(!info.getType().equals(ValueType.Auto)){
+            replacement+=":"+info.getType().toString().toLowerCase();
+         }
+         if(!info.getMerge().equals(ValueMerge.Auto)){
+            replacement+=":"+info.getMerge().toString().toLowerCase();
+            if(ValueMerge.Key.equals(info.getMerge())){
+               replacement+="="+info.getTarget();
+            }
+         }
+         int start = rtrn.indexOf(CAPTURE_PREFIX+key);
+         int stop = rtrn.indexOf(CAPTURE_SUFFIX,start);
+         String substring = rtrn.substring(start,stop+CAPTURE_SUFFIX.length());
+         rtrn = rtrn.replace(substring,CAPTURE_PREFIX+replacement+CAPTURE_SUFFIX);
       }
       return rtrn;
    }
@@ -177,6 +398,9 @@ public class Exp {
       this(pattern,pattern);
    }
    public Exp(String name, String pattern){
+      if(name == null || pattern == null){
+         throw new IllegalArgumentException("name and pattern cannot be null");
+      }
       this.name = name;
       this.pattern = pattern;
       this.fields = parsePattern(pattern);
@@ -189,9 +413,13 @@ public class Exp {
    public int getEat(){return eat;}
 
    public Exp with(String key, Object value){
+      if(key == null || value == null){
+         throw new IllegalArgumentException("key and value cannot be null");
+      }
       with.putIfAbsent(key,value);
       return this;
    }
+   public Map<String,Object> getWith(){return with;}
    public boolean isNested(){
       return !nesting.isEmpty();
    }
@@ -213,14 +441,17 @@ public class Exp {
    }
 
    public Exp nest(String nesting){
+      if(nesting == null){
+         throw new IllegalArgumentException("nesting cannot be null");
+      }
       List<String> nests = Json.dotChain(nesting);
       for(String nest : nests){
          int index=-1;
-         if(nest.startsWith("${{") && nest.endsWith("}}")){
-            String fieldName = nest.substring("${{".length(),nest.length()-"}}".length());
+         if(nest.startsWith(NEST_KEY_PREFIX) && nest.endsWith(NEST_KEY_SUFFIX)){
+            String fieldName = nest.substring(NEST_KEY_PREFIX.length(),nest.length()-NEST_KEY_SUFFIX.length());
             key(fieldName);
-         }else if (nest.startsWith(">")){
-            String extendName = nest.substring(">".length());
+         }else if (nest.startsWith(NEST_EXTEND_PREFIX) && nest.endsWith(NEST_EXTEND_SUFFIX)){
+            String extendName = nest.substring(NEST_EXTEND_PREFIX.length(),nest.length()-NEST_EXTEND_SUFFIX.length());
             extend(extendName);
          }else{
             group(nest);
@@ -228,15 +459,47 @@ public class Exp {
       }
       return this;
    }
+   public String getNest(){
+
+      if(!isNested()){
+         return "";
+      }
+      StringBuilder builder = new StringBuilder();
+      this.eachNest((key,type)->{
+         if(key.contains(".")){
+            key = key.replace(".","\\.");
+         }
+         if(builder.length() > 0){
+            builder.append(".");
+         }
+         if(Exp.NestType.Field.equals(type)){
+            builder.append(NEST_KEY_PREFIX+key+NEST_KEY_SUFFIX);
+         }else if (Exp.NestType.Extend.equals(type)){
+            builder.append(NEST_EXTEND_PREFIX+key+NEST_EXTEND_SUFFIX);
+         }else{
+            builder.append(key);
+         }
+      });
+      return builder.toString();
+   }
    public Exp group(String name){
+      if(name == null){
+         throw new IllegalArgumentException("name cannot be null");
+      }
       nesting.add(new NestPair(name,NestType.Name));
       return this;
    }
    public Exp key(String name){
+      if(name == null){
+         throw new IllegalArgumentException("name cannot be null");
+      }
       nesting.add(new NestPair(name,NestType.Field));
       return this;
    }
    public Exp extend(String name){
+      if(name == null){
+         throw new IllegalArgumentException("name cannot be null");
+      }
       nesting.add(new NestPair(name,NestType.Extend));
       return this;
    }
@@ -246,14 +509,23 @@ public class Exp {
       return this;
    }
    public Exp eat(Eat toEat){
+      if(toEat == null){
+         throw new IllegalArgumentException("eat cannot be null");
+      }
       eat = toEat.getId();
       return this;
    }
    public Exp execute(MatchAction action){
+      if(action == null){
+         throw new IllegalArgumentException("action cannot be null");
+      }
       callbacks.add(action);
       return this;
    }
    public Exp add(Exp child){
+      if(child == null){
+         throw new IllegalArgumentException("child cannot be null");
+      }
       children.add(child);
       return this;
    }
@@ -262,33 +534,59 @@ public class Exp {
       children.forEach(consumer);
    }
    public Exp setType(String fieldName, ValueType type){
+      if(fieldName == null || type == null){
+         throw new IllegalArgumentException("fieldName and type cannot be null");
+      }
       fields.get(fieldName).setType(type);
       return this;
    }
    public Exp setKeyValue(String key, String value){
+      if(key == null || value == null){
+         throw new IllegalArgumentException("key and value cannot be null");
+      }
       fields.get(key).setMerge(ValueMerge.Key);
       fields.get(key).setTarget(value);
       fields.get(value).setSkip(true);
       return this;
    }
    public Exp setMerge(String fieldName, ValueMerge merge){
+      if(fieldName == null || merge == null){
+         throw new IllegalArgumentException("fieldName and merge cannot be null");
+      }
+
       fields.get(fieldName).setMerge(merge);
       return this;
    }
+   public MatchRange getRange(){return matchRange;}
    public Exp setRange(MatchRange range){
+      if(range == null){
+         throw new IllegalArgumentException("range cannot be null");
+      }
+
       this.matchRange = range;
       return this;
    }
    public Exp addRule(ExpRule rule){
+      if(rule == null){
+         throw new IllegalArgumentException("rule cannot be null");
+      }
       this.rules.put(rule,null);
       return this;
    }
    public Exp addRule(ExpRule rule, Object value){
+      if(rule == null || value == null){
+         throw new IllegalArgumentException("rule and value cannot be null");
+      }
+
       this.rules.put(rule,value);
       return this;
    }
 
    public Exp setMerge(ExpMerge merge){
+      if(merge == null){
+         throw new IllegalArgumentException("merge cannot be null");
+      }
+
       this.expMerge = merge;
       return this;
    }
@@ -401,6 +699,9 @@ public class Exp {
       return returnTarget;
    }
    public Json apply(String line){
+      if(line == null){
+         throw new IllegalArgumentException("line cannot be null");
+      }
       JsonBuilder builder = new JsonBuilder();
       apply(new CheatChars(line),builder,null);
       return builder.getRoot();
@@ -597,7 +898,11 @@ public class Exp {
       return matcher.find();
    }
    public String getName(){return name;}
+
    Json appendNames(Json input){
+      if(input == null){
+         throw new IllegalArgumentException("input cannot be null");
+      }
       Json ctx = input;
       for(Exp.NestPair pair : nesting){
          ctx.add(pair.getValue(),new Json());
@@ -612,22 +917,41 @@ public class Exp {
       return ctx;
    }
    public ValueType getType(String key){
+      if(key == null){
+         throw new IllegalArgumentException("key cannot be null");
+      }
       return fields.get(key).getType();
    }
    public ValueMerge getMerge(String key){
+      if(key == null){
+         throw new IllegalArgumentException("key cannot be null");
+      }
       return fields.get(key).getMerge();
    }
 
    public Exp requires(String key){
+      if(key == null){
+         throw new IllegalArgumentException("key cannot be null");
+      }
       requires.add(key);
       return this;
    }
    public Exp enables(String key){
+      if(key == null){
+         throw new IllegalArgumentException("key cannot be null");
+      }
       enables.add(key);
       return this;
    }
    public Exp disables(String key){
+      if(key == null){
+         throw new IllegalArgumentException("key cannot be null");
+      }
       disables.add(key);
       return this;
    }
+
+   public Set<String> getRequires(){return requires;}
+   public Set<String> getEnables(){return enables;}
+   public Set<String> getDisables(){return disables;}
 }

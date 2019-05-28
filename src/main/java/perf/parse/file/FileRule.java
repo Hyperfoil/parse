@@ -1,5 +1,10 @@
 package perf.parse.file;
 
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
+import perf.parse.Exp;
+import perf.parse.JsTransform;
+import perf.parse.factory.*;
 import perf.yaup.StringUtil;
 import perf.yaup.json.Json;
 
@@ -10,6 +15,207 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class FileRule {
+
+    public static FileRule fromJson(Json json){
+        FileRule rtrn = new FileRule(json.getString("name",""));
+        if(json.has("nest")){
+            rtrn.setNest(json.getString("nest"));
+        }
+        if(json.has("path")){
+            rtrn.getCriteria().setPathPattern(json.getString("path"));
+        }
+        if(json.has("headerLines")){
+            rtrn.getCriteria().setHeaderLines((int)json.getLong("headerLines"));
+        }
+        if(json.has("filters")){
+            json.getJson("filters").values().stream().map(o->(Json)o).forEach(jsonFilter->{
+                Filter f = Filter.fromJson(jsonFilter);
+                if(f != null){
+                    rtrn.addFilter(f);
+                }else{
+                    //TODO log error creating filter?
+                }
+            });
+        }
+        if(json.has("findHeader")){
+            Object findHeader = json.get("findHeader");
+            if(findHeader instanceof String){
+                rtrn.getCriteria().addFindPattern(findHeader.toString());
+            }else if (findHeader instanceof Json){
+                Json findList = (Json)findHeader;
+                findList.values().forEach(findIt->{
+                    rtrn.getCriteria().addFindPattern(findIt.toString());
+                });
+                if(rtrn.getCriteria().getHeaderLines() < findList.size()){
+                    rtrn.getCriteria().setHeaderLines(findList.size());
+                }
+            }else{
+                //TODO alert error
+            }
+        }
+        if(json.has("avoidHeader")){
+            Object avoidheader = json.get("avoidHeader");
+            if(avoidheader instanceof String){
+                rtrn.getCriteria().addNotFindPattern(avoidheader.toString());
+            }else if (avoidheader instanceof Json){
+                Json avoidList = (Json)avoidheader;
+                avoidList.values().forEach(avoidIt->{
+                    rtrn.getCriteria().addNotFindPattern(avoidIt.toString());
+                });
+            }else{
+                //TODO alert error
+            }
+        }
+        if(json.has("asText")){
+            TextConverter converter = new TextConverter();
+            Object asText = json.get("asText");
+            if(asText instanceof String){
+                //TODO find the Factory
+                converter.addFactory(()->{
+                    switch (asText.toString().toLowerCase()){
+                        case "dstatfactory": return new DstatFactory().newParser();
+                        case "jep271factory": return new Jep271Factory().newParser();
+                        case "jmaphistofactory": return new JmapHistoFactory().newParser();
+                        case "jstackfactory": return new JStackFactory().newParser();
+                        case "printgcfactory": return new PrintGcFactory().newParser();
+                        case "serverlogfactory": return new ServerLogFactory().newParser();
+                        case "substrategcfactory": return new SubstrateGcFactory().newParser();
+                        case "xanfactory": return new XanFactory().newParser();
+                        default:
+                            throw new IllegalArgumentException("unknown factory "+asText.toString());
+                    }
+                });
+            }else if (asText instanceof Json){
+                Json expList = (Json)asText;
+                expList.values().forEach(expData ->{
+                    if(expData instanceof String){
+                        Exp exp = new Exp(expData.toString());
+                        converter.addExp(exp);
+                    }else if (expData instanceof Json){
+                        Exp exp = Exp.fromJson((Json)expData);
+                        converter.addExp(exp);
+                    }else{
+                        //TODO alert error
+                    }
+                });
+            }
+        }
+        if(json.has("asJbossCli")){
+            Object asJbossCli = json.get("asJbossCli");
+            if(asJbossCli instanceof String){
+                String asString = asJbossCli.toString();
+                if(asString.isEmpty()) {
+                    rtrn.setConverter(new JbossCliConverter());
+                }else{
+                    rtrn.setConverter(new JbossCliConverter().andThen(new JsTransform(asString)));
+                }
+            }else {
+                //TODO alert error
+            }
+        }
+        if(json.has("asJson")){
+            Object asJson = json.get("asJson");
+            if(asJson instanceof String){
+                String asString = (String)asJson;
+                if(asString.isEmpty()){
+                    rtrn.setConverter(new JsonConverter());
+                }else{
+                    rtrn.setConverter(new JsonConverter().andThen(new JsTransform(asString)));
+                }
+            }
+        }
+        if(json.has("asXml")){
+            Object asXml = json.get("asXml");
+            if(asXml instanceof String){
+                String asString = (String)asXml;
+                if(asString.isEmpty()){
+                    rtrn.setConverter(new XmlConverter());
+                }else{
+                    rtrn.setConverter(new XmlConverter().andThen(new JsTransform(asString)));
+                }
+            }else if (asXml instanceof Json){
+                XmlConverter converter = new XmlConverter();
+                ((Json)asXml).values().stream().map(o->(Json)o).forEach(entry->{
+                    Filter f = Filter.fromJson(entry);
+                    if(f!=null) {
+                        converter.addFilter(f);
+                    }
+                });
+                rtrn.setConverter(converter);
+            }
+        }
+        if(json.has("asPath")){
+            rtrn.setConverter((path)->{
+                try(Context context = Context.newBuilder("js").allowAllAccess(true).allowHostAccess(true).build()){
+                    context.enter();
+                    context.eval("js","function milliseconds(v){ return Packages.perf.yaup.StringUtil.parseKMG(v)};");
+                    context.eval("js","const StringUtil = Packages.perf.yaup.StringUtil;");
+                    context.eval("js","const Exp = Java.type('perf.parse.Exp');");
+                    context.eval("js","const ExpMerge = Java.type('perf.parse.ExpMerge');");
+                    context.eval("js","const MatchRange = Java.type('perf.parse.MatchRange');");
+                    context.eval("js","const Eat = Java.type('perf.parse.Eat');");
+                    context.eval("js","const ValueType = Java.type('perf.parse.ValueType')");
+                    context.eval("js","const ValueMerge = Java.type('perf.parse.ValueMerge');");
+                    context.eval("js","const ExpRule = Java.type('perf.parse.ExpRule')");
+                    context.eval("js","");
+
+                    context.eval("js","const console = {log: print}");
+
+                    Value matcher = context.eval("js",json.getString("asPath"));
+                    Value result = matcher.execute(path);
+                    if(result.isHostObject()){
+                        Object hostObj = result.asHostObject();
+                        if(hostObj instanceof Json){
+                            return (Json)hostObj;
+                        }
+                    }else if (result.hasMembers()){
+                        //TODO convert value to Json
+                    }
+                }
+                //TODO alert that failed to return from converter
+                return new Json();
+            });
+        }
+        return rtrn;
+    }
+    public static Json getSchemaDefinition(String filterRef){
+        return Json.fromJs("{" +
+           "type: 'object'," +
+           "properties: {" +
+           "  name: {type: 'string'}," +
+           "  nest: {type: 'string'}," +
+           "  path: {type: 'string'}," +
+           "  headerLines: {type: 'number'}," +
+           "  filter: {type: 'array', items: { $ref: '#/definitions/"+filterRef+"' }," +
+           "  findHeader: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }," +
+           "  avoidHeader: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }," +
+           "  asText: {oneOf: [" +
+           "    { type: 'string'}," +//supplier name or exp string
+           "    { type: 'array', items: { $ref: '#/definitions/exp' } }," +
+           "  ]}," +
+           "  asJbossCli: {oneOf: [" +
+           "    { type: 'string'}," +//empty string or javascript function (json)=>json
+           "  ]}," +
+           "  asJson: {oneOf: [" +
+           "    { type: 'string'}," +//empty string or javascript function (json)=>json
+           "  ]}," +
+           "  asXml: {oneOf: [" +
+           "    { type: 'string'}," +
+           "    { type: 'array', items: { $ref: '#/definitions/filter'} }," +
+           "  ]}," +
+           "  asPath: {type: 'string'}," +
+           "}," +
+           "oneOf: [" +
+           "  { required: ['asText'] }," +
+           "  { required: ['asJbossCli'] }," +
+           "  { required: ['asJson'] }," +
+           "  { required: ['asXml'] }," +
+           "  { required: ['asPath'] }," +
+           "]," +
+           "additionalProperties: false," +
+           "}");
+    }
+
 
     private String name;
     private MatchCriteria criteria = new MatchCriteria();

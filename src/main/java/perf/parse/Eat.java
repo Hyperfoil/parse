@@ -58,7 +58,7 @@ public enum Eat {
         return idMap.containsKey(value) ? idMap.get(value) : Width;
     }
     public static Eat from(String input){
-        if(input.matches("\\d+")){
+        if(input.matches("-?\\d+")){
             return Eat.from(Integer.parseInt(input));
         }else{
             return StringUtil.getEnum(input,Eat.class,Eat.Match);

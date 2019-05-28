@@ -7,6 +7,9 @@ import perf.parse.internal.DropString;
 import perf.parse.internal.JsonBuilder;
 import perf.yaup.json.Json;
 
+import javax.xml.crypto.dsig.keyinfo.KeyValue;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 import static org.junit.Assert.*;
@@ -14,6 +17,65 @@ import static org.junit.Assert.*;
 public class ExpTest {
 
    Function<String, DropString> factory = CheatChars::new;
+
+
+   @Test
+   public void buildPattern_nothing_parsed(){
+      Exp test = new Exp("(?<first>\\w+)")
+         .setType("first", ValueType.KMG)
+         .setMerge("first",ValueMerge.First);
+      String pattern = test.buildPattern();
+      assertEquals("should add :type:merge after name","(?<first:kmg:first>\\w+)",pattern);
+   }
+   @Test
+   public void buildPattern_field_name_matches_merge_name(){
+      Exp test = new Exp("(?<foo>\\w+)(?<first>\\w+)")
+         .setMerge("foo",ValueMerge.First)
+         .setMerge("first",ValueMerge.First);
+
+      String pattern = test.buildPattern();
+      assertEquals("should not replace first in foo description","(?<foo:first>\\w+)(?<first:first>\\w+)",pattern);
+   }
+   @Test
+   public void buildPattern_replace_field_parse(){
+      Exp test = new Exp("(?<foo:kmg:first>\\w+)")
+         .setType("foo",ValueType.Auto)
+         .setMerge("foo",ValueMerge.Auto);
+      String pattern = test.buildPattern();
+      assertEquals("existing pattern :type:merge should be removed for auto","(?<foo>\\w+)",pattern);
+   }
+   @Test
+   public void buildPattern_merge_key(){
+      Exp test = new Exp("(?<foo>\\w+)(?<bar>\\w+)").setKeyValue("foo","bar");
+      String pattern = test.buildPattern();
+      assertEquals("expect key=bar for foo","(?<foo:key=bar>\\w+)(?<bar>\\w+)",pattern);
+   }
+   @Test
+   public void getNest_allOptions(){
+      Exp test = new Exp("")
+         .key("key").group("group").extend("extend");
+
+      String nest = test.getNest();
+      assertEquals("use key and extend notation",Exp.NEST_KEY_PREFIX+"key"+Exp.NEST_KEY_SUFFIX+".group."+Exp.NEST_EXTEND_PREFIX+"extend"+Exp.NEST_EXTEND_SUFFIX,nest);
+   }
+   @Test
+   public void getNest_dot_in_group(){
+      Exp test = new Exp("").group("key.value");
+      String nest = test.getNest();
+
+      assertEquals(". should be escaped","key\\.value",nest);
+   }
+
+   @Test
+   public void nest_dot_in_group(){
+      Exp test = new Exp("").nest("key\\.value");
+      List<String> keys = new ArrayList<>();
+      test.eachNest((key,type)->{
+         keys.add(key);
+      });
+      assertEquals("expect 1 key",1,keys.size());
+      assertEquals("key should remove \\","key.value",keys.get(0));
+   }
 
    @Test
    public void repeat(){

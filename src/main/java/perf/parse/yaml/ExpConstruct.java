@@ -9,13 +9,51 @@ import perf.parse.*;
 import perf.yaup.StringUtil;
 import perf.yaup.json.Json;
 import perf.yaup.yaml.DeferableConstruct;
+import perf.yaup.yaml.Mapping;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 import static perf.yaup.yaml.OverloadConstructor.json;
 
 public class ExpConstruct extends DeferableConstruct {
 
+    public static final Mapping<Exp> MAPPING = (exp)->{
+        Map<Object,Object> map = new LinkedHashMap<>();
+
+        map.put("name",exp.getName());
+        map.put("pattern",exp.buildPattern());//takes care of ValueType & ValueMerge
+        if (Eat.from(exp.getEat()).equals(Eat.Width)) {
+            map.put("eat",exp.getEat());
+        }else if (!Eat.Match.equals(Eat.from(exp.getEat()))){
+            map.put("eat",Eat.from(exp.getEat()).toString().toLowerCase());
+        }
+        //if not default range
+        if(!MatchRange.AfterParent.equals(exp.getRange())){
+            map.put("range",exp.getRange().toString().toLowerCase());
+        }
+        if(!exp.getRequires().isEmpty()){
+            map.put("requires",exp.getRequires());
+        }
+        if(!exp.getEnables().isEmpty()){
+            map.put("enables",exp.getEnables());
+        }
+        if(!exp.getDisables().isEmpty()){
+            map.put("disables",exp.getDisables());
+        }
+        if(!exp.getWith().isEmpty()){
+            map.putIfAbsent("with",exp.getWith());
+        }
+        if(exp.isNested()){
+            map.putIfAbsent("nest",exp.getNest());
+        }
+        if(exp.hasRules()){
+
+        }
+
+        return map;
+    };
 
     @Override
     public Object construct(Node node) {
@@ -46,7 +84,7 @@ public class ExpConstruct extends DeferableConstruct {
         };
         if(node instanceof ScalarNode){
             String pattern = ((ScalarNode)node).getValue();
-            return new Exp("exp-"+System.currentTimeMillis(),pattern);
+            return new Exp(pattern);
         }else if(node instanceof MappingNode){
             MappingNode mappingNode = (MappingNode)node;
             Json json = json(node);

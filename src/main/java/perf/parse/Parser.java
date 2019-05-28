@@ -66,7 +66,11 @@ public class Parser {
         patterns.add(0,pattern);
     }
     public void addAt(Exp pattern, int order){
-        patterns.add(order,pattern);
+        if(patterns.size()<=order){
+            patterns.add(pattern);
+        }else {
+            patterns.add(order, pattern);
+        }
     }
     public void add(Exp pattern){
         patterns.add(pattern);

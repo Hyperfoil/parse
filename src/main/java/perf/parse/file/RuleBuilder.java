@@ -36,15 +36,15 @@ public class RuleBuilder {
         rule.setNest(nest);
         return this;
     }
-    public FileRule path(Function<String, Json> converter){
+    public FileRule asPath(Function<String, Json> converter){
         rule.setConverter(converter);
         return rule;
     }
-    public FileRule text(Supplier<Parser> supplier){
+    public FileRule asText(Supplier<Parser> supplier){
         rule.setConverter(new TextConverter().addFactory(supplier));
         return rule;
     }
-    public FileRule text(Exp...exp){
+    public FileRule asText(Exp...exp){
         TextConverter converter = new TextConverter();
         for(int i=0; i<exp.length; i++){
             converter.addExp(exp[i]);
@@ -52,27 +52,27 @@ public class RuleBuilder {
         rule.setConverter(converter);
         return rule;
     }
-    public FileRule jbossCli(){
+    public FileRule asJbossCli(){
         rule.setConverter(new JbossCliConverter());
         return rule;
     }
-    public FileRule jbossCli(Function<Json,Json> then){
+    public FileRule asJbossCli(Function<Json,Json> then){
         rule.setConverter(new JbossCliConverter().andThen(then));
         return rule;
     }
-    public FileRule json(){
+    public FileRule asJson(){
         rule.setConverter(new JsonConverter());
         return rule;
     }
-    public FileRule json(Function<Json,Json> then){
+    public FileRule asJson(Function<Json,Json> then){
         rule.setConverter(new JsonConverter().andThen(then));
         return rule;
     }
-    public FileRule xml(){
+    public FileRule asXml(){
         rule.setConverter(new XmlConverter());
         return rule;
     }
-    public FileRule xml(Filter...filters){
+    public FileRule asXml(Filter...filters){
         XmlConverter converter = new XmlConverter();
         for(int i=0; i<filters.length;i++){
             converter.addFilter(filters[i]);

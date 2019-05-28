@@ -17,7 +17,7 @@ public class FilterConstruct extends DeferableConstruct {
 
                 rtrn.setResult(value);
             }else{
-                throw new YAMLException("scalar filter defintion must be a javascript function"+node.getStartMark());
+                throw new YAMLException("scalar filter definition must be a javascript function"+node.getStartMark());
             }
         }else if (node instanceof MappingNode){
             MappingNode mappingNode = (MappingNode)node;

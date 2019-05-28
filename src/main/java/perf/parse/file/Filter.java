@@ -3,6 +3,7 @@ package perf.parse.file;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ReadContext;
+import perf.parse.Exp;
 import perf.yaup.StringUtil;
 import perf.yaup.json.Json;
 import perf.yaup.json.YaupJsonProvider;
@@ -20,6 +21,41 @@ import java.util.regex.Pattern;
  *
  */
 public class Filter {
+
+    public static Filter fromJson(Json json){
+        Filter rtrn = new Filter();
+
+        if(json.has("path")){
+            rtrn.setPath(json.getString("path"));
+        }
+        if(json.has("nest")){
+            rtrn.setPath(json.getString("path"));
+        }
+        if(json.has("regex")){
+            rtrn.setRegex(json.getString("regex"));
+        }
+        if(json.has("result")){
+            rtrn.setResult(json.getString("result"));
+        }
+        if(json.has("negated")){
+            rtrn.setNegated(json.getBoolean("negated"));
+        }
+        return rtrn;
+    }
+    public static Json getSchemaDefinition(){
+        return Json.fromJs(
+           "{" +
+           "  type: 'object'," +
+           "  properties: {" +
+           "    path: {type: 'string'}," +
+           "    nest: {type: 'string'}," +
+           "    regex: {type: 'string'}," +
+           "    result: {type: 'string'}," +
+           "    negated: {type: 'boolean'}," +
+           "  }," +
+           "  required: ['regex']," +
+           "}");
+    }
 
     private static Configuration yaup = Configuration.defaultConfiguration().jsonProvider(new YaupJsonProvider());
 
