@@ -105,6 +105,9 @@ public class Parser {
         }
         return index;
     }
+    public boolean remove(Exp exp){
+        return patterns.remove(exp);
+    }
     public void clearConsumers(){consumers.clear();}
 
     public boolean test(CharSequence line){
@@ -152,6 +155,9 @@ public class Parser {
         for (JsonConsumer consumer : consumers) {
             consumer.start();
         }
+        for(Exp exp : patterns){
+            exp.onSetup(this);
+        }
     }
 
     public Json close(){
@@ -160,6 +166,10 @@ public class Parser {
         for (JsonConsumer consumer : consumers) {
             consumer.close();
         }
+        for(Exp exp : patterns){
+            exp.onClose(this);
+        }
+
         return rtrn;
     }
     private Json emit(){

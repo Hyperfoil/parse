@@ -41,7 +41,7 @@ repositories {
 dependencies {
 //    compile "me.champeau.gradle:jmh-gradle-plugin:0.4.7"
 
-    compile 'perf:yaup:+'
+    compile 'perf:yaup:0.2-SNAPSHOT'
     //compile project(':diff')
     //compile 'org.json:json:20141113'
     //compile 'org.apache.commons:commons-math3:3.0'

@@ -231,6 +231,8 @@ public class Exp {
    public static final String ROOT_TARGET_NAME = "_ROOT";
    public static final String GROUPED_NAME = "_GROUPED";
 
+
+
    private static class ValueInfo {
 
       final String name;
@@ -950,6 +952,22 @@ public class Exp {
       disables.add(key);
       return this;
    }
+
+   public void onSetup(Parser parser){
+
+   }
+   public void onClose(Parser parser){
+      if(hasRule(ExpRule.RemoveOnClose)){
+         parser.remove(this);
+      }else{
+         if(hasChildren()){
+            for(Exp child: children){
+               child.onClose(parser);
+            }
+         }
+      }
+   }
+
 
    public Set<String> getRequires(){return requires;}
    public Set<String> getEnables(){return enables;}

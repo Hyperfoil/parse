@@ -7,6 +7,7 @@ import perf.parse.JsTransform;
 import perf.parse.factory.*;
 import perf.yaup.StringUtil;
 import perf.yaup.json.Json;
+import perf.yaup.json.JsonValidator;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -15,6 +16,52 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class FileRule {
+
+    public static void main(String[] args) {
+        JsonValidator validator = new JsonValidator(FileRule.getSchema());
+
+        System.out.println(validator.getSchema().toString(2));
+
+        System.exit(0);
+        FileRule rule = FileRule.fromJson(Json.fromJs(
+           "{" +
+              "name: 'log.xml'," +
+              "path: 'log.xml'," +
+              "nest: 'faban.log'," +
+              "asPath: function (path){\n" +
+              "  function getTimestamp(js, selector){\n" +
+              "    const found = Json.find(js,selector);\n" +
+              "    if(found){\n" +
+              "      if(found.isArray() && found.size() === 1){ found = found.getJson(0);}\n" +
+              "      const value = found.getJson('millis',new Json()).getString('text()','');\n" +
+              "      if(value.matches('\\d+')){return Java.type('java.lang.Long').parseLong(value);}\n" +
+              "}\n" +
+              "}\n" +
+              "const rtrn = new Json();\n" +
+              "const content = Xml.parseFile(path).toJson();\n" +
+              "const first = getTimestamp(content,'$.log.record[0]');\n" +
+              "if(first){Json.chainSet(rtrn,'timestamps.runStart',first);}\n" +
+              "const rampUp = getTimestamp(content,'$.log.record[?(@.message['text()'] == 'Ramp up started')]');\n" +
+              "if(rampUp){Json.chainSet(rtrn,'timestamps.rampUp',rampUp);}\n" +
+              "const steadyState = getTimestamp(content,'$.log.record[?(@.message['text()'] == 'Ramp up completed')]');\n" +
+              "if(steadyState){Json.chainSet(rtrn,'timestamps.steadyState',steadyState);}\n" +
+              "const rampDown = getTimestamp(content,'$.log.record[?(@.message['text()'] == 'Steady state completed')]');\n" +
+              "if(rampDown){Json.chainSet(rtrn,'timestamps.rampDown',rampDown);}\n" +
+              "const runStop = getTimestamp(rtrn,'$.log.record[?(@.message['text()'] == 'Ramp down completed')]');\n" +
+              "if(runStop){Json.chainSet(rtrn,'timestamps.runStop',runStop);}\n" +
+              "const lastLog = getTimestamp(rtrn,'$.log.record[-1]');\n" +
+              "if(lastLog){Json.chainSet(rtrn,'timestamps.lastLog',lastLog);}\n" +
+              "const stats = Json.find(content,'$.log.record[?(@.class['text()'] == 'com.sun.faban.driver.engine.MasterImpl$StatsWriter')]');\n" +
+              "console.log(stats)\n" +
+              "}\n" +
+              "}"));
+
+        rule.apply("/home/wreicher/perfWork/eap73/2010/675/run/benchclient1.perf.lab.eng.rdu.redhat.com/specjdriverharness-jboss-eap-7-2-Beta.416Y/log.xml",(nest,json)->{
+            System.out.println("nest: "+nest);
+            System.out.println("json:\n"+json.toString(2));
+        });
+    }
+
 
     public static FileRule fromJson(Json json){
         FileRule rtrn = new FileRule(json.getString("name",""));
@@ -73,6 +120,7 @@ public class FileRule {
                 //TODO find the Factory
                 converter.addFactory(()->{
                     switch (asText.toString().toLowerCase()){
+                        case "csvfactory": return new CsvFactory().newParser();
                         case "dstatfactory": return new DstatFactory().newParser();
                         case "jep271factory": return new Jep271Factory().newParser();
                         case "jmaphistofactory": return new JmapHistoFactory().newParser();
@@ -153,6 +201,8 @@ public class FileRule {
                     context.eval("js","const Exp = Java.type('perf.parse.Exp');");
                     context.eval("js","const ExpMerge = Java.type('perf.parse.ExpMerge');");
                     context.eval("js","const MatchRange = Java.type('perf.parse.MatchRange');");
+                    context.eval("js","const Xml = Java.type('perf.yaup.xml.pojo.Xml');");
+                    context.eval("js","const Json = Java.type('perf.yaup.json.Json');");
                     context.eval("js","const Eat = Java.type('perf.parse.Eat');");
                     context.eval("js","const ValueType = Java.type('perf.parse.ValueType')");
                     context.eval("js","const ValueMerge = Java.type('perf.parse.ValueMerge');");
@@ -178,6 +228,16 @@ public class FileRule {
         }
         return rtrn;
     }
+    public static Json getSchema(){
+        Json rtrn = new Json();
+        rtrn.set("$schema","http://json-schema.org/draft-07/schema");
+        rtrn.set("definitions",new Json());
+        rtrn.getJson("definitions").set("filter",Filter.getSchemaDefinition());
+        rtrn.getJson("definitions").set("rule",getSchemaDefinition("filter"));
+        rtrn.getJson("definitions").set("exp",Exp.getSchemaDefinition("exp"));
+        rtrn.set("$ref","#/definitions/rule");
+        return rtrn;
+    }
     public static Json getSchemaDefinition(String filterRef){
         return Json.fromJs("{" +
            "type: 'object'," +
@@ -186,7 +246,7 @@ public class FileRule {
            "  nest: {type: 'string'}," +
            "  path: {type: 'string'}," +
            "  headerLines: {type: 'number'}," +
-           "  filter: {type: 'array', items: { $ref: '#/definitions/"+filterRef+"' }," +
+           "  filter: {type: 'array', items: { $ref: '#/definitions/"+filterRef+"' } }," +
            "  findHeader: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }," +
            "  avoidHeader: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }," +
            "  asText: {oneOf: [" +
@@ -212,7 +272,7 @@ public class FileRule {
            "  { required: ['asXml'] }," +
            "  { required: ['asPath'] }," +
            "]," +
-           "additionalProperties: false," +
+           "additionalProperties: false" +
            "}");
     }
 

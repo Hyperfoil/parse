@@ -63,6 +63,7 @@ public class TextConverter implements Function<String, Json> {
         }catch (IOException e) {
             e.printStackTrace();
         }
+        parsers.forEach(Parser::close);
         return rtrn;
     }
 }

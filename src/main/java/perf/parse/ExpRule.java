@@ -41,6 +41,10 @@ public enum ExpRule {
     *
     */
    PreClearTarget,
+   /**
+    *
+    */
+   RemoveOnClose,
    PostClearTarget,
    TargetRoot;
 

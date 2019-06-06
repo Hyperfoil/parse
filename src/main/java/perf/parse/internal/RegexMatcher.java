@@ -12,6 +12,8 @@ import java.util.regex.Pattern;
 public class RegexMatcher implements IMatcher {
 
     private static final String FIELD_PATTERN = "\\(\\?<([^>]+)>";
+    private static final String SAFE_PREFIX = "x";
+
 
     private Matcher matcher;
     ThreadLocal<Matcher> cachedMatcher;
@@ -41,14 +43,18 @@ public class RegexMatcher implements IMatcher {
             int start = fieldMatcher.start(1);
             int end = fieldMatcher.end(1);
             String realName = fieldMatcher.group(1);
-            String compName = realName.replaceAll("[_ +.()\\[\\]\\- \\\\]","x").replaceAll(" ","");
+            String compName = realName.replaceAll("[\"/_ +.()\\[\\]\\- \\\\]","x").replaceAll(" ","");
+            if(!Character.isLetter(compName.charAt(0))){
+                compName = SAFE_PREFIX + compName;
+            }
             if(!compName.equals(realName)){
                 newPattern = newPattern.substring(0,start)+compName+newPattern.substring(end);
                 fieldMatcher.reset(newPattern);
+            }else{
+
             }
             renames.put(realName,compName);
         }
-
         this.pattern = pattern;
         safePattern = newPattern;
         cachedMatcher = new ThreadLocal<>();

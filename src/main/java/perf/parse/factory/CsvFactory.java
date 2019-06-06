@@ -18,7 +18,6 @@ public class CsvFactory implements ParseFactory {
       return p;
    }
 
-
    public Exp headers(){
       return new Exp("header","^(?<header>[^,$]+)(?:,|$)")
          .addRule(ExpRule.Repeat)
