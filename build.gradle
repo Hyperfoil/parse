@@ -2,7 +2,7 @@
 perf from
 https://gvsmirnov.ru/blog/tech/2014/03/10/keeping-your-benchmarks-separate.html
 */
-group 'perf'
+group 'io.hyperfoil.tools'
 version '0.1-SNAPSHOT'
 
 apply plugin: 'java'
@@ -41,7 +41,7 @@ repositories {
 dependencies {
 //    compile "me.champeau.gradle:jmh-gradle-plugin:0.4.7"
 
-    compile 'perf:yaup:0.2-SNAPSHOT'
+    compile 'io.hyperfoil.tools:yaup:0.2-SNAPSHOT'
     //compile project(':diff')
     //compile 'org.json:json:20141113'
     //compile 'org.apache.commons:commons-math3:3.0'

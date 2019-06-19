@@ -11,7 +11,7 @@ Use regex patterns to build json from text files
 
 
 ## Examples
-There are existing Factories in perf.parse.factory for common log formats. For example, parsing jdk-9+ gclogs
+There are existing Factories in io.hyperfoil.tools.parse.factory for common log formats. For example, parsing jdk-9+ gclogs
 ```Java
 Jep271Factory factory = new Jep271Factory();
 Parser parser = factory.newParser();
@@ -35,14 +35,14 @@ Files.lines(Paths.get("server.gclog")).forEach(parser::onLine) //pass each line 
 ## Exp
 Exp are java regex that update the input line and the result json when the regex is found. The regex pattern needs to use named capture groups to identify values for the json e.g. `(?<size>\\d+)` and do not need to match the entire line but can use `^` and `$` to force the match location.
 
-After the Exp pattern is found in the line the Exp will "eat" (remove) part of the line. The default is to "eat" the part of the line that matched the pattern but Exp can also eat nothing, everything, everything up to the match, or a fixed width from the match. See `perf.parse.Eat`
+After the Exp pattern is found in the line the Exp will "eat" (remove) part of the line. The default is to "eat" the part of the line that matched the pattern but Exp can also eat nothing, everything, everything up to the match, or a fixed width from the match. See `io.hyperfoil.tools.parse.Eat`
 
-The next step is to update the result json with the captured name-value pairs. The default is to collect each name-value pair. This means the first match with set `{name : value}` and a second match will change it to `{name : [value,value2]}`. See `perf.parse.Merge`
+The next step is to update the result json with the captured name-value pairs. The default is to collect each name-value pair. This means the first match with set `{name : value}` and a second match will change it to `{name : [value,value2]}`. See `io.hyperfoil.tools.parse.Merge`
 
-There are several other configuration options for shaping the result json. The API is not static and can certainly be improved. If you are trying to create a certain json shape then take a look at `perf.parse.ExpRule` which list all the existing actions that can occur after the match and before the result json is updated.
+There are several other configuration options for shaping the result json. The API is not static and can certainly be improved. If you are trying to create a certain json shape then take a look at `io.hyperfoil.tools.parse.ExpRule` which list all the existing actions that can occur after the match and before the result json is updated.
 
 ## Values
-One of the first json shaping issues is wanting to change the value type for the name-value pair. The default is to treat the value as a Number if `\\d+` or `\\d+\\.\\d+` match the value, otherwise it is a `String`. Check `perf.parse.ValueType` for the currently supported value types. There are 2 ways to set the Value type for a named capture:
+One of the first json shaping issues is wanting to change the value type for the name-value pair. The default is to treat the value as a Number if `\\d+` or `\\d+\\.\\d+` match the value, otherwise it is a `String`. Check `io.hyperfoil.tools.parse.ValueType` for the currently supported value types. There are 2 ways to set the Value type for a named capture:
 
 ```Java
   Exp("javaApi","(?<size>\\d+[kmgtKMGT][bB]?").set("name",Value.KMG); //Java API
@@ -55,7 +55,7 @@ The pattern API should work for all the Value types except `Value.Key`. Key is w
 
 
 ## How I actually use this
-The above examples are great for testing new Exp and verifying result json structure. In practice, I want to scan a collection of files with an expected folder structure (e.g. the archive.zip from a jenkins run) and build a result json from all the content. This where we use `perf.parse.file.FileRule` and the helper `perf.parse.file.RuleBuilder` .
+The above examples are great for testing new Exp and verifying result json structure. In practice, I want to scan a collection of files with an expected folder structure (e.g. the archive.zip from a jenkins run) and build a result json from all the content. This where we use `io.hyperfoil.tools.parse.file.FileRule` and the helper `io.hyperfoil.tools.parse.file.RuleBuilder` .
 ```Java
 //Build a list of all the file patterns and what to do when the pattern matches
 List<FileRule> = Arrays.asList(
