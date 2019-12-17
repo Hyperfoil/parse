@@ -27,6 +27,7 @@ public class FileRuleConstruct extends DeferableConstruct {
                                 Object deferred = deferAs(entryNode,new Tag(MatchCriteria.class));
                                 if(deferred instanceof MatchCriteria){
                                     rtrn.setCriteria((MatchCriteria)deferred);
+
                                 }else{
                                     throw new YAMLException("failt to create a MatchCriteria"+entryNode.getStartMark());
                                 }

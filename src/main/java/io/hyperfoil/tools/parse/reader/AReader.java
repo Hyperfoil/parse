@@ -5,6 +5,7 @@ import io.hyperfoil.tools.parse.Parser;
 import io.hyperfoil.tools.yaup.HashedList;
 import io.hyperfoil.tools.yaup.file.FileUtility;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -17,7 +18,11 @@ public abstract class AReader {
 
     public void read(String path) {
         setup();
-        processInputStream(FileUtility.getInputStream(path));
+        try(InputStream inputStream = FileUtility.getInputStream(path)){
+            processInputStream(inputStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         close();
     }
     public void read(InputStream stream){

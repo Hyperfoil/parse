@@ -18,6 +18,11 @@ public class MatchCriteria {
     private final LinkedHashSet<String> findPatterns = new LinkedHashSet<>();
     private final LinkedHashSet<String> notFindPatterns = new LinkedHashSet<>();
 
+    @Override
+    public String toString(){
+        return pathPattern+" lines="+headerLines+" find="+findPatterns+" avoid="+notFindPatterns;
+    }
+
     public MatchCriteria(){}
     public MatchCriteria(String pathPattern) {
         this.pathPattern = pathPattern;

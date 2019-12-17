@@ -24,6 +24,36 @@ import java.util.regex.Matcher;
 
 public class Exp {
 
+   public Json toJson(){
+      Json rtrn = new Json();
+      rtrn.set("pattern",getPattern());
+      rtrn.set("eat",Eat.from(getEat()) == Eat.Width ? getEat() : Eat.from(getEat()));
+      rtrn.set("name",getName());
+      rtrn.set("range",getRange());
+      if(getNest()!=null){
+         rtrn.set("nest",getNest());
+      }
+      if(!getRequires().isEmpty()){
+         rtrn.set("requires",getRequires());
+      }
+      if(!getEnables().isEmpty()){
+         rtrn.set("enables",getEnables());
+      }
+      if(!getDisables().isEmpty()){
+         rtrn.set("disables",getDisables());
+      }
+      if(!getWith().isEmpty()){
+         Json with = new Json(false);
+         getWith().forEach((k,v)->{
+            with.set(k,v);
+         });
+         rtrn.set("with",with);
+      }
+
+
+
+      return rtrn;
+   }
    public static Exp fromJson(Json json){
       if(!json.has("pattern") || !(json.get("pattern") instanceof String)){
          throw new IllegalArgumentException("exp requires a pattern");
@@ -46,14 +76,6 @@ public class Exp {
             rtrn.requires(value.toString());
          }else if (value instanceof Json){
             ((Json)value).forEach(entry->rtrn.requires(entry.toString()));
-         }
-      }
-      if(json.has("enables")){
-         Object value = json.get("enables");
-         if(value instanceof String){
-            rtrn.requires(value.toString());
-         }else if (value instanceof Json){
-            ((Json)value).forEach(entry->rtrn.enables(entry.toString()));
          }
       }
       if(json.has("enables")){
@@ -734,10 +756,8 @@ public class Exp {
 
          int matchStart = this.matchRange.apply(this.matcher, line, startIndex.get());
 
-
          if (this.matcher.find()) {
             rtrn = true;
-
 
             DropString.Ref firstStart = line.reference(matcher.start());
             DropString.Ref firstEnd = line.reference(matcher.end());

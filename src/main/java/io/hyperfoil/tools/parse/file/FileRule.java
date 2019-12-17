@@ -18,6 +18,19 @@ import java.util.function.Function;
 public class FileRule {
 
     public static void main(String[] args) {
+
+        Function<String,String> convert = (input)->{
+            return input+"."+input;
+        };
+        Function chained = convert.andThen((input)->{
+            return input.toLowerCase();
+        });
+
+        System.out.println(chained.apply("FOO"));
+
+        System.exit(0);
+
+
         JsonValidator validator = new JsonValidator(FileRule.getSchema());
 
         System.out.println(validator.getSchema().toString(2));
@@ -56,7 +69,7 @@ public class FileRule {
               "}\n" +
               "}"));
 
-        rule.apply("/home/wreicher/perfWork/eap73/2010/675/run/benchclient1.perf.lab.eng.rdu.redhat.com/specjdriverharness-jboss-eap-7-2-Beta.416Y/log.xml",(nest,json)->{
+        rule.apply("/tmp/log.xml",(nest,json)->{
             System.out.println("nest: "+nest);
             System.out.println("json:\n"+json.toString(2));
         });
@@ -113,8 +126,15 @@ public class FileRule {
                 //TODO alert error
             }
         }
+        if (json.has("asContent")) {
+            Object asContent = json.get("asContent");
+            ContentConverter converter = new ContentConverter();
+            converter.setKey(asContent.toString());
+            rtrn.setConverter(converter);
+        }
         if(json.has("asText")){
             TextConverter converter = new TextConverter();
+            rtrn.setConverter(converter);
             Object asText = json.get("asText");
             if(asText instanceof String){
                 //TODO find the Factory
@@ -196,30 +216,37 @@ public class FileRule {
             rtrn.setConverter((path)->{
                 try(Context context = Context.newBuilder("js").allowAllAccess(true).allowHostAccess(true).build()){
                     context.enter();
-                    context.eval("js","function milliseconds(v){ return Packages.perf.yaup.StringUtil.parseKMG(v)};");
-                    context.eval("js","const StringUtil = Packages.perf.yaup.StringUtil;");
-                    context.eval("js","const Exp = Java.type('io.hyperfoil.tools.parse.Exp');");
-                    context.eval("js","const ExpMerge = Java.type('io.hyperfoil.tools.parse.ExpMerge');");
-                    context.eval("js","const MatchRange = Java.type('io.hyperfoil.tools.parse.MatchRange');");
-                    context.eval("js","const Xml = Java.type('perf.yaup.xml.pojo.Xml');");
-                    context.eval("js","const Json = Java.type('perf.yaup.json.Json');");
-                    context.eval("js","const Eat = Java.type('io.hyperfoil.tools.parse.Eat');");
-                    context.eval("js","const ValueType = Java.type('io.hyperfoil.tools.parse.ValueType')");
-                    context.eval("js","const ValueMerge = Java.type('io.hyperfoil.tools.parse.ValueMerge');");
-                    context.eval("js","const ExpRule = Java.type('io.hyperfoil.tools.parse.ExpRule')");
-                    context.eval("js","");
+                    try {
+                        context.eval("js", "function milliseconds(v){ return Packages.io.hyperfoil.tools.yaup.StringUtil.parseKMG(v)};");
+                        context.eval("js", "const StringUtil = Packages.io.hyperfoil.tools.yaup.StringUtil;");
+                        context.eval("js", "const FileUtility = Packages.io.hyperfoil.tools.yaup.file.FileUtility;");
+                        context.eval("js", "const Exp = Java.type('io.hyperfoil.tools.parse.Exp');");
+                        context.eval("js", "const ExpMerge = Java.type('io.hyperfoil.tools.parse.ExpMerge');");
+                        context.eval("js", "const MatchRange = Java.type('io.hyperfoil.tools.parse.MatchRange');");
+                        context.eval("js", "const Xml = Java.type('io.hyperfoil.tools.yaup.xml.pojo.Xml');");
+                        context.eval("js", "const Json = Java.type('io.hyperfoil.tools.yaup.json.Json');");
+                        context.eval("js", "const Eat = Java.type('io.hyperfoil.tools.parse.Eat');");
+                        context.eval("js", "const ValueType = Java.type('io.hyperfoil.tools.parse.ValueType')");
+                        context.eval("js", "const ValueMerge = Java.type('io.hyperfoil.tools.parse.ValueMerge');");
+                        context.eval("js", "const ExpRule = Java.type('io.hyperfoil.tools.parse.ExpRule')");
+                        //context.eval("js","");
 
-                    context.eval("js","const console = {log: print}");
+                        //context.eval("js","const console = {log: print}");
 
-                    Value matcher = context.eval("js",json.getString("asPath"));
-                    Value result = matcher.execute(path);
-                    if(result.isHostObject()){
-                        Object hostObj = result.asHostObject();
-                        if(hostObj instanceof Json){
-                            return (Json)hostObj;
+                        Value matcher = context.eval("js", json.getString("asPath"));
+                        Value result = matcher.execute(path);
+                        if (result.isHostObject()) {
+                            Object hostObj = result.asHostObject();
+                            if (hostObj instanceof Json) {
+                                return (Json) hostObj;
+                            }
+                        } else if (result.hasMembers()) {
+                            //TODO convert value to Json
                         }
-                    }else if (result.hasMembers()){
-                        //TODO convert value to Json
+                    }catch(Exception e){
+                        throw new RuntimeException("asPath exception for "+path,e);
+                    }finally {
+                        context.leave();
                     }
                 }
                 //TODO alert that failed to return from converter
@@ -332,6 +359,7 @@ public class FileRule {
     public boolean apply(String path, BiConsumer<String,Json> callback){
         try {
             Json state = new Json();
+
             boolean matched = getCriteria().match(path, state);
 
             if (matched) {

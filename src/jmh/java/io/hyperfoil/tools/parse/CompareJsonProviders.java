@@ -14,7 +14,7 @@ public class CompareJsonProviders {
     @Param({"$[-1].datestamp","$[*][?(@.commandLine)].commandLine"})
     public String path;
 
-    public String content = FileUtility.readFile("/home/wreicher/perfWork/jdcasey/2018-05-09/all.json");
+    public String content = FileUtility.readFile("//tmp/test.json");
     public Configuration yaup = Configuration.defaultConfiguration().jsonProvider(new YaupJsonProvider());
     public Configuration other = Configuration.defaultConfiguration().jsonProvider(new JacksonJsonProvider());
     public Object yaupObject = yaup.jsonProvider().parse(content);

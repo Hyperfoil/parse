@@ -40,7 +40,6 @@ public class XanFactory implements ParseFactory{
             .execute((line, match, pattern, parser) -> {
                 if( parser != null ){
                     int removedIndex = parser.remove("row");
-
                 }
             })
         );
@@ -74,8 +73,11 @@ public class XanFactory implements ParseFactory{
                     arry.set(i,header);
                     sb.append("(?<"+header+">[^ -].*?)(?:\\s{2,}|$)");
                 }
+//                Exp rowExp = new Exp("row",sb.toString())
+//                        .eat(Eat.Line).setMerge(ExpMerge.AsEntry);
                 Exp rowExp = new Exp("row",sb.toString())
-                        .eat(Eat.Line).setMerge(ExpMerge.AsEntry);
+                   .eat(Eat.Line).nest("data").setMerge(ExpMerge.AsEntry);
+
                 if(parser!=null) {
                     int removedIndex = parser.remove("row");
 

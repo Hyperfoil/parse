@@ -14,6 +14,8 @@ public class JsMatchAction implements MatchAction {
    private Context context;
    private String js;
 
+   public String getJs(){return js;}
+
    public JsMatchAction(String js){
       this.js = js;
       this.context = Context.newBuilder("js").allowAllAccess(true).allowHostAccess(true).build();
