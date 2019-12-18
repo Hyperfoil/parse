@@ -24,6 +24,7 @@ nest: qdup
 asJson: |
   (json) => {
     const { latches, state, timestamps } = json;
+    console.log("latches",typeof latches,Object.keys(latches))
     const rtrn = {latches, state, timestamps};
     return rtrn
   }
@@ -235,7 +236,7 @@ asText:
   - name: microcode
     pattern: "microcode\\s+: (?<microcode>0x\\w+)"
 ---
-name: log.xml
+name: faban log.xml
 path: .*?/log.xml$
 nest: faban.log
 asXml:

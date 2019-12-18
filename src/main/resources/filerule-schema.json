@@ -78,7 +78,9 @@
         "path": {"type": "string"},
         "nest": {"type": "string"},
         "regex": {"type": "string"},
-        "result": {"type": "string"}
+        "result": {"type": "string"},
+        "exp": {"type": "array", "items": {"$ref": "#/definitions/exp"}},
+        "children": {"type": "array", "items": {"$ref": "#/definitions/filter"}}
       }
 
     },

@@ -20,6 +20,7 @@ public class JsTransform implements Function<Json, Json> {
 
    @Override
    public Json apply(Json json) {
+
       JsonProxyObject jsonProxyObject = new JsonProxyObject(json);
       Value matcher = null;
       try(Context context = Context.newBuilder("js").allowAllAccess(true).build()){

@@ -170,7 +170,7 @@ public enum ValueMerge {
     TreeSibling(true,new TreeMerger(false)),
     /**
      * TODO work in progress
-     * Use value length to creat a tree with key as the branch identifier.
+     * Use value length to create a tree with key as the branch identifier.
      * Values with the same length are merged together if the values are equal
      */
     TreeMerging(true,new TreeMerger(true));

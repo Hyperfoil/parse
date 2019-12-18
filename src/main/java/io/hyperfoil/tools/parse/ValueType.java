@@ -88,7 +88,7 @@ public enum ValueType {
 
    private static Pattern IntegerPattern = Pattern.compile("-?\\d{1,16}+");
    private static Pattern DoublePattern = Pattern.compile("-?\\d+(?:\\.\\d+)?");
-   private static Pattern KmgPattern = Pattern.compile("\\d+[bBkKmMgG]");
+   private static Pattern KmgPattern = Pattern.compile("\\d+\\.?\\d*[bBkKmMgGtT]");
 
    //private final Function<String,Object> transform;
    ValueType() {
