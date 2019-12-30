@@ -45,6 +45,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @CommandDefinition(name = "parse",description = "parse text files into structured json")
@@ -82,7 +83,17 @@ public class ParseCommand implements Command {
             for (FileRule rule : fileRules) {
                try {
                   rule.apply(entry, (nest, json) -> {
-                     Json.chainMerge(result, nest, json);
+                     if(nest == null || nest.trim().isEmpty()){
+                        if(!json.isArray() && (result.isEmpty() || !result.isArray()) ){
+                           result.merge(json);
+                        }else if (json.isArray() && result.isArray()){
+                           json.forEach((Consumer<Object>) result::add);
+                        }else{
+                           System.out.printf("cannot merge array with object without a nest for rule "+rule.getName());
+                        }
+                     }else {
+                        Json.chainMerge(result, nest, json);
+                     }
                   });
                } catch(Exception e) {
                   System.out.println("Exception for rule="+rule.getName()+" entry="+entry);
@@ -93,7 +104,7 @@ public class ParseCommand implements Command {
          if (result.isEmpty()) {
             System.out.printf("failed to match rules to %s%n", sourcePath);
          }
-         String sourceDestination = destination;
+         String sourceDestination = batch.size() > 1 ? null : destination;
          if(sourceDestination == null || sourceDestination.isEmpty()) {
             if(FileUtility.isArchive(sourcePath)){
                sourceDestination = sourcePath;

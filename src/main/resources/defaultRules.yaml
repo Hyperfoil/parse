@@ -24,7 +24,6 @@ nest: qdup
 asJson: |
   (json) => {
     const { latches, state, timestamps } = json;
-    console.log("latches",typeof latches,Object.keys(latches))
     const rtrn = {latches, state, timestamps};
     return rtrn
   }

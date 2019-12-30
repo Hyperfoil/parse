@@ -4,7 +4,7 @@ import io.hyperfoil.tools.parse.factory.*;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import io.hyperfoil.tools.parse.Exp;
-import io.hyperfoil.tools.parse.JsTransform;
+import io.hyperfoil.tools.parse.JsJsonFunction;
 import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.json.Json;
 import io.hyperfoil.tools.yaup.json.JsonValidator;
@@ -175,7 +175,7 @@ public class FileRule {
                 if(asString.isEmpty()) {
                     rtrn.setConverter(new JbossCliConverter());
                 }else{
-                    rtrn.setConverter(new JbossCliConverter().andThen(new JsTransform(asString)));
+                    rtrn.setConverter(new JbossCliConverter().andThen(new JsJsonFunction(asString)));
                 }
             }else {
                 //TODO alert error
@@ -188,7 +188,7 @@ public class FileRule {
                 if(asString.isEmpty()){
                     rtrn.setConverter(new JsonConverter());
                 }else{
-                    rtrn.setConverter(new JsonConverter().andThen(new JsTransform(asString)));
+                    rtrn.setConverter(new JsonConverter().andThen(new JsJsonFunction(asString)));
                 }
             }
         }
@@ -199,7 +199,7 @@ public class FileRule {
                 if(asString.isEmpty()){
                     rtrn.setConverter(new XmlConverter());
                 }else{
-                    rtrn.setConverter(new XmlConverter().andThen(new JsTransform(asString)));
+                    rtrn.setConverter(new XmlConverter().andThen(new JsJsonFunction(asString)));
                 }
             }else if (asXml instanceof Json){
                 XmlConverter converter = new XmlConverter();
@@ -213,47 +213,50 @@ public class FileRule {
             }
         }
         if(json.has("asPath")){
-            rtrn.setConverter((path)->{
-                try(Context context = Context.newBuilder("js").allowAllAccess(true).allowHostAccess(true).build()){
-                    context.enter();
-                    try {
-                        context.eval("js", "function milliseconds(v){ return Packages.io.hyperfoil.tools.yaup.StringUtil.parseKMG(v)};");
-                        context.eval("js", "const StringUtil = Packages.io.hyperfoil.tools.yaup.StringUtil;");
-                        context.eval("js", "const FileUtility = Packages.io.hyperfoil.tools.yaup.file.FileUtility;");
-                        context.eval("js", "const Exp = Java.type('io.hyperfoil.tools.parse.Exp');");
-                        context.eval("js", "const ExpMerge = Java.type('io.hyperfoil.tools.parse.ExpMerge');");
-                        context.eval("js", "const MatchRange = Java.type('io.hyperfoil.tools.parse.MatchRange');");
-                        context.eval("js", "const Xml = Java.type('io.hyperfoil.tools.yaup.xml.pojo.Xml');");
-                        context.eval("js", "const Json = Java.type('io.hyperfoil.tools.yaup.json.Json');");
-                        context.eval("js", "const Eat = Java.type('io.hyperfoil.tools.parse.Eat');");
-                        context.eval("js", "const ValueType = Java.type('io.hyperfoil.tools.parse.ValueType')");
-                        context.eval("js", "const ValueMerge = Java.type('io.hyperfoil.tools.parse.ValueMerge');");
-                        context.eval("js", "const ExpRule = Java.type('io.hyperfoil.tools.parse.ExpRule')");
-                        //context.eval("js","");
-
-                        //context.eval("js","const console = {log: print}");
-
-                        Value matcher = context.eval("js", json.getString("asPath"));
-                        Value result = matcher.execute(path);
-                        if (result.isHostObject()) {
-                            Object hostObj = result.asHostObject();
-                            if (hostObj instanceof Json) {
-                                return (Json) hostObj;
-                            }
-                        } else if (result.hasMembers()) {
-                            //TODO convert value to Json
-                        }
-                    }catch(Exception e){
-                        throw new RuntimeException("asPath exception for "+path,e);
-                    }finally {
-                        context.leave();
-                    }
-                }
-                //TODO alert that failed to return from converter
-                return new Json();
-            });
+            rtrn.setConverter(FileRule.asPath(json.getString("asPath")));
         }
         return rtrn;
+    }
+    public static Function<String,Json> asPath(String function){
+        return (path)->{
+            try(Context context = Context.newBuilder("js").allowAllAccess(true).allowHostAccess(true).build()){
+                context.enter();
+                try {
+                    context.eval("js", "function milliseconds(v){ return Packages.io.hyperfoil.tools.yaup.StringUtil.parseKMG(v)};");
+                    context.eval("js", "const StringUtil = Packages.io.hyperfoil.tools.yaup.StringUtil;");
+                    context.eval("js", "const FileUtility = Packages.io.hyperfoil.tools.yaup.file.FileUtility;");
+                    context.eval("js", "const Exp = Java.type('io.hyperfoil.tools.parse.Exp');");
+                    context.eval("js", "const ExpMerge = Java.type('io.hyperfoil.tools.parse.ExpMerge');");
+                    context.eval("js", "const MatchRange = Java.type('io.hyperfoil.tools.parse.MatchRange');");
+                    context.eval("js", "const Xml = Java.type('io.hyperfoil.tools.yaup.xml.pojo.Xml');");
+                    context.eval("js", "const Json = Java.type('io.hyperfoil.tools.yaup.json.Json');");
+                    context.eval("js", "const Eat = Java.type('io.hyperfoil.tools.parse.Eat');");
+                    context.eval("js", "const ValueType = Java.type('io.hyperfoil.tools.parse.ValueType')");
+                    context.eval("js", "const ValueMerge = Java.type('io.hyperfoil.tools.parse.ValueMerge');");
+                    context.eval("js", "const ExpRule = Java.type('io.hyperfoil.tools.parse.ExpRule')");
+                    //context.eval("js","");
+
+                    //context.eval("js","const console = {log: print}");
+
+                    Value matcher = context.eval("js", function);
+                    Value result = matcher.execute(path);
+                    if (result.isHostObject()) {
+                        Object hostObj = result.asHostObject();
+                        if (hostObj instanceof Json) {
+                            return (Json) hostObj;
+                        }
+                    } else if (result.hasMembers()) {
+                        //TODO convert value to Json
+                    }
+                }catch(Exception e){
+                    throw new RuntimeException("asPath exception for "+path,e);
+                }finally {
+                    context.leave();
+                }
+            }
+            //TODO alert that failed to return from converter
+            return new Json();
+        };
     }
     public static Json getSchema(){
         Json rtrn = new Json();

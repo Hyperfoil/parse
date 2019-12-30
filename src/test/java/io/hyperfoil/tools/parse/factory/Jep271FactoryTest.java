@@ -35,6 +35,7 @@ public class Jep271FactoryTest {
         p.onLine("[2019-02-12T02:46:28.812+0000][12.639s][1549939588812ms][trace][gc] GC(44) PSYoung generation size changed: 48128K->36864K");
         p.onLine("[2019-02-12T02:46:28.812+0000][12.639s][1549939588812ms][info ][gc] GC(44) Pause Full (Ergonomics) 85M->80M(123M) 290.567ms");
         p.close();
+        found.forEach(v-> System.out.println(v.toString(2)));
     }
 
     @Test @Ignore
@@ -127,9 +128,10 @@ public class Jep271FactoryTest {
         });
         p.onLine("[2018-04-18T09:07:15.744-0500][2018-04-18T14:07:15.744+0000][0.007s][1524060435744ms][7ms][741352031658ns][7051559ns][hostname][12994][12995][info][gc] Using Serial");
 
-        Assert.assertEquals("shoudl find 1 closed json",1,closed.size());
+        Assert.assertEquals("should find 1 closed json",1,closed.size());
 
         Json root = closed.get(0);
+        System.out.println(root.toString(2));
         Assert.assertEquals("uptimeMillis\n"+root.toString(2),7,root.getLong("uptimeMillis"));
         Assert.assertEquals("level\n"+root.toString(2),"info",root.getString("level"));
         Assert.assertEquals("utcTime\n"+root.toString(2),"2018-04-18T14:07:15.744+0000",root.getString("utcTime"));
@@ -237,6 +239,7 @@ public class Jep271FactoryTest {
         ).stream().forEach(p::onLine);
 
         Json root = p.getBuilder().getRoot();
+
     }
 
     @Test @Ignore

@@ -55,7 +55,10 @@ public class SubstrateGcFactoryTest {
       p.onLine("[[105503979854228 GC: before  epoch: 1  cause: CollectOnAllocation.Sometimes]");
       p.onLine(" [105503985983529 GC: after   epoch: 1  cause: CollectOnAllocation.Sometimes  policy: by space and time: 50% in incremental collections  type: incremental");
       json = p.onLine("  collection time: 6119125 nanoSeconds]]");
+
       Assert.assertFalse("json should emit after collection time",json==null);
+
+      System.out.println(json.toString(2));
       //json = p.getBuilder().getRoot();
 
       Assert.assertTrue("nanoSeconds\n"+json.toString(2),json.has("nanoSeconds"));
@@ -83,6 +86,8 @@ public class SubstrateGcFactoryTest {
       json = p.onLine("  collection time: 6268316 nanoSeconds]]");
       Assert.assertNotNull("json should not be null",json);
 
+
+      System.out.println(json.toString(2));
       //verboseGc
       Assert.assertTrue("nanoSeconds\n"+json.toString(2),json.has("nanoSeconds"));
       Assert.assertTrue("parameters\n"+json.toString(2),json.has("parameters"));

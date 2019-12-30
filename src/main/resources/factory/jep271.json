@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "definitions": {
+    "prefixes": {
+      "type": "object",
+      "properties": {
+        "gcId": {"type": "integer"},
+        "level": {"enum": ["info","debug","trace"]},
+        "tags": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "time": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3}[+\\-][0-9]{4}$"},
+        "timeMillis": {"type": "integer"},
+        "timeNanos": {"type": "integer"},
+        "uptime": {"type": "number"},
+        "uptimeMillis": {"type": "integer"},
+        "uptimeNanos": {"type": "integer"},
+        "utcTime": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3}+0000$"}
+      }
+    }
+  }
+}

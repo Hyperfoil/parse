@@ -1,14 +1,7 @@
 package io.hyperfoil.tools.parse;
 
-import io.hyperfoil.tools.parse.Exp;
-import io.hyperfoil.tools.parse.ExpRule;
-import io.hyperfoil.tools.parse.JsMatchAction;
-import io.hyperfoil.tools.parse.Parser;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class JsMatchActionTest {
 

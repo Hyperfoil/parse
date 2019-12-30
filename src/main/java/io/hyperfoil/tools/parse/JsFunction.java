@@ -1,33 +1,37 @@
 package io.hyperfoil.tools.parse;
 
+import io.hyperfoil.tools.yaup.json.Json;
 import io.hyperfoil.tools.yaup.json.ValueConverter;
 import io.hyperfoil.tools.yaup.json.graaljs.JsonProxyObject;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Value;
-import io.hyperfoil.tools.yaup.json.Json;
 
-import java.util.function.Function;
+public class JsFunction {
 
-public class JsTransform implements Function<Json, Json> {
+   private final String js;
 
-   private String js;
-
-   public JsTransform(String js){
+   public JsFunction(String js){
       this.js = js;
-
    }
 
-   @Override
-   public Json apply(Json json) {
+   public String getJs(){return js;}
 
-      JsonProxyObject jsonProxyObject = new JsonProxyObject(json);
+   public Json execute(Object...arguments) {
+      if(arguments==null ){
+         return new Json(false);
+      }
+      for(int i=0; i<arguments.length; i++){
+         if (arguments[i] != null && arguments[i] instanceof Json){
+            arguments[i] = new JsonProxyObject((Json)arguments[i]);
+         }
+      }
       Value matcher = null;
       try(Context context = Context.newBuilder("js").allowAllAccess(true).build()){
          context.enter();
          try {
-            context.eval("js", "function milliseconds(v){ return Packages.perf.yaup.StringUtil.parseKMG(v)};");
-            context.eval("js", "const StringUtil = Packages.perf.yaup.StringUtil;");
+            context.eval("js", "function milliseconds(v){ return Packages.io.hyperfoil.tool.yaup.StringUtil.parseKMG(v)};");
+            context.eval("js", "const StringUtil = Packages.io.hyperfoil.tool.yaup.StringUtil;");
             context.eval("js", "const Exp = Java.type('io.hyperfoil.tools.parse.Exp');");
             context.eval("js", "const ExpMerge = Java.type('io.hyperfoil.tools.parse.ExpMerge');");
             context.eval("js", "const MatchRange = Java.type('io.hyperfoil.tools.parse.MatchRange');");
@@ -36,8 +40,9 @@ public class JsTransform implements Function<Json, Json> {
             context.eval("js", "const ValueMerge = Java.type('io.hyperfoil.tools.parse.ValueMerge');");
             context.eval("js", "const ExpRule = Java.type('io.hyperfoil.tools.parse.ExpRule')");
 
-            //context.eval("js","const console = {log: print}");
-
+            context.eval("js", "const FileUtility = Packages.io.hyperfoil.tools.yaup.file.FileUtility;");
+            context.eval("js", "const Xml = Java.type('io.hyperfoil.tools.yaup.xml.pojo.Xml');");
+            context.eval("js", "const Json = Java.type('io.hyperfoil.tools.yaup.json.Json');");
 
             if (context.getBindings("js").hasMember("js" + js.hashCode())) {
                matcher = context.getBindings("js").getMember("js" + js.hashCode());
@@ -48,11 +53,10 @@ public class JsTransform implements Function<Json, Json> {
                   System.err.println(e.getMessage());
                   //TODO log that fialed to evaluate matchExpression
                }
-
             }
             if (matcher != null) {
-
-               Value result = matcher.execute(jsonProxyObject);
+               Value result = null;
+               result = matcher.execute(arguments);
                Object converted = ValueConverter.convert(result);
                if (converted instanceof JsonProxyObject) {
                   return ((JsonProxyObject) converted).getJson();
@@ -72,9 +76,6 @@ public class JsTransform implements Function<Json, Json> {
             context.leave();
          }
       }
-
-
-
-      return json;
+      return new Json(false);
    }
 }

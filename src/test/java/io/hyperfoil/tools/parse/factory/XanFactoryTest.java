@@ -24,9 +24,6 @@ public class XanFactoryTest {
     @Before
     public void reset(){}
 
-
-
-
     @Test
     public void blank(){
         JsonBuilder jsonBuilder = new JsonBuilder();
