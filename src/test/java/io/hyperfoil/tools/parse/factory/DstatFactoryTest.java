@@ -27,8 +27,5 @@ public class DstatFactoryTest {
       p.onLine("  epoch   |usr sys idl wai hiq siq| read  writ| recv  send|  in   out | int   csw | used  buff  cach  free");
       p.onLine("1552513095|  0   0 100   0   0   0|2679B   44k|   0     0 | 598B  742B|1409  1675 |8592M 3304k 77.6G  166G");
       p.close();
-      found.forEach(j->{
-         System.out.println(j.toString(2));
-      });
    }
 }

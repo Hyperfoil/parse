@@ -43,6 +43,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -53,13 +54,17 @@ public class ParseCommand implements Command {
 
    private class RuleRunner implements Runnable{
 
+      private final Semaphore semaphore;
       private final List<FileRule> fileRules;
       private final SystemTimer systemTimer;
       private String sourcePath;
+      private final int maxPermits;
 
-      public RuleRunner(List<FileRule> fileRules, SystemTimer systemTimer){
+      public RuleRunner(List<FileRule> fileRules, SystemTimer systemTimer, Semaphore semaphore, int maxPermits){
          this.fileRules = fileRules;
          this.systemTimer = systemTimer;
+         this.semaphore = semaphore;
+         this.maxPermits = maxPermits;
       }
       public void setSourcePath(String sourcePath){
          this.sourcePath = sourcePath;
@@ -71,67 +76,83 @@ public class ParseCommand implements Command {
             System.out.println("cannot access "+sourcePath);
             return;
          }
-         System.out.println("parse "+sourcePath);
-         SystemTimer thisTimer = systemTimer.start(sourcePath,true);
-         List<String> entries = FileUtility.isArchive(sourcePath) ?
-            FileUtility.getArchiveEntries(sourcePath).stream().map(entry -> sourcePath + FileUtility.ARCHIVE_KEY + entry).collect(Collectors.toList()) :
-            FileUtility.getFiles(sourcePath, "", true);
+         int neededMb = (int)(FileUtility.getInputSize(sourcePath) / (1024*1024));
 
-         Json result = new Json();
+         int acquire = Math.min(maxPermits,2*neededMb);
 
-         for (String entry : entries) {
-            for (FileRule rule : fileRules) {
-               try {
-                  rule.apply(entry, (nest, json) -> {
-                     if(nest == null || nest.trim().isEmpty()){
-                        if(!json.isArray() && (result.isEmpty() || !result.isArray()) ){
-                           result.merge(json);
-                        }else if (json.isArray() && result.isArray()){
-                           json.forEach((Consumer<Object>) result::add);
-                        }else{
-                           System.out.printf("cannot merge array with object without a nest for rule "+rule.getName());
-                        }
-                     }else {
-                        Json.chainMerge(result, nest, json);
+         try {
+            semaphore.acquire(acquire);
+            try{
+               SystemTimer thisTimer = systemTimer.start(sourcePath,true);
+               List<String> entries = FileUtility.isArchive(sourcePath) ?
+                  FileUtility.getArchiveEntries(sourcePath).stream().map(entry -> sourcePath + FileUtility.ARCHIVE_KEY + entry).collect(Collectors.toList()) :
+                  FileUtility.getFiles(sourcePath, "", true);
+
+               Json result = new Json();
+
+               for (String entry : entries) {
+                  for (FileRule rule : fileRules) {
+                     try {
+                        rule.apply(entry, (nest, json) -> {
+                           if(nest == null || nest.trim().isEmpty()){
+                              if(!json.isArray() && (result.isEmpty() || !result.isArray()) ){
+                                 result.merge(json);
+                              }else if (json.isArray() && result.isArray()){
+                                 json.forEach((Consumer<Object>) result::add);
+                              }else{
+                                 System.out.printf("cannot merge array with object without a nest for rule "+rule.getName());
+                              }
+                           }else {
+                              Json.chainMerge(result, nest, json);
+                           }
+                        });
+                     } catch(Exception e) {
+                        System.out.println("Exception for rule="+rule.getName()+" entry="+entry);
+                        e.printStackTrace();
                      }
-                  });
-               } catch(Exception e) {
-                  System.out.println("Exception for rule="+rule.getName()+" entry="+entry);
+                  }
+               }
+               if (result.isEmpty()) {
+                  System.out.printf("failed to match rules to %s%n", sourcePath);
+               }
+               String sourceDestination = batch.size() > 1 ? null : destination;
+               if(sourceDestination == null || sourceDestination.isEmpty()) {
+                  if(FileUtility.isArchive(sourcePath)){
+                     sourceDestination = sourcePath;
+                     if(sourceDestination.endsWith(".zip")){
+                        sourceDestination = sourceDestination.substring(0,sourceDestination.lastIndexOf(".zip"));
+                     }
+                     if(sourceDestination.endsWith(".tar.gz")){
+                        sourceDestination = sourceDestination.substring(0,sourceDestination.lastIndexOf(".tar.gz"));
+                     }
+                     sourceDestination = sourceDestination+".json";
+                  }else{
+                     sourceDestination = sourcePath.endsWith("/") ? sourcePath.substring(0,sourcePath.length()-1)+".json" : sourcePath+".json";
+                  }
+               }
+               Path parentPath = Paths.get(sourceDestination).toAbsolutePath().getParent();
+               if (!parentPath.toFile().exists()) {
+                  parentPath.toFile().mkdirs();
+               }
+               try {
+                  Files.write(Paths.get(sourceDestination), result.toString(0).getBytes());
+               } catch (IOException e) {
+                  System.out.printf("failed to write to %s", sourceDestination);
                   e.printStackTrace();
                }
+
+               thisTimer.stop();
+
+            }finally{
+               semaphore.release(acquire);
             }
-         }
-         if (result.isEmpty()) {
-            System.out.printf("failed to match rules to %s%n", sourcePath);
-         }
-         String sourceDestination = batch.size() > 1 ? null : destination;
-         if(sourceDestination == null || sourceDestination.isEmpty()) {
-            if(FileUtility.isArchive(sourcePath)){
-               sourceDestination = sourcePath;
-               if(sourceDestination.endsWith(".zip")){
-                  sourceDestination = sourceDestination.substring(0,sourceDestination.lastIndexOf(".zip"));
-               }
-               if(sourceDestination.endsWith(".tar.gz")){
-                  sourceDestination = sourceDestination.substring(0,sourceDestination.lastIndexOf(".tar.gz"));
-               }
-               sourceDestination = sourceDestination+".json";
-            }else{
-               sourceDestination = sourcePath.endsWith("/") ? sourcePath.substring(0,sourcePath.length()-1)+".json" : sourcePath+".json";
-            }
-         }
-         Path parentPath = Paths.get(sourceDestination).toAbsolutePath().getParent();
-         if (!parentPath.toFile().exists()) {
-            parentPath.toFile().mkdirs();
-         }
-         try {
-            Files.write(Paths.get(sourceDestination), result.toString(0).getBytes());
-         } catch (IOException e) {
-            System.out.printf("failed to write to %s", sourceDestination);
+
+
+         } catch (InterruptedException e) {
             e.printStackTrace();
          }
 
-         thisTimer.stop();
-         System.out.println(sourcePath+" finished "+ AsciiArt.printKMG( (new File(sourceDestination)).length() )+" in " + StringUtil.durationToString(thisTimer.milliTime()));
+
 
       }
    }
@@ -177,7 +198,7 @@ public class ParseCommand implements Command {
                            fileRules.add(rule);
                         }
                      } else {
-                        System.out.println("What do I do with " + entry);
+                        System.out.println("cannot load rules from " + entry);
                      }
 
                   });
@@ -248,6 +269,10 @@ public class ParseCommand implements Command {
          return CommandResult.FAILURE;
       }
 
+      int heapMb = (int)(Runtime.getRuntime().maxMemory() / (1024*1024) );
+
+      Semaphore heapSemaphore = new Semaphore(heapMb);
+
       int numOfThread = threadCount !=null && threadCount > 0 ? threadCount : Runtime.getRuntime().availableProcessors();
       int blockQueueSize = 2*numOfThread;
       BlockingQueue<Runnable> blockingQueue = new ArrayBlockingQueue<Runnable>(blockQueueSize);
@@ -257,15 +282,13 @@ public class ParseCommand implements Command {
       systemTimer.start("parse");
 
       for(String sourcePath : batch){
-
-         RuleRunner ruleRunner = new RuleRunner(fileRules,systemTimer);
+         RuleRunner ruleRunner = new RuleRunner(fileRules,systemTimer, heapSemaphore, heapMb);
          ruleRunner.setSourcePath(sourcePath);
          executorService.submit(ruleRunner);
       }
       executorService.shutdown();
       executorService.awaitTermination(1,TimeUnit.DAYS);
       systemTimer.stop();
-
 
       System.out.println(systemTimer.getJson().toString(2));
 
@@ -292,9 +315,7 @@ public class ParseCommand implements Command {
          try (BufferedReader reader = new BufferedReader(fileStream)) {
             String content = reader.lines().collect(Collectors.joining("\n"));
 
-
             Json schemaJson = Json.fromString(content);
-
 
             JsonValidator validator = new JsonValidator(schemaJson);
             return validator;

@@ -58,7 +58,6 @@ public class SubstrateGcFactoryTest {
 
       Assert.assertFalse("json should emit after collection time",json==null);
 
-      System.out.println(json.toString(2));
       //json = p.getBuilder().getRoot();
 
       Assert.assertTrue("nanoSeconds\n"+json.toString(2),json.has("nanoSeconds"));
@@ -86,8 +85,6 @@ public class SubstrateGcFactoryTest {
       json = p.onLine("  collection time: 6268316 nanoSeconds]]");
       Assert.assertNotNull("json should not be null",json);
 
-
-      System.out.println(json.toString(2));
       //verboseGc
       Assert.assertTrue("nanoSeconds\n"+json.toString(2),json.has("nanoSeconds"));
       Assert.assertTrue("parameters\n"+json.toString(2),json.has("parameters"));

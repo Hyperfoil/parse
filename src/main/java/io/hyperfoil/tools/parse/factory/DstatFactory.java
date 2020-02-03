@@ -81,13 +81,7 @@ public class DstatFactory implements ParseFactory{
                         sb.append("[:\\|]?");
                         h++;
                     } else {
-                        if(h>=headers.size()){
-                            System.out.println(h+" > "+headers.size()+"\n  headers="+headers+"\n  line="+line);
-                        }
                         String header = headers.get(h);
-                        if(header==null){
-                            System.out.println("header @ "+h+" is null");
-                        }
                         sb.append("(?<");
                         sb.append(header.replaceAll("[_\\-/]", ""));
                         sb.append("\\.");

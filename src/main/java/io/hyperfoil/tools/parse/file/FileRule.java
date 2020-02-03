@@ -17,65 +17,6 @@ import java.util.function.Function;
 
 public class FileRule {
 
-    public static void main(String[] args) {
-
-        Function<String,String> convert = (input)->{
-            return input+"."+input;
-        };
-        Function chained = convert.andThen((input)->{
-            return input.toLowerCase();
-        });
-
-        System.out.println(chained.apply("FOO"));
-
-        System.exit(0);
-
-
-        JsonValidator validator = new JsonValidator(FileRule.getSchema());
-
-        System.out.println(validator.getSchema().toString(2));
-
-        System.exit(0);
-        FileRule rule = FileRule.fromJson(Json.fromJs(
-           "{" +
-              "name: 'log.xml'," +
-              "path: 'log.xml'," +
-              "nest: 'faban.log'," +
-              "asPath: function (path){\n" +
-              "  function getTimestamp(js, selector){\n" +
-              "    const found = Json.find(js,selector);\n" +
-              "    if(found){\n" +
-              "      if(found.isArray() && found.size() === 1){ found = found.getJson(0);}\n" +
-              "      const value = found.getJson('millis',new Json()).getString('text()','');\n" +
-              "      if(value.matches('\\d+')){return Java.type('java.lang.Long').parseLong(value);}\n" +
-              "}\n" +
-              "}\n" +
-              "const rtrn = new Json();\n" +
-              "const content = Xml.parseFile(path).toJson();\n" +
-              "const first = getTimestamp(content,'$.log.record[0]');\n" +
-              "if(first){Json.chainSet(rtrn,'timestamps.runStart',first);}\n" +
-              "const rampUp = getTimestamp(content,'$.log.record[?(@.message['text()'] == 'Ramp up started')]');\n" +
-              "if(rampUp){Json.chainSet(rtrn,'timestamps.rampUp',rampUp);}\n" +
-              "const steadyState = getTimestamp(content,'$.log.record[?(@.message['text()'] == 'Ramp up completed')]');\n" +
-              "if(steadyState){Json.chainSet(rtrn,'timestamps.steadyState',steadyState);}\n" +
-              "const rampDown = getTimestamp(content,'$.log.record[?(@.message['text()'] == 'Steady state completed')]');\n" +
-              "if(rampDown){Json.chainSet(rtrn,'timestamps.rampDown',rampDown);}\n" +
-              "const runStop = getTimestamp(rtrn,'$.log.record[?(@.message['text()'] == 'Ramp down completed')]');\n" +
-              "if(runStop){Json.chainSet(rtrn,'timestamps.runStop',runStop);}\n" +
-              "const lastLog = getTimestamp(rtrn,'$.log.record[-1]');\n" +
-              "if(lastLog){Json.chainSet(rtrn,'timestamps.lastLog',lastLog);}\n" +
-              "const stats = Json.find(content,'$.log.record[?(@.class['text()'] == 'com.sun.faban.driver.engine.MasterImpl$StatsWriter')]');\n" +
-              "console.log(stats)\n" +
-              "}\n" +
-              "}"));
-
-        rule.apply("/tmp/log.xml",(nest,json)->{
-            System.out.println("nest: "+nest);
-            System.out.println("json:\n"+json.toString(2));
-        });
-    }
-
-
     public static FileRule fromJson(Json json){
         FileRule rtrn = new FileRule(json.getString("name",""));
         if(json.has("nest")){
@@ -366,7 +307,6 @@ public class FileRule {
             boolean matched = getCriteria().match(path, state);
 
             if (matched) {
-
                 Json result = getConverter().apply(path);
                 String nestPath = StringUtil.populatePattern(getNest(), Json.toObjectMap(state));
                 if (getFilters().isEmpty()) {
