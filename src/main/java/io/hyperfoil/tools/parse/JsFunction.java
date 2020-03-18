@@ -51,7 +51,7 @@ public class JsFunction {
                   matcher = context.eval("js", js);
                } catch (PolyglotException e) {
                   System.err.println(e.getMessage());
-                  //TODO log that fialed to evaluate matchExpression
+                  //TODO log that failed to evaluate matchExpression
                }
             }
             if (matcher != null) {

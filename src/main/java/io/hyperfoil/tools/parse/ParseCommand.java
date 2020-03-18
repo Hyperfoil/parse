@@ -82,8 +82,9 @@ public class ParseCommand implements Command {
 
          try {
             semaphore.acquire(acquire);
-            try{
-               SystemTimer thisTimer = systemTimer.start(sourcePath,true);
+            try {
+               System.out.printf("Starting %s%n", sourcePath);
+               SystemTimer thisTimer = systemTimer.start(sourcePath, true);
                List<String> entries = FileUtility.isArchive(sourcePath) ?
                   FileUtility.getArchiveEntries(sourcePath).stream().map(entry -> sourcePath + FileUtility.ARCHIVE_KEY + entry).collect(Collectors.toList()) :
                   FileUtility.getFiles(sourcePath, "", true);
@@ -94,20 +95,20 @@ public class ParseCommand implements Command {
                   for (FileRule rule : fileRules) {
                      try {
                         rule.apply(entry, (nest, json) -> {
-                           if(nest == null || nest.trim().isEmpty()){
-                              if(!json.isArray() && (result.isEmpty() || !result.isArray()) ){
+                           if (nest == null || nest.trim().isEmpty()) {
+                              if (!json.isArray() && (result.isEmpty() || !result.isArray())) {
                                  result.merge(json);
-                              }else if (json.isArray() && result.isArray()){
+                              } else if (json.isArray() && result.isArray()) {
                                  json.forEach((Consumer<Object>) result::add);
-                              }else{
-                                 System.out.printf("cannot merge array with object without a nest for rule "+rule.getName());
+                              } else {
+                                 System.out.printf("cannot merge array with object without a nest for rule " + rule.getName());
                               }
-                           }else {
+                           } else {
                               Json.chainMerge(result, nest, json);
                            }
                         });
-                     } catch(Exception e) {
-                        System.out.println("Exception for rule="+rule.getName()+" entry="+entry);
+                     } catch (Exception e) {
+                        System.out.println("Exception for rule=" + rule.getName() + " entry=" + entry);
                         e.printStackTrace();
                      }
                   }
@@ -116,20 +117,21 @@ public class ParseCommand implements Command {
                   System.out.printf("failed to match rules to %s%n", sourcePath);
                }
                String sourceDestination = batch.size() > 1 ? null : destination;
-               if(sourceDestination == null || sourceDestination.isEmpty()) {
-                  if(FileUtility.isArchive(sourcePath)){
+               if (sourceDestination == null || sourceDestination.isEmpty()) {
+                  if (FileUtility.isArchive(sourcePath)) {
                      sourceDestination = sourcePath;
-                     if(sourceDestination.endsWith(".zip")){
-                        sourceDestination = sourceDestination.substring(0,sourceDestination.lastIndexOf(".zip"));
+                     if (sourceDestination.endsWith(".zip")) {
+                        sourceDestination = sourceDestination.substring(0, sourceDestination.lastIndexOf(".zip"));
                      }
-                     if(sourceDestination.endsWith(".tar.gz")){
-                        sourceDestination = sourceDestination.substring(0,sourceDestination.lastIndexOf(".tar.gz"));
+                     if (sourceDestination.endsWith(".tar.gz")) {
+                        sourceDestination = sourceDestination.substring(0, sourceDestination.lastIndexOf(".tar.gz"));
                      }
-                     sourceDestination = sourceDestination+".json";
-                  }else{
-                     sourceDestination = sourcePath.endsWith("/") ? sourcePath.substring(0,sourcePath.length()-1)+".json" : sourcePath+".json";
+                     sourceDestination = sourceDestination + ".json";
+                  } else {
+                     sourceDestination = sourcePath.endsWith("/") ? sourcePath.substring(0, sourcePath.length() - 1) + ".json" : sourcePath + ".json";
                   }
                }
+               System.out.printf("Writing to %s%n", sourceDestination);
                Path parentPath = Paths.get(sourceDestination).toAbsolutePath().getParent();
                if (!parentPath.toFile().exists()) {
                   parentPath.toFile().mkdirs();
@@ -137,12 +139,13 @@ public class ParseCommand implements Command {
                try {
                   Files.write(Paths.get(sourceDestination), result.toString(0).getBytes());
                } catch (IOException e) {
-                  System.out.printf("failed to write to %s", sourceDestination);
+                  System.out.printf("failed to write to %s%n", sourceDestination);
                   e.printStackTrace();
                }
 
                thisTimer.stop();
-
+            }catch(Exception e){
+               e.printStackTrace();
             }finally{
                semaphore.release(acquire);
             }
