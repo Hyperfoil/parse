@@ -76,10 +76,13 @@ public class ParseCommand implements Command {
             System.out.println("cannot access "+sourcePath);
             return;
          }
-         int neededMb = (int)(FileUtility.getInputSize(sourcePath) / (1024*1024));
-
+         int neededMb = 0;
+         try {
+            neededMb = (int) (FileUtility.getInputSize(sourcePath) / (1024 * 1024));
+         }catch(Exception e){
+            e.printStackTrace();
+         }
          int acquire = Math.min(maxPermits,2*neededMb);
-
          try {
             semaphore.acquire(acquire);
             try {

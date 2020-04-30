@@ -1,4 +1,16 @@
 ---
+name: flamegraphFile
+path: ".*flamegraph.*.svg?"
+nest: files.flamegraph
+asPath: |
+  (path)=>({name: path.substring(path.lastIndexOf("/")+1) })
+---
+name: jfrFile
+path: ".*.jfr?"
+nest: files.jfr
+asPath: |
+  (path)=>({name: path.substring(path.lastIndexOf("/")+1) })
+---
 name: all.json
 path: ".*all.json?"
 nest: hyperfoil.stats

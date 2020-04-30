@@ -5,6 +5,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ReadContext;
 import io.hyperfoil.tools.parse.Exp;
 import io.hyperfoil.tools.parse.Parser;
+import io.hyperfoil.tools.yaup.PopulatePatternException;
 import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.json.Json;
 import io.hyperfoil.tools.yaup.json.YaupJsonProvider;
@@ -325,7 +326,11 @@ public class Filter {
                             rtrnJson.values().forEach(value->{
                                 String newValue = getResult();
                                 if(value instanceof Json){
-                                    newValue = StringUtil.populatePattern(getResult(),Json.toObjectMap((Json)value));
+                                    try {
+                                        newValue = StringUtil.populatePattern(getResult(), Json.toObjectMap((Json) value));
+                                    } catch (PopulatePatternException e) {
+                                        e.printStackTrace();
+                                    }
                                 }
                                 newValues.add(newValue);
                             });
@@ -376,7 +381,13 @@ public class Filter {
                                 }
                             }
                             if(hasResult()){
-                                callback.accept(getNest(),StringUtil.populatePattern(getResult(),Json.toObjectMap(captured)));
+                                try {
+                                    String populated = StringUtil.populatePattern(getResult(), Json.toObjectMap(captured));
+                                    callback.accept(getNest(),populated);
+                                } catch (PopulatePatternException e) {
+                                    e.printStackTrace();
+                                }
+
                             }else{
                                 callback.accept(getNest(),captured);
                             }
