@@ -147,6 +147,7 @@ The existing file parser factories:
 * `printGcFactory` gc logs from jdk < 11
 * `serverLogFactory` parsers the default `server.log` format
 * `substrateGcFactory` parses the gc logs from substrateVm (quarkus)
+* `wrkFactory` parses wrk output files (e.g. `wrk http://lcoalhost:8080/api`)
 * `xanFactory` parses faban xan files (e.g. `xan.details`)
 
 If you need to parse a different format line by line then you need to create a list of `exp`

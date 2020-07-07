@@ -50,6 +50,11 @@ path: ".*?run/(?<serverName>[^\\./]+).+?/dstat\\.log?"
 nest: "${{serverName}}.dstat"
 asText: DstatFactory
 ---
+name: wrk
+path: "^(.+)\\/(?<filename>([^/]+))\\.wrk$"
+nest: "wrk.${{filename}}"
+asText: WrkFactory
+---
 name: detail.xan
 path: ".*?/detail.xan$"
 nest: xan.detail
