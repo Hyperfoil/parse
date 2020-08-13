@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 public class Exp {
 
@@ -418,6 +419,8 @@ public class Exp {
    final private String pattern;
    final private IMatcher matcher;
 
+   private boolean debug = false;
+
    public Exp(String pattern){
       this(pattern,pattern);
    }
@@ -431,6 +434,15 @@ public class Exp {
 
       String safePattern = removePatternValues(pattern);
       this.matcher = new RegexMatcher(safePattern);
+   }
+
+   public boolean isDebug(){return debug;}
+   public Exp debug(){
+      return debug(true);
+   }
+   public Exp debug(boolean debug){
+      this.debug = debug;
+      return this;
    }
 
    public String getPattern(){return pattern;}
@@ -734,11 +746,19 @@ public class Exp {
       return apply(line,builder,parser,line.reference(0));
    }
    protected boolean apply(DropString line, JsonBuilder builder, Parser parser, DropString.Ref startIndex){
+
+      if(isDebug() && startIndex.get() < line.length()){
+         System.out.printf("%s apply to %s%n",getName(),line.subSequence(startIndex.get(),line.length()));
+      }
+
       boolean rtrn = false;
       try {
          //cannot return for line.length==0 becausGe pattern may expect empty line
          if (startIndex.get() > line.length() && this.matchRange.equals(MatchRange.AfterParent)) {
 
+            if(isDebug()){
+
+            }
             return false;
          }
 
@@ -749,6 +769,9 @@ public class Exp {
                .orElse(null) == null;
 
             if (!satisfyRequired) {
+               if(isDebug()){
+                  System.out.printf("%s does not satisfy %s%n",getName(),requires.stream().filter(required -> !parser.getState(required)).collect(Collectors.toList()));
+               }
                return false;
             }
          }
@@ -757,6 +780,7 @@ public class Exp {
          int matchStart = this.matchRange.apply(this.matcher, line, startIndex.get());
 
          if (this.matcher.find()) {
+
             rtrn = true;
 
             DropString.Ref firstStart = line.reference(matcher.start());
@@ -769,7 +793,12 @@ public class Exp {
 
             //run the pre-populate rules
             this.rules.forEach((rule, roleObjects) -> {
-               rule.prePopulate(builder, roleObjects);
+               boolean changed = rule.prePopulate(builder, roleObjects);
+               if(changed){
+                  if(isDebug()){
+                     System.out.printf("%s prepopulated target json due to %s%n",getName(),rule);
+                  }
+               }
             });
 
             Json startTarget = builder.getTarget();
@@ -777,6 +806,13 @@ public class Exp {
 
             do {//repeat this
 
+               if(isDebug()){
+                  System.out.printf("%s matches %s of %s%n",
+                     getName(),
+                     line.subSequence(matcher.start(),matcher.end()),
+                     line.subSequence(startIndex.get(),line.length())
+                  );
+               }
 
                DropString.Ref matcherStart = line.reference(matcher.start());
                DropString.Ref matcherEnd = line.reference(matcher.end());
@@ -788,6 +824,11 @@ public class Exp {
                if (currentTarget != startTarget) {//nesting pushes a temporary target
                   builder.pushTarget(currentTarget, getName() + GROUPED_NAME);
                   needPop = true;
+
+                  if(isDebug()){
+                     System.out.printf("%s created a nested target json%n",getName());
+                  }
+
                }
 //               if(fields.values().stream().filter(v->v.getMerge().equals(ValueMerge.TargetId)).findAny().orElse(null) != null){
 //                  System.out.println("PrePopulate: startTarget:"+startTarget.toString());
@@ -798,6 +839,13 @@ public class Exp {
                if (currentTarget != builder.getTarget()) {//populating changed the target
                   currentTarget = builder.getTarget();
                   populateChangedTarget = true;
+                  if(isDebug()){
+                     System.out.printf("%s changed target json when populated pattern values%n",getName());
+
+                  }
+               }
+               if(isDebug()){
+                  System.out.printf("%s post populate json%n%s%n",getName(),builder.getRoot().toString(2));
                }
 
                DropString beforeMatch = line;
@@ -813,7 +861,10 @@ public class Exp {
                   beforeMatchStart = beforeMatch.reference(beforeMatchStart.get());
                   beforeMatchEnd = beforeMatch.reference(beforeMatchEnd.get());
                }
-               Eat.preEat(this.eat, line, matcher.start(), matcher.end());
+               boolean preEatChanged = Eat.preEat(this.eat, line, matcher.start(), matcher.end());
+               if(preEatChanged && isDebug()){
+                  System.out.printf("%s changed line before children match%n",getName());
+               }
 
                Json ruleTarget = currentTarget;//ugh, lambdas
                this.rules.forEach((rule, roleObjects) -> {
@@ -821,9 +872,15 @@ public class Exp {
                });
                if (!disables.isEmpty() && parser != null) {
                   disables.forEach(v -> parser.setState(v, false));
+                  if(isDebug()){
+                     System.out.printf("%s disabled %s%n",getName(),disables);
+                  }
                }
                if (!enables.isEmpty() && parser != null) {
                   enables.forEach(v -> parser.setState(v, true));
+                  if(isDebug()){
+                     System.out.printf("%s enabled %s%n",getName(),enables);
+                  }
                }
                int lineLength = line.length();
 
@@ -838,6 +895,9 @@ public class Exp {
                         } else {
                            //default is to start children from end of current match
                            boolean matched = child.apply(line, builder, parser, beforeMatchEnd);//startIndex?
+                           if(isDebug()){
+                              System.out.printf("%s applied child %s matched=%b%n",getName(),child.getName(),matched);
+                           }
                            childMatched = matched || childMatched;
                         }
                      }
@@ -850,11 +910,13 @@ public class Exp {
 
                if (line.length() != lineLength) {//reset matcher if children modified the line
                   matcher.reset(line);
+                  if(isDebug()){
+                     System.out.printf("%s children modified line%n",getName());
+                  }
                }
                //default is to loop from end of current match
-               //TODO how does this work if the Exp is EntireLine and doesn't eat?
+               //TODO how does this work if the Exp is EntireLine and doesn't eat? Is that supported?
                this.matchRange.apply(this.matcher, line, matcherEnd.get());
-
 
             } while (hasRule(ExpRule.Repeat) && this.matcher.find());
             if (rtrn) {//TODO also support pre-child match actions and call this postMatch?

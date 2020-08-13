@@ -63,25 +63,33 @@ public enum Eat {
     }
 
 
-    public static void preEat(int eat, DropString line, int start, int end){
+    public static boolean preEat(int eat, DropString line, int start, int end){
         Eat toEat = Eat.from(eat);
+        boolean changed = false;
         switch (toEat){
             case Match:
                 line.drop(start,end);
+                changed = true;
                 break;
             case ToMatch:
                 line.drop(0,end);
+                changed = true;
                 break;
             case Width:
                 line.drop(start,start+eat);
+                changed = true;
                 break;
         }
+        return changed;
     }
-    public static void postEat(int eat,DropString line,int start,int end){
+    public static boolean postEat(int eat,DropString line,int start,int end){
         Eat toEat = Eat.from(eat);
+        boolean changed = false;
         switch (toEat){
             case Line:
                 line.drop(0,line.length());
+                changed = true;
         }
+        return changed;
     }
 }

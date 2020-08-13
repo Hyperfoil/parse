@@ -1,10 +1,21 @@
 package io.hyperfoil.tools.parse;
 
+import io.hyperfoil.tools.parse.factory.CsvFactory;
+import io.hyperfoil.tools.parse.factory.DstatFactory;
+import io.hyperfoil.tools.parse.factory.JStackFactory;
+import io.hyperfoil.tools.parse.factory.Jep271Factory;
+import io.hyperfoil.tools.parse.factory.JmapHistoFactory;
+import io.hyperfoil.tools.parse.factory.PrintGcFactory;
+import io.hyperfoil.tools.parse.factory.ServerLogFactory;
+import io.hyperfoil.tools.parse.factory.SubstrateGcFactory;
+import io.hyperfoil.tools.parse.factory.WrkFactory;
+import io.hyperfoil.tools.parse.factory.XanFactory;
 import io.hyperfoil.tools.parse.internal.CheatChars;
 import io.hyperfoil.tools.parse.internal.JsonBuilder;
 import io.hyperfoil.tools.yaup.json.Json;
 
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -12,8 +23,48 @@ import java.util.stream.Collectors;
  */
 public class Parser {
 
+
+
+
     public static interface UnparsedConsumer {
         void accept(String remainder,String original,int lineNumber);
+    }
+
+    public static Parser fromJson(Object obj){
+            if(obj instanceof String){
+                switch (obj.toString().toLowerCase()){
+                    case "csvfactory": return new CsvFactory().newParser();
+                    case "dstatfactory": return new DstatFactory().newParser();
+                    case "jep271factory": return new Jep271Factory().newParser();
+                    case "jmaphistofactory": return new JmapHistoFactory().newParser();
+                    case "jstackfactory": return new JStackFactory().newParser();
+                    case "printgcfactory": return new PrintGcFactory().newParser();
+                    case "serverlogfactory": return new ServerLogFactory().newParser();
+                    case "substrategcfactory": return new SubstrateGcFactory().newParser();
+                    case "xanfactory": return new XanFactory().newParser();
+                    case "wrkfactory": return new WrkFactory().newParser();
+                    default:
+                        throw new IllegalArgumentException("unknown parser "+obj.toString());
+                }
+            }else if (obj instanceof Json){
+                Json json = (Json)obj;
+                //same for array or map
+                Parser p = new Parser();
+                json.values().forEach(entry->{
+                    if(entry instanceof String){
+                        Exp exp = new Exp(entry.toString());
+                        p.add(exp);
+                    }else if (entry instanceof Json){
+                        Exp exp = Exp.fromJson((Json)entry);
+                        p.add(exp);
+                    }else{
+                        throw new IllegalArgumentException("cannot create expression from "+entry);
+                    }
+                });
+                return p;
+            }else{
+                throw new IllegalArgumentException("unknown parser "+obj);
+            }
     }
 
     private List<JsonConsumer> consumers;

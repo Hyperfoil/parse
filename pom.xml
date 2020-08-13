@@ -37,6 +37,25 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>META-INF/truffle/</exclude>
+                        <exclude>META-INF/truffle/*</exclude>
+                    </excludes>
+                    <archive>
+                        <manifest>
+                            <addClasspath>false</addClasspath>
+                            <mainClass>io.hyperfoil.tools.parse.ParseCommand</mainClass>
+                        </manifest>
+                        <manifestEntries>
+                            <hash>${git.commit.id.abbrev}</hash>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <dependencies>
