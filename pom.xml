@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.hyperfoil.tools</groupId>
     <artifactId>parse</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.1</version>
     <name>Hyperfoil parse</name>
     <description>Use regex patterns and rules to build json from text files</description>
     <url>https://github.com/Hyperfoil/parse</url>
@@ -12,7 +11,7 @@
         <connection>scm:git:git://github.com/Hyperfoil/parse.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/Hyperfoil/parse.git</developerConnection>
         <url>https://github.com/Hyperfoil/parse</url>
-        <tag>HEAD</tag>
+        <tag>0.1</tag>
     </scm>
     <licenses>
         <license>
@@ -59,7 +58,6 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <graalvm.version>20.1.0</graalvm.version>
         <version.maven.gpg>1.6</version.maven.gpg>
         <version.maven.source>3.2.0</version.maven.source>
         <version.maven.javadoc>3.2.0</version.maven.javadoc>
@@ -132,7 +130,7 @@
         <dependency>
             <groupId>io.hyperfoil.tools</groupId>
             <artifactId>yaup</artifactId>
-            <version>0.7</version>
+            <version>0.8-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
@@ -144,16 +142,16 @@
             <artifactId>commons-cli</artifactId>
             <version>1.4</version>
         </dependency>
-        <dependency>
-            <groupId>org.graalvm.sdk</groupId>
-            <artifactId>graal-sdk</artifactId>
-            <version>${graalvm.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.graalvm.js</groupId>
-            <artifactId>js</artifactId>
-            <version>${graalvm.version}</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.graalvm.sdk</groupId>-->
+<!--            <artifactId>graal-sdk</artifactId>-->
+<!--            <version>${graalvm.version}</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.graalvm.js</groupId>-->
+<!--            <artifactId>js</artifactId>-->
+<!--            <version>${graalvm.version}</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.aesh</groupId>
             <artifactId>aesh</artifactId>
