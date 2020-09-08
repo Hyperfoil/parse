@@ -2,12 +2,6 @@ package io.hyperfoil.tools.parse;
 
 import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.json.Json;
-import io.hyperfoil.tools.yaup.json.ValueConverter;
-import io.hyperfoil.tools.yaup.json.graaljs.JsonProxy;
-import io.hyperfoil.tools.yaup.json.graaljs.JsonProxyObject;
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.PolyglotException;
-import org.graalvm.polyglot.Value;
 
 import java.util.Arrays;
 
@@ -24,11 +18,6 @@ public class JsFunction {
    public Json execute(Object...arguments) {
       if(arguments==null ){
          return new Json(false);
-      }
-      for(int i=0; i<arguments.length; i++){
-         if (arguments[i] != null && arguments[i] instanceof Json){
-            arguments[i] = JsonProxy.create((Json)arguments[i]);
-         }
       }
       Object fromJs = StringUtil.jsEval(js, Arrays.asList(
          "function milliseconds(v){ return Packages.io.hyperfoil.tool.yaup.StringUtil.parseKMG(v)};",

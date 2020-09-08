@@ -2,13 +2,10 @@ package io.hyperfoil.tools.parse.file;
 
 import io.hyperfoil.tools.parse.JsStringFunction;
 import io.hyperfoil.tools.parse.factory.*;
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Value;
 import io.hyperfoil.tools.parse.Exp;
 import io.hyperfoil.tools.parse.JsJsonFunction;
 import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.json.Json;
-import io.hyperfoil.tools.yaup.json.JsonValidator;
 
 import java.util.LinkedList;
 import java.util.List;

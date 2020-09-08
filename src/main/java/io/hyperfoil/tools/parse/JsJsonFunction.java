@@ -1,10 +1,5 @@
 package io.hyperfoil.tools.parse;
 
-import io.hyperfoil.tools.yaup.json.ValueConverter;
-import io.hyperfoil.tools.yaup.json.graaljs.JsonProxyObject;
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.PolyglotException;
-import org.graalvm.polyglot.Value;
 import io.hyperfoil.tools.yaup.json.Json;
 
 import java.util.function.Function;
