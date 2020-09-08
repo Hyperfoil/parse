@@ -16,7 +16,7 @@
 #language2.defaultMimeType=application/javascript
 #language2.dependentLanguage.0=regex
 #language2.fileTypeDetector0=com.oracle.truffle.js.lang.JSFileTypeDetector
-#language2.id=js
+#language2.id=js_foo
 #language2.implementationName=GraalVM JavaScript
 #language2.interactive=true
 #language2.internal=false
