@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.hyperfoil.tools</groupId>
     <artifactId>parse</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.2-SNAPSHOT </version>
     <name>Hyperfoil parse</name>
     <description>Use regex patterns and rules to build json from text files</description>
     <url>https://github.com/Hyperfoil/parse</url>
@@ -109,10 +109,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
-<!--                    <excludes>-->
-<!--                        <exclude>META-INF/truffle/</exclude>-->
-<!--                        <exclude>META-INF/truffle/*</exclude>-->
-<!--                    </excludes>-->
                     <archive>
                         <manifest>
                             <addClasspath>false</addClasspath>
@@ -130,7 +126,7 @@
         <dependency>
             <groupId>io.hyperfoil.tools</groupId>
             <artifactId>yaup</artifactId>
-            <version>0.8</version>
+            <version>0.9-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
@@ -142,16 +138,6 @@
             <artifactId>commons-cli</artifactId>
             <version>1.4</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.graalvm.sdk</groupId>-->
-<!--            <artifactId>graal-sdk</artifactId>-->
-<!--            <version>${graalvm.version}</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.graalvm.js</groupId>-->
-<!--            <artifactId>js</artifactId>-->
-<!--            <version>${graalvm.version}</version>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>org.aesh</groupId>
             <artifactId>aesh</artifactId>
