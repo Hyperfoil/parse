@@ -1,0 +1,42 @@
+= parse User's Guide
+:revnumber: {project-version}
+:example-caption!:
+:sectnums:
+
+== Introduction
+
+parse is a line based text parser to create json from logs and data files.
+
+== Quickstart
+
+1. Download the latest https://github.com/Hyperfoil/parse/releases[release]
+2. run the jar against a folder or archive of files. This uses the default parsers.
+....
+java -jar parse.jar -b /tmp/archive.tar.gz
+....
+3. We can also use custom parser rules in a yaml
+....
+cat > rules.yaml << 'EOF'
+---
+name: mustgather
+path: ".*mustgather*.tar.gz"
+nest: files.mustgather
+asPath: |
+  (path)=>({name: path.substring(path.lastIndexOf("/")+1) })
+EOF
+---
+
+java -jar parse.jar -r rules.yaml -b /tmp/archive.tar.gz
+....
+
+== How it works
+
+parse works in 3 phases.
+
+1. Match files to parsers based on file name, file path, and optional header lines.
+2. Apply the parser rules to create a json object.
+3. Merge the json based on the `nest` path.
+
+
+
+
