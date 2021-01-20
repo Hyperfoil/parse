@@ -12,10 +12,30 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 public class ExpTest {
 
    Function<String, DropString> factory = CheatChars::new;
 
+   @Test
+   public void fromJson_enables(){
+      Json json = Json.fromString("    {\n" +
+              "        \"merge\": \"AsEntry\",\n" +
+              "        \"name\": \"subnet\",\n" +
+              "        \"pattern\":\"subnet\",\n" +
+              "        \"rules\": [\n" +
+              "            \"PushTarget\"\n" +
+              "        ],\n" +
+              "        \"nest\": \"subnet\",\n" +
+              "        \"enables\": \"subnet\"\n" +
+              "    }",null,true);
+      assertNotNull("json should not be null",json);
+      Exp exp = Exp.fromJson(json);
+      assertNotNull("exp should not be null",exp);
+      assertTrue("should enable subnet: "+exp.getEnables(),exp.getEnables().contains("subnet"));
+   }
 
    @Test
    public void buildPattern_nothing_parsed(){

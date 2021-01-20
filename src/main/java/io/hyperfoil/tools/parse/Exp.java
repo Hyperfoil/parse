@@ -82,7 +82,7 @@ public class Exp {
       if(json.has("enables")){
          Object value = json.get("enables");
          if(value instanceof String){
-            rtrn.requires(value.toString());
+            rtrn.enables(value.toString());
          }else if (value instanceof Json){
             ((Json)value).forEach(entry->rtrn.enables(entry.toString()));
          }
@@ -90,7 +90,7 @@ public class Exp {
       if(json.has("disables")){
          Object value = json.get("disables");
          if(value instanceof String){
-            rtrn.requires(value.toString());
+            rtrn.disables(value.toString());
          }else if (value instanceof Json){
             ((Json)value).forEach(entry->rtrn.disables(entry.toString()));
          }

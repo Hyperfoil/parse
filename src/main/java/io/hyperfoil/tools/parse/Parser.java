@@ -23,9 +23,6 @@ import java.util.stream.Collectors;
  */
 public class Parser {
 
-
-
-
     public static interface UnparsedConsumer {
         void accept(String remainder,String original,int lineNumber);
     }
