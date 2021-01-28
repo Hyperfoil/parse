@@ -20,7 +20,6 @@ public class JsFunction {
          return new Json(false);
       }
       Object fromJs = StringUtil.jsEval(js, Arrays.asList(
-         "function milliseconds(v){ return Packages.io.hyperfoil.tool.yaup.StringUtil.parseKMG(v)};",
          "const StringUtil = Packages.io.hyperfoil.tool.yaup.StringUtil;",
          "const Exp = Java.type('io.hyperfoil.tools.parse.Exp');",
          "const ExpMerge = Java.type('io.hyperfoil.tools.parse.ExpMerge');",

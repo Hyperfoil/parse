@@ -51,6 +51,24 @@ public class Exp {
          rtrn.set("with",with);
       }
 
+      if(!callbacks.isEmpty()){
+         Json execute = new Json();
+         callbacks.forEach(callback->{
+            if(callback instanceof JsMatchAction){
+               JsMatchAction matchAction = (JsMatchAction)callback;
+               execute.add(matchAction.getJs());
+            }
+         });
+         if(!execute.isEmpty()){
+            if(execute.size()==1){
+              rtrn.set("execute",execute.get(0));
+            } else {
+               rtrn.set("execute", execute);
+            }
+         }
+      }
+
+
 
 
       return rtrn;
@@ -194,9 +212,9 @@ public class Exp {
          "        eat: { oneOf: [ { type: 'number' }, { enum: ['None','Match','ToMatch','Line'] } ] }," +
          "        range: { enum: ['EntireLine','AfterParent','BeforeParent'] }," +
          "        nest: { type: 'string' }," +
-         "        requires: { type: 'array', items: { type: 'string' } }," +
-         "        enables: { type: 'array', items: { type: 'string' } }," +
-         "        disables: { type: 'array', items: { type: 'string' } }," +
+         "        requires: { oneOf: [ { type: 'string'}, { type: 'array', items: { type: 'string' } } ] }," +
+         "        enables: { oneOf: [ { type: 'string'}, { type: 'array', items: { type: 'string' } } ] }," +
+         "        disables: { oneOf: [ { type: 'string'}, { type: 'array', items: { type: 'string' } } ] }," +
          "        merge: { enum: ['ByKey','AsEntry','Extend'] }," +
          "        with: { type: 'object' }," +
          "        rules: {" +
@@ -921,7 +939,7 @@ public class Exp {
             } while (hasRule(ExpRule.Repeat) && this.matcher.find());
             if (rtrn) {//TODO also support pre-child match actions and call this postMatch?
                for (MatchAction action : callbacks) {
-                  action.onMatch(line.getLine(), currentTarget, null /*TODO matchAction Exp*/, parser);
+                  action.onMatch(line.getLine(), currentTarget, this /*TODO matchAction Exp*/, parser);
                }
             }
 

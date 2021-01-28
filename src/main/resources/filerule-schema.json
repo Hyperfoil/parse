@@ -18,9 +18,9 @@
             },
             "range": {"enum": ["EntireLine","AfterParent","BeforeParent"]},
             "nest": {"type": "string"},
-            "requires": {"type": "array","items": {"type": "string"}},
-            "enables": {"type": "array","items": {"type": "string"}},
-            "disables": {"type": "array","items": {"type": "string"}},
+            "requires": { "oneOf": [ { "type": "string"}, { "type": "array", "items": { "type": "string" } } ] },
+            "enables": { "oneOf": [ { "type": "string"}, { "type": "array", "items": { "type": "string" } } ] },
+            "disables": { "oneOf": [ { "type": "string"}, { "type": "array", "items": { "type": "string" } } ] },
             "merge": {"enum": ["ByKey","AsEntry","Extend"]},
             "with": {"type": "object"},
             "rules": {
@@ -62,7 +62,7 @@
                   "merge": {"enum": ["Auto","BooleanKey","BooleanValue","TargetId","Count","Add","List","Key","Set","First","Last","TreeSibling","TreeMerge"]}
                 },
                 "if": {"properties": {"merge": {"enum": ["Key"]}}},
-                "then": {"requres": ["target"]}
+                "then": {"requires": ["target"]}
               }
             },
             "execute": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},

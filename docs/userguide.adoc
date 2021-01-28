@@ -7,6 +7,7 @@
 
 parse is a line based text parser to create json from logs and data files.
 
+
 == Quickstart
 
 1. Download the latest https://github.com/Hyperfoil/parse/releases[release]
@@ -37,6 +38,16 @@ parse works in 3 phases.
 2. Apply the parser rules to create a json object.
 3. Merge the json based on the `nest` path.
 
+== Parser rules
+file parser rules (file rules) tell parse how to handle the file content.
+The valid rules are:
+
+- link:./asContent.adoc[asContent] - load the entire file content as a string
+- asJbossCli - parse the jboss-cli output into json
+- asJson - assume the file contains json
+- link:./asText.adoc[asText] - parse each line of text
+- link:./asPath.adoc[asPath] - execute a javascript function on the file path
+- asXml - assume the file contains xml
 
 
 

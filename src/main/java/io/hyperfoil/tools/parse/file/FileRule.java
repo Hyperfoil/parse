@@ -237,11 +237,12 @@ public class FileRule {
            "  asPath: {type: 'string'}," +
            "}," +
            "oneOf: [" +
-           "  { required: ['asText'] }," +
+           "  { required: ['asContent'] }," +
            "  { required: ['asJbossCli'] }," +
            "  { required: ['asJson'] }," +
-           "  { required: ['asXml'] }," +
+           "  { required: ['asText'] }," +
            "  { required: ['asPath'] }," +
+           "  { required: ['asXml'] }," +
            "]," +
            "additionalProperties: false" +
            "}");
