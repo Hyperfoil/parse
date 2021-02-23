@@ -100,6 +100,9 @@
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>io.hyperfoil.tools.parse.ParseCommand</mainClass>
                                 </transformer>
+                                <!-- https://github.com/oracle/graaljs/issues/125 -->
+                                <!-- https://maven.apache.org/plugins/maven-shade-plugin/examples/resource-transformers.html#ServicesResourceTransformer -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>
                         </configuration>
                     </execution>
@@ -126,7 +129,7 @@
         <dependency>
             <groupId>io.hyperfoil.tools</groupId>
             <artifactId>yaup</artifactId>
-            <version>0.8.1</version>
+            <version>0.8.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
