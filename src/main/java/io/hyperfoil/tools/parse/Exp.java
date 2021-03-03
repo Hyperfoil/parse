@@ -803,7 +803,8 @@ public class Exp {
 
             DropString.Ref firstStart = line.reference(matcher.start());
             DropString.Ref firstEnd = line.reference(matcher.end());
-
+            int originalStart = line.getOriginalIndex(matcher.start());
+            int originalEnd = line.getOriginalIndex(matcher.end());
 
             //adding them to line causes line.drop to impact child matching
             //line.addReference(matcherStart);

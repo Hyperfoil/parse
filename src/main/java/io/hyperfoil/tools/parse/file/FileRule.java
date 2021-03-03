@@ -89,6 +89,7 @@ public class FileRule {
                         case "substrategcfactory": return new SubstrateGcFactory().newParser();
                         case "xanfactory": return new XanFactory().newParser();
                         case "wrkfactory": return new WrkFactory().newParser();
+                        case "vmstatfactory": return new VmstatFactory().newParser();
                         default:
                             throw new IllegalArgumentException("unknown factory "+asText.toString());
                     }

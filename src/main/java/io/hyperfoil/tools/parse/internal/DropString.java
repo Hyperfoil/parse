@@ -1,5 +1,6 @@
 package io.hyperfoil.tools.parse.internal;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -10,6 +11,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class DropString implements CharSequence {
 
+
+   public static class Drop {
+      final int start;
+      final int end;
+      public Drop(int start,int stop){
+         this.start = start;
+         this.end = stop;
+      }
+      public int getStart(){return start;}
+      public int getEnd(){return end;}
+   }
    public static class Ref implements Comparable<Ref>{
       private final AtomicInteger value;
       private Ref(int index){
@@ -29,6 +41,7 @@ public abstract class DropString implements CharSequence {
 
    String line;
    List<Ref> references = new LinkedList<>();
+   List<Drop> drops = new ArrayList<>();
 
    DropString(String line){
       this.line = line;
@@ -47,7 +60,20 @@ public abstract class DropString implements CharSequence {
    public void clearReferences(){references.clear();}
    public int referenceCount(){return references.size();}
 
-   void updateReferences(int start,int end){
+   public int getOriginalIndex(int currentIndex){
+      int rtrn = currentIndex;
+      int idx = drops.size();
+      for(int i = idx-1; i>=0; i--){
+         Drop d = drops.get(i);
+         if(rtrn >= d.getStart()){
+            rtrn += d.getEnd();
+         }
+      }
+      return rtrn;
+   }
+
+   final void updateReferences(int start,int end){
+      drops.add(new Drop(start,end));
       if(!references.isEmpty()){
          for(Ref ref : references){
             int value = ref.get();

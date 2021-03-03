@@ -98,20 +98,25 @@ public class ParseCommand implements Command {
                   for (FileRule rule : fileRules) {
                      try {
                         rule.apply(entry, (nest, json) -> {
-                           if (nest == null || nest.trim().isEmpty()) {
-                              if (!json.isArray() && (result.isEmpty() || !result.isArray())) {
-                                 result.merge(json);
-                              } else if (json.isArray() && result.isArray()) {
-                                 json.forEach((Consumer<Object>) result::add);
+                           try {
+                              if (nest == null || nest.trim().isEmpty()) {
+                                 if (!json.isArray() && (result.isEmpty() || !result.isArray())) {
+                                    result.merge(json);
+                                 } else if (json.isArray() && result.isArray()) {
+                                    json.forEach((Consumer<Object>) result::add);
+                                 } else {
+                                    System.out.printf("cannot merge array with object without a nest for rule " + rule.getName());
+                                 }
                               } else {
-                                 System.out.printf("cannot merge array with object without a nest for rule " + rule.getName());
+                                 Json.chainMerge(result, nest, json);
                               }
-                           } else {
-                              Json.chainMerge(result, nest, json);
+                           }catch(Throwable e){
+                              System.out.printf("Exception applying rule=" + rule.getName() + " entry=" + entry+"%n");
+                              e.printStackTrace();
                            }
                         });
-                     } catch (Exception e) {
-                        System.out.println("Exception for rule=" + rule.getName() + " entry=" + entry);
+                     } catch (Throwable e) {
+                        System.out.printf("Exception for rule=" + rule.getName() + " entry=" + entry+"%n");
                         e.printStackTrace();
                      }
                   }
