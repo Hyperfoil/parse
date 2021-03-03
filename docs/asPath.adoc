@@ -1,0 +1,34 @@
+= creating an asPath rule
+
+The `asPath` file rule expects a javascript function that returns a Json object.
+
+```yaml
+name: example
+path: test.txt
+nest: foo
+asPath: (path)=>({filePath:path})
+```
+The javascript function will receive the full path to the file
+and the returned json will be merged with other file rules under the `nest` key.
+```javascript
+{
+    foo: {
+        filePath: "/tmp/run/output/test.txt"
+    }
+}
+```
+
+== When to use
+parse is designed for text based files but `asPath` can be used to work with non-text files such as jfrs or coredumps.
+The javascript function has 1 argument (the path) but can access the link:./javascript.adoc[javascript context].
+
+```yaml
+name: flight_recorder
+path: *.jfr
+nest: jfr
+asPath: |
+  (path)=>{
+    const size = FileUtility.getInputSize(path)
+    return { path,size}
+  }
+```

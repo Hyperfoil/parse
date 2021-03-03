@@ -1,0 +1,40 @@
+= creating an asContent rule
+
+The simplest file rule creates a json object with the file content under a key (`content` by default).
+
+```yaml
+name: example
+path: test.txt
+nest: foo
+asContent: key #default value is 'content'
+```
+
+The above example will load `test.txt` into a json object
+
+```javascript
+{
+  key: "<file_text>"
+}
+```
+
+then merge it with the json from other file rules under the `foo` key
+
+```javascript
+{
+    foo : {
+        key: "<file_text>"
+    }
+    //other rule json...
+}
+```
+
+The `asContent` file rule is similar to using a `.*` expression in `asText`
+except that `asContent` preserves newlines and keeps the content as a single string.
+
+=== When to use
+The most common use case is when a file contains a version or identifier.
+```bash
+java -version > /tmp/java.version.txt
+uname -r > /tmp/uname.txt
+```
+

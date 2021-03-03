@@ -1,0 +1,41 @@
+= creating an asText file rule
+
+The `asText` file rule is designed to create json based on the
+lines of text in a file. The json is created by applying expressions to each line.
+An expression is a regular exression with named capture groups, `(?<count>\\d+)`,
+and additional settings for how parse should handle the captured fields.
+
+== Expression Factories
+Parse has a selection of pre-built expressions to handle common text content:
+- CsvFactory - create a keyed csv table
+- DstatFactory - parse output from dstat
+```bash
+dstat -Tupln 1 >> /tmp/dstat.log
+```
+- Jep271Factory - parse jep271 garbage collection logs
+- JmapHistoFactory - parse `jmap -histo` output
+```bash
+jmap -histo <pid> >> /tmp/jmap.histo.txt
+```
+- JStackFactory - parse jstack output
+```bash
+jstack <pid> >> /tmp/jstack.txt
+```
+- PrintGcFactory - parse hotspot (adopt-open-jdk) logs enabled with -XX:+PrintGc
+- ServerLogFactory - parse EAP server.log
+- SubstrateGcFactory - parse SubstrateVm (graal & quarkus) gc logs
+- WrkFactory - parse logs from the `wrk` and `wrk2` command
+- XanFactory - parse xan files (Faban performace data)
+
+The pre-build expressions can be used by passing their name to `asText`
+```yaml
+name: printGc
+path: *.gclog
+headerLines: 1
+findHeader: "JRE (1."
+nest: gclog
+asText: PrintGcFactory
+```
+
+== Custom Expressions
+Custom text expressions

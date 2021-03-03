@@ -1,0 +1,31 @@
+= Javascript Context
+
+parse uses javascript to support custom actions in yaml defined file rules.
+
+The javascript can be a file rule ( `asPath` or `asJson`) or an `execute` task
+in an `asText` expression. In all cases, the javascript has access to global helper
+methods and some Java classes from yaup.
+
+- `Exp` - create new a new expression. This is mostly used in an `execute` action to add expressions based on the content of the file.
+`Exp` related enums are also availalbe (`ExpMerge`, `MatchRange`, `Eat`, `ValueType`, `ValueMerge`, `ExpRule`)
+```yaml
+...
+asText:
+- name: csv
+  pattern: "^(?<header>[^,$]+)(?:,|$)"
+  rules: [Repeat]
+  execute: |
+    (line,match,pattern,parser)=>{
+      const newPattern = (match.header||[]).reduce((x,v)=>x+`(?<${v}>[^,$]+)(?:,|$)`,'');
+      const newExp = new Exp("data",newPattern)
+        .nest("data")
+        .setMerge(ExpMerge.AsEntry)
+        .eat(Eat.Line)
+        .addRule(ExpRule.RemoveOnClose)
+      parser.addAhead(newExp);
+    }
+```
+- `StringUtil` - string manipulation utility from yaup
+- `FileUtility` - file manipulation utility from yaup
+- `Xml` - xml java wrapper from yaup
+- `Json` - json java wrapper from yaup
