@@ -365,7 +365,7 @@ public class Exp {
       while(fieldMatcher.find()){
          Queue<String> fieldKeys = new LinkedList<>(Arrays.asList(fieldMatcher.group(1).split(":")));
          String name = fieldKeys.poll();
-         ValueInfo valueInfo = new ValueInfo(name,null,ValueType.Auto,ValueMerge.Auto);
+         ValueInfo valueInfo = rtrn.containsKey(name) ? rtrn.get(name) : new ValueInfo(name,null,ValueType.Auto,ValueMerge.Auto);
          rtrn.put(name,valueInfo);
          while(!fieldKeys.isEmpty()){
             String key = fieldKeys.poll().toLowerCase();
@@ -381,6 +381,13 @@ public class Exp {
                if(valueMerge!=null){
                   valueInfo.setMerge(valueMerge);
                   valueInfo.setTarget(value);
+                  if(ValueMerge.Key.equals(valueMerge)){
+                     if(!rtrn.containsKey(value)){
+                        rtrn.put(value,new ValueInfo(value,null,ValueType.Auto,ValueMerge.Auto));
+                     }
+                     rtrn.get(value).setSkip(true);
+                  }else {
+                  }
                }else{
                   //TODO log the error for invalid type?
                }
@@ -654,6 +661,12 @@ public class Exp {
          switch (this.expMerge){
             case AsEntry:
                if(currentTarget == builder.getRoot()){
+                  if (builder.getRoot().isArray()){
+                     Json newEnty = new Json();
+                     currentTarget.add(newEnty);
+                     builder.pushTarget(newEnty);
+                     currentTarget = builder.getTarget();
+                  }
                   //currently do nothing
                }else if (currentTarget.isEmpty()){
                   Json newEntry = new Json();
@@ -849,10 +862,6 @@ public class Exp {
                   }
 
                }
-//               if(fields.values().stream().filter(v->v.getMerge().equals(ValueMerge.TargetId)).findAny().orElse(null) != null){
-//                  System.out.println("PrePopulate: startTarget:"+startTarget.toString());
-//                  System.out.println(builder.debug(true));
-//               }
 
                populate(builder);
                if (currentTarget != builder.getTarget()) {//populating changed the target
@@ -956,7 +965,7 @@ public class Exp {
       }catch(Exception e){
          System.out.println(getName()+" caught exception on line "+line.getLine());
          e.printStackTrace(System.out);
-         System.exit(1);
+
          throw new RuntimeException((e));
       }
 
