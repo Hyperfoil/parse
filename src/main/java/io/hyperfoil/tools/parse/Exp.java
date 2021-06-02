@@ -337,8 +337,6 @@ public class Exp {
 
    /**
     * Removes anything in the capture group name after a :
-    * @param pattern
-    * @return
     */
    public static String removePatternValues(String pattern) {
       String rtrn = pattern;
@@ -355,8 +353,6 @@ public class Exp {
 
    /**
     * Identify the capture groups and any value information from the pattern
-    * @param pattern
-    * @return
     */
    public static Map<String,ValueInfo> parsePattern(String pattern){
       Matcher fieldMatcher = java.util.regex.Pattern.compile(CAPTURE_GROUP_PATTERN).matcher(pattern);

@@ -106,7 +106,7 @@ public enum ValueMerge {
     }),
     /**
      * Uses the value from the input as the key for the value from the other specified capture group.
-     * Can be specified in the capture name with (?<foo:key=bar>\\S+) (?<bar>\\S+) to create json {biz:buz}
+     * Can be specified in the capture name with {@literal(?<foo:key=bar>\\S+) (?<bar>\\S+)} to create json {biz:buz}
      * from input "biz buz"
      */
     Key((key,value,builder,data)->{
