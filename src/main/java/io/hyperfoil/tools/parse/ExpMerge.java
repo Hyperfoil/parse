@@ -1,14 +1,20 @@
 package io.hyperfoil.tools.parse;
 
+/**
+ *
+ */
 public enum ExpMerge {
+
+
+
    /**
     * Each key is merged separately into the current json object. This uses the ValueMerge to determine
-    * how multiple matches are merged togehter.
+    * how multiple matches are merged together. This is the default merge for an Exp.
     */
    ByKey,
    /**
-    * creates a new Json object from all the values in the current Exp and merges them together into
-    * an array under the Exp nesting or just the first array in the current json's parent path.
+    * Creates a new Json object from all the values in the current Exp and merges them together into
+    * an array under the Exp's nest or the parent array of the current current json target.
     */
    AsEntry,
    /**

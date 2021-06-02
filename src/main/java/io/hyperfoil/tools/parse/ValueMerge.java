@@ -105,7 +105,9 @@ public enum ValueMerge {
         return false;
     }),
     /**
-     * Uses the value from the input as the key for the value from the other specified capture group
+     * Uses the value from the input as the key for the value from the other specified capture group.
+     * Can be specified in the capture name with (?<foo:key=bar>\\S+) (?<bar>\\S+) to create json {biz:buz}
+     * from input "biz buz"
      */
     Key((key,value,builder,data)->{
        Json.chainAct(builder.getTarget(),key,value,(target,k,v)->{

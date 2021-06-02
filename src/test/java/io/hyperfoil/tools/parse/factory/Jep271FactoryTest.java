@@ -15,8 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class Jep271FactoryTest {
     private static Jep271Factory f;
@@ -366,6 +365,11 @@ public class Jep271FactoryTest {
     @Test
     public void shenandoahPhase_finalUpdateRefs(){
         Json root = f.shenandoahPhase().apply("Pause Final Update Refs 0.379ms");
+        assertNotNull(root);
+        assertTrue("root should now be an array due to change in AsEntry",root.isArray());
+        assertEquals("root should have 1 entry",1,root.size());
+        root = root.getJson(0);
+
         Assert.assertEquals("lock","Pause",root.getString("lock"));
         Assert.assertEquals("phase","Final Update Refs",root.getString("phase"));
         Assert.assertEquals("milliseconds",0.379,root.getDouble("milliseconds"),0.000001);
@@ -374,6 +378,11 @@ public class Jep271FactoryTest {
     @Test
     public void shenandoahPhase_initUpdateRefs(){
         Json root = f.shenandoahPhase().apply("Pause Init Update Refs 0.035ms");
+        assertNotNull(root);
+        assertTrue("root should now be an array due to change in AsEntry",root.isArray());
+        assertEquals("root should have 1 entry",1,root.size());
+        root = root.getJson(0);
+
         Assert.assertEquals("lock","Pause",root.getString("lock"));
         Assert.assertEquals("phase","Init Update Refs",root.getString("phase"));
         Assert.assertEquals("milliseconds",0.035,root.getDouble("milliseconds"),0.000001);
@@ -382,6 +391,11 @@ public class Jep271FactoryTest {
     public void shenandoahPhase_finalMark(){
         Json root;
         root = f.shenandoahPhase().apply("Pause Final Mark (process weakrefs) 1.265ms");
+        assertNotNull(root);
+        assertTrue("root should now be an array due to change in AsEntry",root.isArray());
+        assertEquals("root should have 1 entry",1,root.size());
+        root = root.getJson(0);
+
         Assert.assertEquals("lock","Pause",root.getString("lock"));
         Assert.assertEquals("phase","Final Mark",root.getString("phase"));
         Assert.assertEquals("task","process weakrefs",root.getString("task"));
@@ -390,6 +404,11 @@ public class Jep271FactoryTest {
     @Test
     public void shenandoahPhase_initMark(){
         Json root = f.shenandoahPhase().apply("Pause Init Mark (process weakrefs) 1.939ms");
+        assertNotNull(root);
+        assertTrue("root should now be an array due to change in AsEntry",root.isArray());
+        assertEquals("root should have 1 entry",1,root.size());
+        root = root.getJson(0);
+
         Assert.assertEquals("lock","Pause",root.getString("lock"));
         Assert.assertEquals("phase","Init Mark",root.getString("phase"));
         Assert.assertEquals("task","process weakrefs",root.getString("task"));
@@ -398,16 +417,25 @@ public class Jep271FactoryTest {
     @Test
     public void shenandoahPhase_concurrentReset(){
         Json root = f.shenandoahPhase().apply("Concurrent reset 50M->50M(512M) 0.381ms");
-        Assert.assertEquals("lock","Concurrent",root.getString("lock"));
-        Assert.assertEquals("phase","reset",root.getString("phase"));
-        Assert.assertEquals("usedBefore", StringUtil.parseKMG("50M"),root.getLong("usedBefore"));
-        Assert.assertEquals("usedAfter", StringUtil.parseKMG("50M"),root.getLong("usedAfter"));
-        Assert.assertEquals("capacity", StringUtil.parseKMG("512M"),root.getLong("capacity"));
-        Assert.assertEquals("milliseconds",0.381,root.getDouble("milliseconds"),0.000001);
+        assertNotNull(root);
+        assertTrue("root should now be an array due to change in AsEntry",root.isArray());
+        assertEquals("root should have 1 entry",1,root.size());
+        root = root.getJson(0);
+        Assert.assertEquals("lock: "+root,"Concurrent",root.getString("lock"));
+        Assert.assertEquals("phase: "+root,"reset",root.getString("phase"));
+        Assert.assertEquals("usedBefore: "+root, StringUtil.parseKMG("50M"),root.getLong("usedBefore"));
+        Assert.assertEquals("usedAfter: "+root, StringUtil.parseKMG("50M"),root.getLong("usedAfter"));
+        Assert.assertEquals("capacity: "+root, StringUtil.parseKMG("512M"),root.getLong("capacity"));
+        Assert.assertEquals("milliseconds+ "+root,0.381,root.getDouble("milliseconds"),0.000001);
     }
     @Test
     public void shenandoahPhase_concurrentMarking(){
         Json root = f.shenandoahPhase().apply("Concurrent marking (process weakrefs) 50M->51M(512M) 6.146ms");
+        assertNotNull(root);
+        assertTrue("root should now be an array due to change in AsEntry",root.isArray());
+        assertEquals("root should have 1 entry",1,root.size());
+        root = root.getJson(0);
+
         Assert.assertEquals("lock","Concurrent",root.getString("lock"));
         Assert.assertEquals("phase","marking",root.getString("phase"));
         Assert.assertEquals("task","process weakrefs",root.getString("task"));

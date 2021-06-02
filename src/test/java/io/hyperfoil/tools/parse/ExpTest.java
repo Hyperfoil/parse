@@ -12,12 +12,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ExpTest {
 
    Function<String, DropString> factory = CheatChars::new;
+
+   @Test
+   public void nest_push_without_capture(){
+      Exp exp = new Exp("foo").nest("foo").addRule(ExpRule.PushTarget).addRule(ExpRule.PreClearTarget);
+
+      Json json = exp.apply("foo");
+      assertTrue("json should have a foo key:"+json,json.has("foo"));
+      assertTrue("json.foo should be json:"+json,json.get("foo") instanceof Json);
+      Json foo = json.getJson("foo");
+      assertTrue("foo should be empty:"+foo,foo.isEmpty());
+   }
 
    @Test
    public void fromJson_enables(){
@@ -157,6 +167,32 @@ public class ExpTest {
 
 
    }
+
+   @Test
+   public void asEntry_build_array(){
+      Exp exp = new Exp("asEntry","(?<a>.)")
+              .setMerge(ExpMerge.AsEntry)
+              .addRule(ExpRule.PushTarget)
+              .addRule(ExpRule.PrePopTarget);
+
+      JsonBuilder b = new JsonBuilder();
+      exp.apply(factory.apply("1"),b,null);
+      exp.apply(factory.apply("2"),b,null);
+
+      Json root = b.getRoot();
+      assertNotNull(root);
+      assertTrue("root should be an array",root.isArray());
+      assertEquals("root should have 2 entries",2,root.size());
+      assertTrue("root[0] should be json",root.get(0) instanceof Json);
+      Json json = root.getJson(0);
+      assertTrue("root[0] should have an a",json.has("a"));
+      assertTrue("root[1] should be json",root.get(1) instanceof Json);
+      json = root.getJson(1);
+      assertTrue("root[1] should have an a",json.has("a"));
+
+   }
+
+
    @Test
    public void pushTarget_named(){
       Exp push = new Exp("push","(?<a>a)").addRule(ExpRule.PushTarget,"a");
@@ -292,6 +328,10 @@ public class ExpTest {
 
       Json root = p.getBuilder().getRoot();
 
+      assertNotNull(root);
+      assertTrue("root should now be an array due to change in AsEntry",root.isArray());
+      assertEquals("root shoudl have 1 entry",1,root.size());
+      root = root.getJson(0);
       Json expected = Json.fromString("{\"key\":\"foo\",\"value\":\"bar\",\"child\":[[{\"key\":\"a\",\"value\":\"Alpha\"},{\"key\":\"b\",\"value\":\"Bravo\"}],[{\"key\":\"y\",\"value\":\"Yankee\"},{\"key\":\"z\",\"value\":\"Zulu\"}]]}\n");
       Assert.assertEquals("root should have 2 children each with 2 entries",expected,root);
    }
@@ -393,9 +433,22 @@ public class ExpTest {
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").setKeyValue("key", "value");
       p.apply(factory.apply("age=23"),b,null);
-
       Assert.assertTrue("Should turn value of <key> to the key for <value>", b.getRoot().has("age"));
       Assert.assertEquals("expected {\"age\":\"23\"}","23",b.getRoot().getString("age"));
+      Json json = p.apply("age=23");
+      assertNotNull("json should not be null",json);
+      assertTrue("json.age should exist"+json,json.has("age"));
+      assertEquals("json should have 1 key"+json,1,json.size());
+   }
+   @Test
+   public void valueKey_in_pattern(){
+      JsonBuilder b = new JsonBuilder();
+      Exp p = new Exp("kv","(?<key:key=value>\\w+)=(?<value>\\w+)");
+      Json json = p.apply("age=23");
+      assertNotNull("json should not be null",json);
+      assertTrue("json.age should exist"+json,json.has("age"));
+      assertEquals("json should have 1 key"+json,1,json.size());
+
    }
    @Test
    public void valueBooleanKey(){

@@ -45,7 +45,13 @@ public enum ExpRule {
     *
     */
    RemoveOnClose,
+   /**
+    *
+    */
    PostClearTarget,
+   /**
+    *
+    */
    TargetRoot;
 
    private interface RuleAction {

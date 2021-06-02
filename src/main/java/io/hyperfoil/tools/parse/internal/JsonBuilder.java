@@ -67,7 +67,7 @@ public class JsonBuilder {
     public Json getRoot(){return targets.get(0).target;}
 
     public Json peekTarget(int ahead){
-        if(ahead > targets.size()-2){
+        if(ahead > targets.size()-1){
             return null;
         }
         return targets.get(targets.size()-1-ahead).target;

@@ -71,7 +71,20 @@ public class JsonBuilderTest {
     }
 
     @Test
-    public void peekTarget_1(){
+    public void peekTarget_pused_1(){
+        JsonBuilder builder = new JsonBuilder();
+        builder.getTarget().set("Name","one");
+        builder.pushTarget(new Json());
+        builder.getTarget().set("Name","two");
+
+        Json peek = builder.peekTarget(1);
+
+        Assert.assertFalse("peek should not be null",peek==null);
+        Assert.assertEquals("Name:"+peek,"one",peek.getString("Name"));
+    }
+
+    @Test
+    public void peekTarget_pushed_3(){
         JsonBuilder builder = new JsonBuilder();
         builder.getTarget().set("Name","one");
         builder.pushTarget(new Json());

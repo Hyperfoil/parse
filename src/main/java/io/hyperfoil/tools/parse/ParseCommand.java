@@ -306,7 +306,6 @@ public class ParseCommand implements Command {
       return CommandResult.SUCCESS;
    }
    public static void main(String[] args) {
-
       AeshRuntimeRunner.builder().command(ParseCommand.class).args(args).execute();
       String cmdLineSyntax = "";
       cmdLineSyntax =
