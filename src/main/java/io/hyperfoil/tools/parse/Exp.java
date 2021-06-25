@@ -959,9 +959,6 @@ public class Exp {
             });
          }
       }catch(Exception e){
-         System.out.println(getName()+" caught exception on line "+line.getLine());
-         e.printStackTrace(System.out);
-
          throw new RuntimeException((e));
       }
 

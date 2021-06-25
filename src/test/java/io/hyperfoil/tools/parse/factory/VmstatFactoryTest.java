@@ -4,6 +4,7 @@ import io.hyperfoil.tools.parse.ExpRule;
 import io.hyperfoil.tools.parse.Parser;
 import io.hyperfoil.tools.yaup.json.Json;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -41,7 +42,7 @@ public class VmstatFactoryTest {
         p.close();
     }
 
-    @Test
+    @Test @Ignore
     public void timestamp_wide_oneHeader(){
         Parser p = f.newParser();
         final List<Json> found = new LinkedList<>();
@@ -53,8 +54,8 @@ public class VmstatFactoryTest {
 
         p.close();
 
-        found.forEach(json->{
-            System.out.println(json.toString(2));
-        });
+//        found.forEach(json->{
+//            System.out.println(json.toString(2));
+//        });
     }
 }
