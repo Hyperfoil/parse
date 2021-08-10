@@ -35,10 +35,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -170,6 +167,9 @@ public class ParseCommand implements Command {
    @Option(shortName = 't', name="threads", description = "number of parallel threads for parsing sources",defaultValue = "-1")
    Integer threadCount;
 
+   @Option(name = "disableDefault", description = "disables default rules", hasValue = false)
+   Boolean disableDefault;
+
    @OptionList(shortName = 'r', name = "rules", description = "parse rule definitions")
    Set<String> config;
 
@@ -188,14 +188,18 @@ public class ParseCommand implements Command {
       List<FileRule> fileRules = new ArrayList<>();
       JsonValidator validator = getValidator();
       systemTimer.start("load config");
-      if(config== null ||  config.isEmpty()){
-         System.out.println("using default file rules");
+      if(config== null ||  config.isEmpty()) {
+         config = new HashSet<>();
+      }
+      //Load default rules
+      if(!disableDefault) {
+         System.out.println("loading default rules");
          try (InputStreamReader fileStream = new InputStreamReader(ParseCommand.class.getClassLoader().getResourceAsStream("defaultRules.yaml"))) {
             try (BufferedReader reader = new BufferedReader(fileStream)) {
                String content = reader.lines().collect(Collectors.joining("\n"));
 
                Json loaded = Json.fromYaml(content);
-               if(loaded.isArray()) {
+               if (loaded.isArray()) {
                   loaded.forEach(entry -> {
                      if (entry instanceof Json) {
                         Json entryJson = (Json) entry;
@@ -213,9 +217,9 @@ public class ParseCommand implements Command {
                      }
 
                   });
-               }else{
+               } else {
                   FileRule rule = FileRule.fromJson(loaded);
-                  if(rule != null){
+                  if (rule != null) {
                      fileRules.add(rule);
                   }
                }
@@ -225,6 +229,7 @@ public class ParseCommand implements Command {
             e.printStackTrace();
          }
       }
+
       if(batch == null){
          batch = new LinkedHashSet<>();
       }
