@@ -54,8 +54,5 @@ public class VmstatFactoryTest {
 
         p.close();
 
-//        found.forEach(json->{
-//            System.out.println(json.toString(2));
-//        });
     }
 }

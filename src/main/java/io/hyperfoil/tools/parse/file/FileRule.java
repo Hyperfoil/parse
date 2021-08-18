@@ -6,7 +6,10 @@ import io.hyperfoil.tools.parse.Exp;
 import io.hyperfoil.tools.parse.JsJsonFunction;
 import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.json.Json;
+import org.slf4j.ext.XLogger;
+import org.slf4j.ext.XLoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -14,6 +17,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class FileRule {
+
+    final static XLogger logger = XLoggerFactory.getXLogger(MethodHandles.lookup().lookupClass());
 
     public static FileRule fromJson(Json json){
         FileRule rtrn = new FileRule(json.getString("name",""));
@@ -326,8 +331,7 @@ public class FileRule {
             }
             return matched;
         }catch(Exception e){
-            System.out.println("Failed to convert "+path);
-            e.printStackTrace(System.out);
+            logger.error("Failed to convert "+path,e);
         }
         return false;
     }

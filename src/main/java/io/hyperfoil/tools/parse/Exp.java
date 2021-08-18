@@ -8,7 +8,11 @@ import io.hyperfoil.tools.parse.internal.RegexMatcher;
 import io.hyperfoil.tools.yaup.HashedLists;
 import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.json.Json;
+import org.slf4j.Marker;
+import org.slf4j.ext.XLogger;
+import org.slf4j.ext.XLoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -24,6 +28,8 @@ import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 public class Exp {
+
+   final static XLogger logger = XLoggerFactory.getXLogger(MethodHandles.lookup().lookupClass());
 
    public Json toJson(){
       Json rtrn = new Json();
@@ -388,7 +394,7 @@ public class Exp {
                   //TODO log the error for invalid type?
                }
             }else{
-               System.err.println("WTF is a "+key);
+               logger.error("what is a "+key);
                throw new IllegalArgumentException("cannot infer type info from "+key+" in "+fieldMatcher.group(1)+" of "+pattern);
             }
          }
@@ -775,7 +781,7 @@ public class Exp {
    protected boolean apply(DropString line, JsonBuilder builder, Parser parser, DropString.Ref startIndex){
 
       if(isDebug() && startIndex.get() < line.length()){
-         System.out.printf("%s apply to %s%n",getName(),line.subSequence(startIndex.get(),line.length()));
+         logger.debug("%s apply to %s%n",getName(),line.subSequence(startIndex.get(),line.length()));
       }
 
       boolean rtrn = false;
@@ -797,7 +803,7 @@ public class Exp {
 
             if (!satisfyRequired) {
                if(isDebug()){
-                  System.out.printf("%s does not satisfy %s%n",getName(),requires.stream().filter(required -> !parser.getState(required)).collect(Collectors.toList()));
+                  logger.debug("%s does not satisfy %s%n",getName(),requires.stream().filter(required -> !parser.getState(required)).collect(Collectors.toList()));
                }
                return false;
             }
@@ -824,7 +830,7 @@ public class Exp {
                boolean changed = rule.prePopulate(builder, roleObjects);
                if(changed){
                   if(isDebug()){
-                     System.out.printf("%s prepopulated target json due to %s%n",getName(),rule);
+                     logger.debug("%s prepopulated target json due to %s%n",getName(),rule);
                   }
                }
             });
@@ -835,7 +841,7 @@ public class Exp {
             do {//repeat this
 
                if(isDebug()){
-                  System.out.printf("%s matches %s of %s%n",
+                  logger.debug("{} matches {} of {}",
                      getName(),
                      line.subSequence(matcher.start(),matcher.end()),
                      line.subSequence(startIndex.get(),line.length())
@@ -854,7 +860,7 @@ public class Exp {
                   needPop = true;
 
                   if(isDebug()){
-                     System.out.printf("%s created a nested target json%n",getName());
+                     logger.debug("{} created a nested target json",getName());
                   }
 
                }
@@ -864,12 +870,12 @@ public class Exp {
                   currentTarget = builder.getTarget();
                   populateChangedTarget = true;
                   if(isDebug()){
-                     System.out.printf("%s changed target json when populated pattern values%n",getName());
+                     logger.debug("{} changed target json when populated pattern values",getName());
 
                   }
                }
                if(isDebug()){
-                  System.out.printf("%s post populate json%n%s%n",getName(),builder.getRoot().toString(2));
+                  logger.debug("{} post populate json\n{}",getName(),builder.getRoot().toString(2));
                }
 
                DropString beforeMatch = line;
@@ -887,7 +893,7 @@ public class Exp {
                }
                boolean preEatChanged = Eat.preEat(this.eat, line, matcher.start(), matcher.end());
                if(preEatChanged && isDebug()){
-                  System.out.printf("%s changed line before children match%n",getName());
+                  logger.debug("{} changed line before children match",getName());
                }
 
                Json ruleTarget = currentTarget;//ugh, lambdas
@@ -897,13 +903,13 @@ public class Exp {
                if (!disables.isEmpty() && parser != null) {
                   disables.forEach(v -> parser.setState(v, false));
                   if(isDebug()){
-                     System.out.printf("%s disabled %s%n",getName(),disables);
+                     logger.debug("{} disabled {}",getName(),disables);
                   }
                }
                if (!enables.isEmpty() && parser != null) {
                   enables.forEach(v -> parser.setState(v, true));
                   if(isDebug()){
-                     System.out.printf("%s enabled %s%n",getName(),enables);
+                     logger.debug("{} enabled {}",getName(),enables);
                   }
                }
                int lineLength = line.length();
@@ -920,7 +926,7 @@ public class Exp {
                            //default is to start children from end of current match
                            boolean matched = child.apply(line, builder, parser, beforeMatchEnd);//startIndex?
                            if(isDebug()){
-                              System.out.printf("%s applied child %s matched=%b%n",getName(),child.getName(),matched);
+                              logger.debug("{} applied child {} matched={}",getName(),child.getName(),matched);
                            }
                            childMatched = matched || childMatched;
                         }
@@ -935,7 +941,7 @@ public class Exp {
                if (line.length() != lineLength) {//reset matcher if children modified the line
                   matcher.reset(line);
                   if(isDebug()){
-                     System.out.printf("%s children modified line%n",getName());
+                     logger.debug("{} children modified line",getName());
                   }
                }
                //default is to loop from end of current match

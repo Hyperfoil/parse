@@ -24,6 +24,8 @@ import org.aesh.command.CommandResult;
 import org.aesh.command.invocation.CommandInvocation;
 import org.aesh.command.option.Option;
 import org.aesh.command.option.OptionList;
+import org.slf4j.ext.XLogger;
+import org.slf4j.ext.XLoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.nodes.Tag;
@@ -32,6 +34,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,6 +51,8 @@ import java.util.stream.Collectors;
 
 @CommandDefinition(name = "parse",description = "parse text files into structured json")
 public class ParseCommand implements Command {
+
+   final static XLogger logger = XLoggerFactory.getXLogger(MethodHandles.lookup().lookupClass());
 
    private class RuleRunner implements Runnable{
 
@@ -70,7 +75,7 @@ public class ParseCommand implements Command {
       @Override
       public void run() {
          if( !Files.exists(Paths.get(sourcePath)) ){
-            System.out.println("cannot access "+sourcePath);
+            logger.error("cannot access "+sourcePath);
             return;
          }
          int neededMb = 0;
@@ -83,7 +88,7 @@ public class ParseCommand implements Command {
          try {
             semaphore.acquire(acquire);
             try {
-               System.out.printf("Starting %s%n", sourcePath);
+               logger.info("Starting %s%n", sourcePath);
                SystemTimer thisTimer = systemTimer.start(sourcePath, true);
                List<String> entries = FileUtility.isArchive(sourcePath) ?
                   FileUtility.getArchiveEntries(sourcePath).stream().map(entry -> sourcePath + FileUtility.ARCHIVE_KEY + entry).collect(Collectors.toList()) :
@@ -102,24 +107,22 @@ public class ParseCommand implements Command {
                                  } else if (json.isArray() && result.isArray()) {
                                     json.forEach((Consumer<Object>) result::add);
                                  } else {
-                                    System.out.printf("cannot merge array with object without a nest for rule " + rule.getName());
+                                    logger.error("cannot merge array with object without a nest for rule " + rule.getName());
                                  }
                               } else {
                                  Json.chainMerge(result, nest, json);
                               }
                            }catch(Throwable e){
-                              System.out.printf("Exception applying rule=" + rule.getName() + " entry=" + entry+"%n");
-                              e.printStackTrace();
+                              logger.error("Exception applying rule=" + rule.getName() + " entry=" + entry,e);
                            }
                         });
                      } catch (Throwable e) {
-                        System.out.printf("Exception for rule=" + rule.getName() + " entry=" + entry+"%n");
-                        e.printStackTrace();
+                        logger.error("Exception for rule=" + rule.getName() + " entry=" + entry,e);
                      }
                   }
                }
                if (result.isEmpty()) {
-                  System.out.printf("failed to match rules to %s%n", sourcePath);
+                  logger.error("failed to match rules to {}", sourcePath);
                }
                String sourceDestination = batch.size() > 1 ? null : destination;
                if (sourceDestination == null || sourceDestination.isEmpty()) {
@@ -136,7 +139,7 @@ public class ParseCommand implements Command {
                      sourceDestination = sourcePath.endsWith("/") ? sourcePath.substring(0, sourcePath.length() - 1) + ".json" : sourcePath + ".json";
                   }
                }
-               System.out.printf("Writing to %s%n", sourceDestination);
+               logger.info("writing to {}", sourceDestination);
                Path parentPath = Paths.get(sourceDestination).toAbsolutePath().getParent();
                if (!parentPath.toFile().exists()) {
                   parentPath.toFile().mkdirs();
@@ -144,7 +147,7 @@ public class ParseCommand implements Command {
                try {
                   Files.write(Paths.get(sourceDestination), result.toString(0).getBytes());
                } catch (IOException e) {
-                  System.out.printf("failed to write to %s%n", sourceDestination);
+                  logger.error("failed to write to {}", sourceDestination);
                   e.printStackTrace();
                }
 
@@ -193,7 +196,7 @@ public class ParseCommand implements Command {
       }
       //Load default rules
       if(!disableDefault) {
-         System.out.println("loading default rules");
+         logger.info("loading default rules");
          try (InputStreamReader fileStream = new InputStreamReader(ParseCommand.class.getClassLoader().getResourceAsStream("defaultRules.yaml"))) {
             try (BufferedReader reader = new BufferedReader(fileStream)) {
                String content = reader.lines().collect(Collectors.joining("\n"));
@@ -205,7 +208,7 @@ public class ParseCommand implements Command {
                         Json entryJson = (Json) entry;
                         Json errors = validator.validate(entryJson);
                         if (!errors.isEmpty()) {
-                           System.out.println("Errors\n" + errors.toString(2));
+                           logger.error("Errors\n" + errors.toString(2));
                            System.exit(1);
                         }
                         FileRule rule = FileRule.fromJson(entryJson);
@@ -213,7 +216,7 @@ public class ParseCommand implements Command {
                            fileRules.add(rule);
                         }
                      } else {
-                        System.out.println("cannot load rules from " + entry);
+                        logger.error("cannot load rules from " + entry);
                      }
 
                   });
@@ -235,7 +238,7 @@ public class ParseCommand implements Command {
       }
       if(batch.isEmpty()){
          if (source == null || source.isEmpty() || !Files.exists(Paths.get(source))) {
-            System.out.println("source cannot be found: " + source);
+            logger.error("source cannot be found: " + source);
             return CommandResult.FAILURE;
          }else{
             batch.add(source);
@@ -249,14 +252,14 @@ public class ParseCommand implements Command {
          config.forEach(configPath->{
             Json loaded = configPath.endsWith("yaml") || configPath.endsWith("yml") ? Json.fromYamlFile(configPath) : Json.fromFile(configPath);
             if (loaded.isEmpty()) {
-               System.out.printf("failed to load content from %s%n", configPath);
+               logger.error("failed to load content from %s%n", configPath);
             } else if (loaded.isArray()) {
                loaded.forEach(entry -> {
                   if (entry instanceof Json) {
                      Json entryJson = (Json) entry;
                      Json errors = validator.validate(entryJson);
                      if (!errors.isEmpty()) {
-                        System.out.println("Errors\n"+errors.toString(2));
+                        logger.error("Errors\n"+errors.toString(2));
                         System.exit(1);
                      }
                      FileRule rule = FileRule.fromJson(entryJson);
@@ -264,14 +267,14 @@ public class ParseCommand implements Command {
                         fileRules.add(rule);
                      }
                   } else {
-                     System.out.printf("cannot create rule from %s%n", entry.toString());
+                     logger.error("cannot create rule from %s%n", entry.toString());
                      System.exit(1);
                   }
                });
             } else {
                Json errors = validator.validate(loaded);
                if (!errors.isEmpty()) {
-                  System.out.println("Errors\n"+errors.toString(2));
+                  logger.error("Errors\n"+errors.toString(2));
                   System.exit(1);
                }
                FileRule rule = FileRule.fromJson(loaded);
@@ -281,7 +284,7 @@ public class ParseCommand implements Command {
       }
       //loaded all the file rules
       if(fileRules.isEmpty()){
-         System.out.println("failed to load any rules");
+         logger.error("failed to load any rules");
          return CommandResult.FAILURE;
       }
 
@@ -306,7 +309,7 @@ public class ParseCommand implements Command {
       executorService.awaitTermination(1,TimeUnit.DAYS);
       systemTimer.stop();
 
-      System.out.println(systemTimer.getJson().toString(2));
+      logger.info(systemTimer.getJson().toString(2));
 
       return CommandResult.SUCCESS;
    }
