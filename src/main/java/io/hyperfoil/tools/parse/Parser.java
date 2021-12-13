@@ -1,21 +1,11 @@
 package io.hyperfoil.tools.parse;
 
-import io.hyperfoil.tools.parse.factory.CsvFactory;
-import io.hyperfoil.tools.parse.factory.DstatFactory;
-import io.hyperfoil.tools.parse.factory.JStackFactory;
-import io.hyperfoil.tools.parse.factory.Jep271Factory;
-import io.hyperfoil.tools.parse.factory.JmapHistoFactory;
-import io.hyperfoil.tools.parse.factory.PrintGcFactory;
-import io.hyperfoil.tools.parse.factory.ServerLogFactory;
-import io.hyperfoil.tools.parse.factory.SubstrateGcFactory;
-import io.hyperfoil.tools.parse.factory.WrkFactory;
-import io.hyperfoil.tools.parse.factory.XanFactory;
+import io.hyperfoil.tools.parse.factory.ParseFactory;
 import io.hyperfoil.tools.parse.internal.CheatChars;
 import io.hyperfoil.tools.parse.internal.JsonBuilder;
 import io.hyperfoil.tools.yaup.json.Json;
 
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -23,25 +13,34 @@ import java.util.stream.Collectors;
  */
 public class Parser {
 
+    private static final Map<String, ParseFactory> parserFactories = new HashMap<>();
+
+    static {
+        try {
+            ServiceLoader<ParseFactory> parserSetLoader = ServiceLoader.load(io.hyperfoil.tools.parse.factory.ParseFactory.class);
+
+            parserSetLoader.forEach(parseFactory -> {
+                String[] className = parseFactory.getClass().getName().split("\\.");
+                if (className.length > 0) {
+                    parserFactories.put(className[className.length - 1].toLowerCase(), parseFactory);
+                }
+            });
+        } catch (ServiceConfigurationError serviceConfigurationError){
+            throw new RuntimeException("Unable to load ParserFactories via ServiceLoader", serviceConfigurationError);
+        }
+    }
+
     public static interface UnparsedConsumer {
         void accept(String remainder,String original,int lineNumber);
     }
 
     public static Parser fromJson(Object obj){
             if(obj instanceof String){
-                switch (obj.toString().toLowerCase()){
-                    case "csvfactory": return new CsvFactory().newParser();
-                    case "dstatfactory": return new DstatFactory().newParser();
-                    case "jep271factory": return new Jep271Factory().newParser();
-                    case "jmaphistofactory": return new JmapHistoFactory().newParser();
-                    case "jstackfactory": return new JStackFactory().newParser();
-                    case "printgcfactory": return new PrintGcFactory().newParser();
-                    case "serverlogfactory": return new ServerLogFactory().newParser();
-                    case "substrategcfactory": return new SubstrateGcFactory().newParser();
-                    case "xanfactory": return new XanFactory().newParser();
-                    case "wrkfactory": return new WrkFactory().newParser();
-                    default:
-                        throw new IllegalArgumentException("unknown parser "+obj.toString());
+                ParseFactory parseFactory = parserFactories.get(obj.toString().toLowerCase());
+                if(parseFactory != null){
+                    return parseFactory.newParser();
+                } else {
+                    throw new IllegalArgumentException("unknown parser "+obj.toString());
                 }
             }else if (obj instanceof Json){
                 Json json = (Json)obj;

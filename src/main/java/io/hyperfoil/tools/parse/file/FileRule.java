@@ -1,6 +1,7 @@
 package io.hyperfoil.tools.parse.file;
 
 import io.hyperfoil.tools.parse.JsStringFunction;
+import io.hyperfoil.tools.parse.Parser;
 import io.hyperfoil.tools.parse.factory.*;
 import io.hyperfoil.tools.parse.Exp;
 import io.hyperfoil.tools.parse.JsJsonFunction;
@@ -81,24 +82,7 @@ public class FileRule {
             rtrn.setConverter(converter);
             Object asText = json.get("asText");
             if(asText instanceof String){
-                //TODO find the Factory
-                converter.addFactory(()->{
-                    switch (asText.toString().toLowerCase()){
-                        case "csvfactory": return new CsvFactory().newParser();
-                        case "dstatfactory": return new DstatFactory().newParser();
-                        case "jep271factory": return new Jep271Factory().newParser();
-                        case "jmaphistofactory": return new JmapHistoFactory().newParser();
-                        case "jstackfactory": return new JStackFactory().newParser();
-                        case "printgcfactory": return new PrintGcFactory().newParser();
-                        case "serverlogfactory": return new ServerLogFactory().newParser();
-                        case "substrategcfactory": return new SubstrateGcFactory().newParser();
-                        case "xanfactory": return new XanFactory().newParser();
-                        case "wrkfactory": return new WrkFactory().newParser();
-                        case "vmstatfactory": return new VmstatFactory().newParser();
-                        default:
-                            throw new IllegalArgumentException("unknown factory "+asText.toString());
-                    }
-                });
+                converter.addFactory(()-> Parser.fromJson(asText.toString()));
             }else if (asText instanceof Json){
                 Json expList = (Json)asText;
                 expList.values().forEach(expData ->{
