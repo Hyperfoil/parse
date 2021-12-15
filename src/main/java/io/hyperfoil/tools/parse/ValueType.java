@@ -63,6 +63,15 @@ public enum ValueType {
       }
    },
    /**
+    * Excludes the capture group from the result json. This is normally used with a key nesting or the value for a key=value pair
+    */
+   Ignore {
+      @Override
+      public Object apply(String input){
+         return null;
+      }
+   },
+   /**
     * Convert the value to a Double
     */
    Decimal {

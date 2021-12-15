@@ -21,7 +21,6 @@ public class ExpTest {
    @Test
    public void nest_push_without_capture(){
       Exp exp = new Exp("foo").nest("foo").addRule(ExpRule.PushTarget).addRule(ExpRule.PreClearTarget);
-
       Json json = exp.apply("foo");
       assertTrue("json should have a foo key:"+json,json.has("foo"));
       assertTrue("json.foo should be json:"+json,json.get("foo") instanceof Json);
@@ -279,8 +278,31 @@ public class ExpTest {
          .key("key");
       p.apply(factory.apply("foo=bar"),b,null);
       Assert.assertTrue("Should be grouped by value of key field (foo)", b.getRoot().has("foo"));
-
    }
+   @Test
+   public void key_ignore(){
+      JsonBuilder b = new JsonBuilder();
+      Exp p = new Exp("kv","(?<key:ignore>\\w+)=(?<value>\\w+)")
+              .key("key");
+      p.apply(factory.apply("foo=bar"),b,null);
+      Assert.assertTrue("Should be grouped by value of key field (foo)", b.getRoot().has("foo"));
+      Object foo = b.getRoot().get("foo");
+      assertTrue("foo should be json "+foo,foo instanceof Json);
+      Json jsonFoo = (Json)foo;
+      assertFalse("foo should not have a foo\n"+jsonFoo.toString(2),jsonFoo.has("foo"));
+      assertTrue("foo should have value\n"+jsonFoo.toString(2),jsonFoo.has("value"));
+      assertEquals("foo.value should be bar","bar",jsonFoo.get("value"));
+   }
+   @Test
+   public void key_only_capture(){
+      JsonBuilder b = new JsonBuilder();
+      Exp p = new Exp("kv","(?<key>\\w+)")
+              .key("key");
+      p.apply(factory.apply("foo"),b,null);
+      Assert.assertTrue("Should be grouped by value of key field (foo)", b.getRoot().has("foo"));
+      System.out.println(  b.getRoot().toString(2));
+   }
+
    @Test
    public void extend(){
       JsonBuilder b = new JsonBuilder();

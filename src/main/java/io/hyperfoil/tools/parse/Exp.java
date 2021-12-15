@@ -813,7 +813,6 @@ public class Exp {
          int matchStart = this.matchRange.apply(this.matcher, line, startIndex.get());
 
          if (this.matcher.find()) {
-            logger.info("{} matches {}",getName(),line.getLine());
             rtrn = true;
 
             DropString.Ref firstStart = line.reference(matcher.start());

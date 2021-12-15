@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public enum ValueMerge {
     /**
-     * Sets key = value if key is not defined, othwersie key = [value,...]
+     * Sets key = value if key is not defined, otherwise key = [value,...]
      */
     Auto(false,(key,value,builder,data)->{
        Json.chainAct(builder.getTarget(),key,value,(target,k,v)->{
