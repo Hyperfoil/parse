@@ -23,7 +23,6 @@
             "disables": { "oneOf": [ { "type": "string"}, { "type": "array", "items": { "type": "string" } } ] },
             "merge": {"enum": ["ByKey","AsEntry","Extend"]},
             "with": {"type": "object"},
-            "key": {"type": "string"},
             "rules": {
               "type": "array",
               "items": {

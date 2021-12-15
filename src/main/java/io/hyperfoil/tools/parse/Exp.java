@@ -813,7 +813,7 @@ public class Exp {
          int matchStart = this.matchRange.apply(this.matcher, line, startIndex.get());
 
          if (this.matcher.find()) {
-
+            logger.info("{} matches {}",getName(),line.getLine());
             rtrn = true;
 
             DropString.Ref firstStart = line.reference(matcher.start());
@@ -830,7 +830,7 @@ public class Exp {
                boolean changed = rule.prePopulate(builder, roleObjects);
                if(changed){
                   if(isDebug()){
-                     logger.debug("%s prepopulated target json due to %s%n",getName(),rule);
+                     logger.debug("{} pre-populated target json due to {}",getName(),rule);
                   }
                }
             });
@@ -995,7 +995,9 @@ public class Exp {
                target = fields.get(target).type.apply(matcher.group(target.toString()));
             }
             Object value = valueInfo.type.apply(matcher.group(key));
-            valueInfo.getMerge().merge(key,value,builder,target);
+            if (value!=null) {
+               valueInfo.getMerge().merge(key, value, builder, target);
+            }
          }
       }
       if(!with.isEmpty()){
