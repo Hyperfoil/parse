@@ -66,6 +66,7 @@ public class Parser {
     private List<JsonConsumer> consumers;
     private ArrayList<Exp> patterns;
     private HashMap<String,Boolean> states;
+    private HashMap<String,Integer> counts;
     private JsonBuilder builder;
     private List<UnparsedConsumer> unparsedConsumers;
 
@@ -78,6 +79,17 @@ public class Parser {
         patterns = new ArrayList<>();
         builder = new JsonBuilder();
         states = new HashMap<>();
+        counts = new HashMap<>();
+    }
+
+    public void setCount(String name,int value){
+        counts.put(name,value);
+    }
+    public void addCount(String name,int value){
+        counts.put(name,value + counts.getOrDefault(name,0));
+    }
+    public int getCount(String name){
+        return counts.getOrDefault(name,0);
     }
 
     public void setState(String state,boolean value){

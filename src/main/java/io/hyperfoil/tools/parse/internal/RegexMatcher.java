@@ -1,5 +1,7 @@
 package io.hyperfoil.tools.parse.internal;
 
+import io.hyperfoil.tools.parse.Exp;
+
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -9,7 +11,7 @@ import java.util.regex.Pattern;
  */
 public class RegexMatcher implements IMatcher {
 
-    private static final String FIELD_PATTERN = "\\(\\?<([^>]+)>";
+    private static final String FIELD_PATTERN = Exp.CAPTURE_GROUP_PATTERN;
     private static final String SAFE_PREFIX = "x";
 
 

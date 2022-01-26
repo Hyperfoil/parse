@@ -91,7 +91,7 @@ public enum ValueMerge {
             if(v instanceof Number){
                 target.set(k, ((Number)v).doubleValue() + target.getDouble(k, 0.0));
             }else{
-                target.set(k,v.toString()+target.getString(k,""));
+                target.set(k,target.getString(k,"")+v.toString());
             }
         });
 
