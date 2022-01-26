@@ -19,6 +19,27 @@ public class ExpTest {
    Function<String, DropString> factory = CheatChars::new;
 
    @Test
+   public void removePatternValues_negative_lookbehind(){
+      String input = "((?<![\\\\])['\"])(?<name>(?:.(?!(?<![\\\\])\\1))*.?)\\1";
+
+      String safe = Exp.removePatternValues(input);
+
+      System.out.println(safe);
+   }
+
+   @Test
+   public void parent_disables_child_enables(){
+      Parser p = new Parser();
+      Exp parent = new Exp("foo","foo").disables("state");
+      parent.add(new Exp("bar","bar").enables("state"));
+      p.add(parent);
+      p.onLine("foo bar");
+
+      assertTrue("child should enable after parent disables",p.getState("state"));
+   }
+
+
+   @Test
    public void nest_push_without_capture(){
       Exp exp = new Exp("foo").nest("foo").addRule(ExpRule.PushTarget).addRule(ExpRule.PreClearTarget);
       Json json = exp.apply("foo");

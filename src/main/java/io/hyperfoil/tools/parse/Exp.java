@@ -274,12 +274,14 @@ public class Exp {
    public static final String NEST_EXTEND_SUFFIX = "]]";
    public static final String CAPTURE_PREFIX = "(?<";
    public static final String CAPTURE_SUFFIX = ">";
-   public static final String CAPTURE_GROUP_PATTERN = "\\(\\?<([^>]+)>";
+   public static final String CAPTURE_GROUP_PATTERN = "\\(\\?<(?!!)([^>]+)>";
    public static final String ROOT_TARGET_NAME = "_ROOT";
    public static final String GROUPED_NAME = "_GROUPED";
 
 
-
+   /**
+      Stores the merge info for each value in the pattern
+    */
    private static class ValueInfo {
 
       final String name;
@@ -322,7 +324,10 @@ public class Exp {
          this.merge = merge;
       }
    }
+
+   // How the nest token works
    public enum NestType {Extend,Field,Name}
+   // the token word along with how the nest works
    private class NestPair{
 
       final String value;
