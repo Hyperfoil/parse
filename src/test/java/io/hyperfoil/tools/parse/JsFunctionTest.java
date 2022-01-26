@@ -37,6 +37,5 @@ public class JsFunctionTest {
                 "}");
 
         Json resp = jsFunction.execute("");
-        System.out.println(resp);
     }
 }

@@ -18,13 +18,10 @@ public class ExpTest {
 
    Function<String, DropString> factory = CheatChars::new;
 
-   @Test
+   @Test @Ignore
    public void removePatternValues_negative_lookbehind(){
       String input = "((?<![\\\\])['\"])(?<name>(?:.(?!(?<![\\\\])\\1))*.?)\\1";
-
       String safe = Exp.removePatternValues(input);
-
-      System.out.println(safe);
    }
 
    @Test
@@ -321,7 +318,6 @@ public class ExpTest {
               .key("key");
       p.apply(factory.apply("foo"),b,null);
       Assert.assertTrue("Should be grouped by value of key field (foo)", b.getRoot().has("foo"));
-      System.out.println(  b.getRoot().toString(2));
    }
 
    @Test
