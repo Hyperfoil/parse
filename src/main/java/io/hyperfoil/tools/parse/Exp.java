@@ -3,8 +3,8 @@ package io.hyperfoil.tools.parse;
 import io.hyperfoil.tools.parse.internal.CheatChars;
 import io.hyperfoil.tools.parse.internal.DropString;
 import io.hyperfoil.tools.parse.internal.IMatcher;
-import io.hyperfoil.tools.parse.internal.JsonBuilder;
 import io.hyperfoil.tools.parse.internal.RegexMatcher;
+import io.hyperfoil.tools.parse.json.JsonBuilder;
 import io.hyperfoil.tools.yaup.HashedLists;
 import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.json.Json;
@@ -662,7 +662,7 @@ public class Exp {
    public boolean hasRule(ExpRule rule){
       return this.rules.containsKey(rule);
    }
-   public Json getNestedTarget(Json currentTarget,JsonBuilder builder){
+   public Json getNestedTarget(Json currentTarget, JsonBuilder builder){
       Json returnTarget = currentTarget;
       if(nesting.isEmpty()){//for Tree
          switch (this.expMerge){
