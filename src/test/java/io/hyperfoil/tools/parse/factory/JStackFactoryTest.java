@@ -1,21 +1,14 @@
 package io.hyperfoil.tools.parse.factory;
 
 
-import io.hyperfoil.tools.parse.Parser;
-import io.hyperfoil.tools.parse.factory.JStackFactory;
-import io.hyperfoil.tools.parse.reader.TextLineReader;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import io.hyperfoil.tools.parse.Exp;
 import io.hyperfoil.tools.parse.internal.CheatChars;
-import io.hyperfoil.tools.parse.internal.JsonBuilder;
+import io.hyperfoil.tools.parse.json.JsonBuilder;
 import io.hyperfoil.tools.yaup.json.Json;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

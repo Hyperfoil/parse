@@ -1,6 +1,6 @@
 package io.hyperfoil.tools.parse;
 
-import io.hyperfoil.tools.parse.internal.JsonBuilder;
+import io.hyperfoil.tools.parse.json.JsonBuilder;
 import io.hyperfoil.tools.yaup.json.Json;
 
 import java.util.List;
@@ -93,6 +93,7 @@ public enum ExpRule {
             break;
          case TargetRoot:
             builder.pushTarget(builder.getRoot(),filteredData.toString()+ Exp.ROOT_TARGET_NAME);
+            changedTarget=true;
             break;
       }
       return changedTarget;

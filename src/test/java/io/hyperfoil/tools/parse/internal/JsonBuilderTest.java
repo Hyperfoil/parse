@@ -1,6 +1,6 @@
 package io.hyperfoil.tools.parse.internal;
 
-import io.hyperfoil.tools.parse.internal.JsonBuilder;
+import io.hyperfoil.tools.parse.json.JsonBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 import io.hyperfoil.tools.yaup.json.Json;

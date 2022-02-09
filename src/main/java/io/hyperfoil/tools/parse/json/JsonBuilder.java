@@ -1,4 +1,4 @@
-package io.hyperfoil.tools.parse.internal;
+package io.hyperfoil.tools.parse.json;
 
 import io.hyperfoil.tools.yaup.json.Json;
 
@@ -149,6 +149,21 @@ public class JsonBuilder {
     }
 
     public int size(){return targets.size();}
+
+    public Json targetStackJson(){
+        Json rtrn = new Json();
+        for(int i= targets.size()-1; i>0; i--){
+            Json entry = new Json();
+            entry.set("target",targets.get(i).target);
+            entry.set("info",Json.fromMap(targets.get(i).info));
+            if(entry.getJson("info").has(NAME_KEY)){
+                entry.getJson("info").set("name",entry.getJson("info").get(NAME_KEY));
+                entry.getJson("info").remove(NAME_KEY);
+            }
+            rtrn.add(entry);
+        }
+        return rtrn;
+    }
 
     public String debug(boolean recursive){
         StringBuilder sb = new StringBuilder();

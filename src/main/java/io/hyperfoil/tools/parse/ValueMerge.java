@@ -1,6 +1,6 @@
 package io.hyperfoil.tools.parse;
 
-import io.hyperfoil.tools.parse.internal.JsonBuilder;
+import io.hyperfoil.tools.parse.json.JsonBuilder;
 import io.hyperfoil.tools.yaup.json.Json;
 
 import java.util.concurrent.atomic.AtomicBoolean;

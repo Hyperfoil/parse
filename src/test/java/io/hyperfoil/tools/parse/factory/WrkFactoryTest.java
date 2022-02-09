@@ -7,7 +7,6 @@ package io.hyperfoil.tools.parse.factory;
 
 import io.hyperfoil.tools.parse.JsonConsumer;
 import io.hyperfoil.tools.parse.Parser;
-import io.hyperfoil.tools.parse.internal.JsonBuilder;
 import io.hyperfoil.tools.yaup.json.Json;
 import org.junit.BeforeClass;
 import org.junit.Test;
