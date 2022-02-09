@@ -2,7 +2,7 @@ package io.hyperfoil.tools.parse;
 
 import io.hyperfoil.tools.parse.internal.CheatChars;
 import io.hyperfoil.tools.parse.internal.DropString;
-import io.hyperfoil.tools.parse.internal.JsonBuilder;
+import io.hyperfoil.tools.parse.json.JsonBuilder;
 import io.hyperfoil.tools.yaup.json.Json;
 import org.junit.Assert;
 import org.junit.Ignore;

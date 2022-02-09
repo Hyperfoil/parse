@@ -8,8 +8,8 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import io.hyperfoil.tools.parse.internal.CheatChars;
 import io.hyperfoil.tools.parse.internal.DropString;
-import io.hyperfoil.tools.parse.internal.JsonBuilder;
 import io.hyperfoil.tools.parse.internal.SharedString;
+import io.hyperfoil.tools.parse.json.JsonBuilder;
 import io.hyperfoil.tools.yaup.json.Json;
 
 @State(Scope.Benchmark)
