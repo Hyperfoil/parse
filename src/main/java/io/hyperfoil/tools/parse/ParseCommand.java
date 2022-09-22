@@ -7,12 +7,12 @@ import io.hyperfoil.tools.parse.yaml.ExpConstruct;
 import io.hyperfoil.tools.parse.yaml.FileRuleConstruct;
 import io.hyperfoil.tools.parse.yaml.FilterConstruct;
 import io.hyperfoil.tools.parse.yaml.MatchCriteriaConstruct;
-import io.hyperfoil.tools.yaup.AsciiArt;
 import io.hyperfoil.tools.yaup.Sets;
 import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.file.FileUtility;
 import io.hyperfoil.tools.yaup.json.Json;
 import io.hyperfoil.tools.yaup.json.JsonValidator;
+import io.hyperfoil.tools.yaup.json.graaljs.JsException;
 import io.hyperfoil.tools.yaup.time.SystemTimer;
 import io.hyperfoil.tools.yaup.yaml.MapRepresenter;
 import io.hyperfoil.tools.yaup.yaml.OverloadConstructor;
@@ -23,6 +23,7 @@ import org.aesh.command.CommandException;
 import org.aesh.command.CommandResult;
 import org.aesh.command.invocation.CommandInvocation;
 import org.aesh.command.option.Option;
+import org.aesh.command.option.OptionGroup;
 import org.aesh.command.option.OptionList;
 import org.slf4j.ext.XLogger;
 import org.slf4j.ext.XLoggerFactory;
@@ -88,7 +89,7 @@ public class ParseCommand implements Command {
          try {
             semaphore.acquire(acquire);
             try {
-               logger.info("Starting %s%n", sourcePath);
+               logger.info("Starting {}", sourcePath);
                SystemTimer thisTimer = systemTimer.start(sourcePath, true);
                List<String> entries = FileUtility.isArchive(sourcePath) ?
                   FileUtility.getArchiveEntries(sourcePath).stream().map(entry -> sourcePath + FileUtility.ARCHIVE_KEY + entry).collect(Collectors.toList()) :
@@ -102,13 +103,26 @@ public class ParseCommand implements Command {
                         rule.apply(entry, (nest, json) -> {
                            try {
                               if (nest == null || nest.trim().isEmpty()) {
-                                 if (!json.isArray() && (result.isEmpty() || !result.isArray())) {
-                                    result.merge(json);
-                                 } else if (json.isArray() && result.isArray()) {
-                                    json.forEach((Consumer<Object>) result::add);
-                                 } else {
-                                    logger.error("cannot merge array with object without a nest for rule " + rule.getName());
+                                 if (!json.isArray()) {
+                                    if (result.isEmpty() || !result.isArray()) {
+                                       result.merge(json);
+                                    } else { //result is an array with entries
+                                       result.add(json);
+                                    }
+                                 } else { //json is an array
+                                    if (result.isEmpty() || result.isArray()) {
+                                       json.forEach((Consumer<Object>) result::add);
+                                    } else {//result is an object but json is an array
+                                       logger.error("cannot add an array to an object without a key");
+                                    }
                                  }
+                              } else if (StringUtil.isJsLambdaLike(nest)){
+                                 try {
+                                    StringUtil.jsEval(nest,result,json,state);
+                                 }catch (JsException jse){
+                                    logger.error(jse.getMessage());
+                                 }
+
                               } else {
                                  Json.chainMerge(result, nest, json);
                               }
@@ -185,6 +199,9 @@ public class ParseCommand implements Command {
    @Option(shortName = 'd', name="destination",description = "destination for the resulting json")
    String destination;
 
+   @OptionGroup(shortName = 'S', name="state",description = "state variables for patterns",defaultValue = {  })
+   Map<Object,Object> state;
+
    @Override
    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
       SystemTimer systemTimer = new SystemTimer("fileparser");
@@ -211,7 +228,7 @@ public class ParseCommand implements Command {
                            logger.error("Errors\n" + errors.toString(2));
                            System.exit(1);
                         }
-                        FileRule rule = FileRule.fromJson(entryJson);
+                        FileRule rule = FileRule.fromJson(entryJson, state);
                         if (rule != null) {
                            fileRules.add(rule);
                         }
@@ -221,7 +238,7 @@ public class ParseCommand implements Command {
 
                   });
                } else {
-                  FileRule rule = FileRule.fromJson(loaded);
+                  FileRule rule = FileRule.fromJson(loaded, state);
                   if (rule != null) {
                      fileRules.add(rule);
                   }
@@ -252,7 +269,7 @@ public class ParseCommand implements Command {
          config.forEach(configPath->{
             Json loaded = configPath.endsWith("yaml") || configPath.endsWith("yml") ? Json.fromYamlFile(configPath) : Json.fromFile(configPath);
             if (loaded.isEmpty()) {
-               logger.error("failed to load content from %s%n", configPath);
+               logger.error("failed to load content from {}", configPath);
             } else if (loaded.isArray()) {
                loaded.forEach(entry -> {
                   if (entry instanceof Json) {
@@ -262,12 +279,12 @@ public class ParseCommand implements Command {
                         logger.error("Errors\n"+errors.toString(2));
                         System.exit(1);
                      }
-                     FileRule rule = FileRule.fromJson(entryJson);
+                     FileRule rule = FileRule.fromJson(entryJson, state);
                      if (rule != null) {
                         fileRules.add(rule);
                      }
                   } else {
-                     logger.error("cannot create rule from %s%n", entry.toString());
+                     logger.error("cannot create rule from {}", entry.toString());
                      System.exit(1);
                   }
                });
@@ -277,7 +294,7 @@ public class ParseCommand implements Command {
                   logger.error("Errors\n"+errors.toString(2));
                   System.exit(1);
                }
-               FileRule rule = FileRule.fromJson(loaded);
+               FileRule rule = FileRule.fromJson(loaded, state);
                fileRules.add(rule);
             }
          });

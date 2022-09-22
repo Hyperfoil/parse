@@ -2,9 +2,9 @@ package io.hyperfoil.tools.parse.file;
 
 import io.hyperfoil.tools.parse.JsStringFunction;
 import io.hyperfoil.tools.parse.Parser;
-import io.hyperfoil.tools.parse.factory.*;
 import io.hyperfoil.tools.parse.Exp;
 import io.hyperfoil.tools.parse.JsJsonFunction;
+import io.hyperfoil.tools.yaup.PopulatePatternException;
 import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.json.Json;
 import org.slf4j.ext.XLogger;
@@ -13,6 +13,7 @@ import org.slf4j.ext.XLoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -21,7 +22,7 @@ public class FileRule {
 
     final static XLogger logger = XLoggerFactory.getXLogger(MethodHandles.lookup().lookupClass());
 
-    public static FileRule fromJson(Json json){
+    public static FileRule fromJson(Json json, Map<Object,Object> state){
         FileRule rtrn = new FileRule(json.getString("name",""));
         if(json.has("nest")){
             rtrn.setNest(json.getString("nest"));
@@ -74,7 +75,13 @@ public class FileRule {
         if (json.has("asContent")) {
             Object asContent = json.get("asContent");
             ContentConverter converter = new ContentConverter();
-            converter.setKey(asContent.toString());
+            String asContentStr = asContent.toString();
+            try{
+                asContentStr = StringUtil.populatePattern(asContentStr,state);
+            }catch(PopulatePatternException e){
+                logger.error(e.getMessage());
+            }
+            converter.setKey(asContentStr);
             rtrn.setConverter(converter);
         }
         if(json.has("asText")){
@@ -82,7 +89,14 @@ public class FileRule {
             rtrn.setConverter(converter);
             Object asText = json.get("asText");
             if(asText instanceof String){
-                converter.addFactory(()-> Parser.fromJson(asText.toString()));
+                String str = asText.toString();
+                try{
+                    str = StringUtil.populatePattern(str,state);
+                }catch(PopulatePatternException e){
+                    logger.error(e.getMessage());
+                }
+                String ref = str;
+                converter.addFactory(()-> Parser.fromJson(ref));
             }else if (asText instanceof Json){
                 Json expList = (Json)asText;
                 expList.values().forEach(expData ->{
@@ -102,6 +116,12 @@ public class FileRule {
             Object asJbossCli = json.get("asJbossCli");
             if(asJbossCli instanceof String){
                 String asString = asJbossCli.toString();
+                try{
+                    asString = StringUtil.populatePattern(asString,state);
+                }catch(PopulatePatternException e){
+                    logger.error(e.getMessage());
+                }
+
                 if(asString.isEmpty()) {
                     rtrn.setConverter(new JbossCliConverter());
                 }else{
@@ -115,6 +135,11 @@ public class FileRule {
             Object asJson = json.get("asJson");
             if(asJson instanceof String){
                 String asString = (String)asJson;
+                try {
+                    asString = StringUtil.populatePattern(asString,state);
+                }catch (PopulatePatternException e){
+                    logger.error(e.getMessage());
+                }
                 if(asString.isEmpty()){
                     rtrn.setConverter(new JsonConverter());
                 }else{
@@ -126,6 +151,11 @@ public class FileRule {
             Object asXml = json.get("asXml");
             if(asXml instanceof String){
                 String asString = (String)asXml;
+                try {
+                    asString = StringUtil.populatePattern(asString,state);
+                }catch (PopulatePatternException e){
+                    logger.error(e.getMessage());
+                }
                 if(asString.isEmpty()){
                     rtrn.setConverter(new XmlConverter());
                 }else{
@@ -240,6 +270,8 @@ public class FileRule {
 
 
     private String name;
+
+    private Json with;
     private MatchCriteria criteria = new MatchCriteria();
     private final List<Filter> filters = new LinkedList<>();
     private String nest="";
@@ -248,6 +280,16 @@ public class FileRule {
     public FileRule(){this("");}
     public FileRule(String name){
         this.name = name;
+        this.with = new Json(false);
+    }
+
+    public void addWith(Map<Object,Object> toLoad){
+        if(toLoad!=null) {
+            toLoad.forEach((k, v) -> addWith(k,v));
+        }
+    }
+    public void addWith(Object key, Object value){
+        with.add(key,value);
     }
 
     public void setName(String name){this.name = name;}
@@ -293,13 +335,13 @@ public class FileRule {
 
     public boolean apply(String path, BiConsumer<String,Json> callback){
         try {
-            Json state = new Json();
-
+            Json state = with.clone();
             boolean matched = getCriteria().match(path, state);
 
             if (matched) {
                 Json result = getConverter().apply(path);
                 String nestPath = StringUtil.populatePattern(getNest(), Json.toObjectMap(state));
+
                 if (getFilters().isEmpty()) {
                     callback.accept(nestPath, result);
                 } else {
