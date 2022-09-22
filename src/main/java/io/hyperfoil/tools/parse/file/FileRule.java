@@ -24,6 +24,7 @@ public class FileRule {
 
     public static FileRule fromJson(Json json, Map<Object,Object> state){
         FileRule rtrn = new FileRule(json.getString("name",""));
+        rtrn.addWith(state);
         if(json.has("nest")){
             rtrn.setNest(json.getString("nest"));
         }

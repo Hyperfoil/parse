@@ -7,6 +7,7 @@ import io.hyperfoil.tools.parse.yaml.ExpConstruct;
 import io.hyperfoil.tools.parse.yaml.FileRuleConstruct;
 import io.hyperfoil.tools.parse.yaml.FilterConstruct;
 import io.hyperfoil.tools.parse.yaml.MatchCriteriaConstruct;
+import io.hyperfoil.tools.yaup.AsciiArt;
 import io.hyperfoil.tools.yaup.Sets;
 import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.file.FileUtility;
@@ -116,7 +117,7 @@ public class ParseCommand implements Command {
                                        logger.error("cannot add an array to an object without a key");
                                     }
                                  }
-                              } else if (StringUtil.isJsLambdaLike(nest)){
+                              } else if (StringUtil.isJsFnLike(nest)){
                                  try {
                                     StringUtil.jsEval(nest,result,json,state);
                                  }catch (JsException jse){
@@ -200,7 +201,7 @@ public class ParseCommand implements Command {
    String destination;
 
    @OptionGroup(shortName = 'S', name="state",description = "state variables for patterns",defaultValue = {  })
-   Map<Object,Object> state;
+   Map<String,String> state;
 
    @Override
    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
@@ -228,7 +229,7 @@ public class ParseCommand implements Command {
                            logger.error("Errors\n" + errors.toString(2));
                            System.exit(1);
                         }
-                        FileRule rule = FileRule.fromJson(entryJson, state);
+                        FileRule rule = FileRule.fromJson(entryJson, Json.toObjectMap(Json.fromMap(state)));
                         if (rule != null) {
                            fileRules.add(rule);
                         }
@@ -238,7 +239,7 @@ public class ParseCommand implements Command {
 
                   });
                } else {
-                  FileRule rule = FileRule.fromJson(loaded, state);
+                  FileRule rule = FileRule.fromJson(loaded, Json.toObjectMap(Json.fromMap(state)));
                   if (rule != null) {
                      fileRules.add(rule);
                   }
@@ -279,7 +280,7 @@ public class ParseCommand implements Command {
                         logger.error("Errors\n"+errors.toString(2));
                         System.exit(1);
                      }
-                     FileRule rule = FileRule.fromJson(entryJson, state);
+                     FileRule rule = FileRule.fromJson(entryJson, Json.toObjectMap(Json.fromMap(state)));
                      if (rule != null) {
                         fileRules.add(rule);
                      }
@@ -294,7 +295,7 @@ public class ParseCommand implements Command {
                   logger.error("Errors\n"+errors.toString(2));
                   System.exit(1);
                }
-               FileRule rule = FileRule.fromJson(loaded, state);
+               FileRule rule = FileRule.fromJson(loaded, Json.toObjectMap(Json.fromMap(state)));
                fileRules.add(rule);
             }
          });
