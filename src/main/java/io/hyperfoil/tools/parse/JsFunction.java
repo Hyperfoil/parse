@@ -2,15 +2,21 @@ package io.hyperfoil.tools.parse;
 
 import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.json.Json;
+import io.hyperfoil.tools.yaup.json.graaljs.JsException;
 import org.graalvm.polyglot.Source;
+import org.slf4j.ext.XLogger;
+import org.slf4j.ext.XLoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public class JsFunction {
+
+   private static final XLogger logger = XLoggerFactory.getXLogger(MethodHandles.lookup().lookupClass());
 
    private final String js;
 
@@ -29,19 +35,21 @@ public class JsFunction {
       Object fromJs = null;
       try {
          fromJs = StringUtil.jsEval(js, Arrays.asList(
-            "const StringUtil = Packages.io.hyperfoil.tool.yaup.StringUtil;",
-            "const Exp = Java.type('io.hyperfoil.tools.parse.Exp');",
-            "const ExpMerge = Java.type('io.hyperfoil.tools.parse.ExpMerge');",
-            "const MatchRange = Java.type('io.hyperfoil.tools.parse.MatchRange');",
-            "const Eat = Java.type('io.hyperfoil.tools.parse.Eat');",
-            "const ValueType = Java.type('io.hyperfoil.tools.parse.ValueType')",
-            "const ValueMerge = Java.type('io.hyperfoil.tools.parse.ValueMerge');",
-            "const ExpRule = Java.type('io.hyperfoil.tools.parse.ExpRule')",
-            "const FileUtility = Packages.io.hyperfoil.tools.yaup.file.FileUtility;",
-            "const Xml = Java.type('io.hyperfoil.tools.yaup.xml.pojo.Xml');",
-            "const Json = Java.type('io.hyperfoil.tools.yaup.json.Json');",
-            also
-         ),arguments);
+                 "const StringUtil = Packages.io.hyperfoil.tool.yaup.StringUtil;",
+                 "const Exp = Java.type('io.hyperfoil.tools.parse.Exp');",
+                 "const ExpMerge = Java.type('io.hyperfoil.tools.parse.ExpMerge');",
+                 "const MatchRange = Java.type('io.hyperfoil.tools.parse.MatchRange');",
+                 "const Eat = Java.type('io.hyperfoil.tools.parse.Eat');",
+                 "const ValueType = Java.type('io.hyperfoil.tools.parse.ValueType')",
+                 "const ValueMerge = Java.type('io.hyperfoil.tools.parse.ValueMerge');",
+                 "const ExpRule = Java.type('io.hyperfoil.tools.parse.ExpRule')",
+                 "const FileUtility = Packages.io.hyperfoil.tools.yaup.file.FileUtility;",
+                 "const Xml = Java.type('io.hyperfoil.tools.yaup.xml.pojo.Xml');",
+                 "const Json = Java.type('io.hyperfoil.tools.yaup.json.Json');",
+                 also
+         ), arguments);
+      }catch(JsException jse){
+         logger.error("exception for js:\n"+js+"\n"+jse.getMessage());
       } finally {}
       if(fromJs == null){
          return new Json();

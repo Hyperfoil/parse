@@ -786,7 +786,7 @@ public class Exp {
    protected boolean apply(DropString line, JsonBuilder builder, Parser parser, DropString.Ref startIndex){
 
       if(isDebug() && startIndex.get() < line.length()){
-         logger.debug("%s apply to %s%n",getName(),line.subSequence(startIndex.get(),line.length()));
+         logger.debug("{} apply to {}",getName(),line.subSequence(startIndex.get(),line.length()));
       }
 
       boolean rtrn = false;
@@ -808,7 +808,7 @@ public class Exp {
 
             if (!satisfyRequired) {
                if(isDebug()){
-                  logger.debug("%s does not satisfy %s%n",getName(),requires.stream().filter(required -> !parser.getState(required)).collect(Collectors.toList()));
+                  logger.debug("{} does not satisfy {}",getName(),requires.stream().filter(required -> !parser.getState(required)).collect(Collectors.toList()));
                }
                return false;
             }

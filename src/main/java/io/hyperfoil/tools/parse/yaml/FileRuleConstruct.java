@@ -29,7 +29,7 @@ public class FileRuleConstruct extends DeferableConstruct {
                                     rtrn.setCriteria((MatchCriteria)deferred);
 
                                 }else{
-                                    throw new YAMLException("failt to create a MatchCriteria"+entryNode.getStartMark());
+                                    throw new YAMLException("failed to create a MatchCriteria"+entryNode.getStartMark());
                                 }
                             });
                         }else{

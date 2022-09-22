@@ -36,7 +36,8 @@
                     "PrePopTarget",
                     "PostPopTarget",
                     "PreClearTarget",
-                    "PostClearTaret",
+                    "RemoveOnClose",
+                    "PostClearTarget",
                     "TargetRoot"
                   ]},
                   {

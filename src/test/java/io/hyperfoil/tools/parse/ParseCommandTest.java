@@ -2,6 +2,7 @@ package io.hyperfoil.tools.parse;
 
 import io.hyperfoil.tools.yaup.json.Json;
 import io.hyperfoil.tools.yaup.json.JsonValidator;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
@@ -9,7 +10,7 @@ import static org.junit.Assert.assertTrue;
 
 public class ParseCommandTest {
 
-    @Test
+    @Test @Ignore
     public void getValidator_asText_key(){
         JsonValidator validator = ParseCommand.getValidator();
 
