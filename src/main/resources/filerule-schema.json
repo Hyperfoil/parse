@@ -44,6 +44,8 @@
                     "type": "object",
                     "properties": {
                       "PushTarget": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+                      "PrePopTarget": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+                      "PostPopTarget": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
                       "PreClearTarget": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
                       "PostClearTarget": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
                       "PreClose": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},

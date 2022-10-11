@@ -1,0 +1,30 @@
+= How to get started
+
+== Prerequisites
+
+parse is distributed as a Java executable jar. We need install Java and download the parse release from GitHub.
+
+=== Install Java
+
+parse requires java version that is 1.8 or greater. Try and run `java -version` in the command line.
+
+```
+java -version
+openjdk version "11.0.10" 2021-01-19
+OpenJDK Runtime Environment AdoptOpenJDK (build 11.0.10+9)
+OpenJDK 64-Bit Server VM AdoptOpenJDK (build 11.0.10+9, mixed mode)
+```
+
+You should message like the one above. If instead you see a message about `command not found` then follow the instructions to download and install java from link:https://adoptopenjdk.net/[AdoptOpenJdk]
+
+=== Download Parse
+
+Parse releases are available to download from the link:https://github.com/Hyperfoil/parse/releases[Github project]. Download the `-uber` jar for a dependency free executable jar or use the light weight jar as a project depenency. Parse is also available from maven central
+```xml
+<dependency>
+  <groupId>io.hyperfoil.tools</groupId>
+  <artifactId>parse</artifactId>
+  <version>0.1.12</version>
+</dependency>
+```
+

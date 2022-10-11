@@ -14,7 +14,7 @@ public enum ExpMerge {
    ByKey,
    /**
     * Creates a new Json object from all the values in the current Exp and merges them together into
-    * an array under the Exp's nest or the parent array of the current current json target.
+    * an array under the Exp's nest or the parent array of the current json target.
     */
    AsEntry,
    /**

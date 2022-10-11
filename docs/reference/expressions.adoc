@@ -1,0 +1,88 @@
+= text expressions
+
+Expressions are how parse extracts data from a line of text.
+The simplest expression is just a java regular expression pattern.
+```yaml
+  pattern: ".*"
+```
+This would match any line of text but would not extract data.
+A more useful expression would include named capture groups to extract data.
+```yaml
+  pattern: "(?<line>.*)"
+```
+The expression will now save the line of text under the `line` key in the resulting json object.
+```javascript
+{ line: "..." }
+```
+
+Expression patterns will match to any part of the input line unless the pattern includes the `^` or `$` characters.
+
+If a file has the following line of text:
+```
+name=jane/class=math/
+```
+Then `class=(?<class>[^/]+)` will match the input line because the pattern was found in the line but
+`\^class=(?<class>[^/]+)` will not match because class is not at the start of the line.
+
+There are several more options to control how an expression updates the resulting json and modifies the line of text from the file.
+Before we discuss other control options, it can be helpful to name expressions.
+```yaml
+  name: example
+  pattern: "(?<line>.*)"
+```
+
+Named expressions make it easier when debugging and tracking changes to the resulting json object.
+
+== Controlling expressions
+
+Let's look at controlling expressions in the same order parse uses when running the expressions. Before we discuss the expressions themselves, parse runs expressions in the order they are defined. We can re-arrange expression order as a quick way to control how they run, but we caution not to rely solely on expression order.
+
+=== Enables, Disables, and Requires
+
+The first step in expression execution is to check if the expression should run. We enable and disable expressions by setting `requires` and `enables`.
+
+`requires` is a list of names that must all be `enabled` for the expression to run. Similarly, `enables` is a list of names that are enabled whenever an expression matches. This lets us define expressions that are off by default then enabled after a different expression matches. There is also a `disables` option to disable expressions after an expression matches.
+
+We use `enables`, `disables`, and `required` to create expressions that we know only apply to part of a text document and prevent their patterns from interfering with parsing other parts of the document.
+
+=== Where to match
+
+The next step in running an expression is to determine where to look for the pattern in the line. Parse refers to this as the `range` of the expression. By default, an expressions `range` starts after where their parent expression matched (or the start of the line if they don't have a parent). This is called `AfterParent` but there is also `BeforeParent` to search the part of the line before where the parent expression matched and `EntireLine` to search the entire remaining line.
+
+
+=== After the match
+
+If an expression pattern matches the next step is to apply `rules` that take effect before the expression capture groups are added. Those rules are:
+* PreClose
+* PrePopTarget
+* PreClearTarget
+* TargetRoot
+See link:./rules.adoc[rules] for information on how those rules change the resulting json.
+
+=== Populate captured values
+
+Next the expression merges the current json target with the values captured by the pattern. This is first controlled by the `nest` and `merge` options.
+
+`nest` is an optional sequence of keys to use from the current target.
+`merge` controls how the values from the pattern are merged into the json object. See link:./merge.adoc[merge] for each `merge` option.
+
+If the target json has a conflicting capture name then the value merge for that name controls how the two values are combined. See the link:./valuemerge.adoc[value-merge rules] for all the options.
+
+=== Post Merging
+
+The next step is to edit the input line if the `eat` is not set to `None` or `Line`. Expressions can edit the line so that subsequent expressions only see the remainder of the line rather than the entire original line. This makes it easier to compose complex patterns by parts rather than having to craft a single complex regular expression.
+
+The expression then `enables` or `disables` any named controls and runs all the children. The children will repeat until they all do not match if the expression has the `RepeatChildren` rule.
+
+The entire above process will repeat of the expression has the `Repeat` rule.
+
+== Post match
+
+When the expression `Repeat` finishes the expression moves into the post match steps. Post match starts with any code to `execute` after a match. The `execute` is called with the original line, the current target json object, the current expression, and parser that is running the expression. `execute` is how an expression can add or remove other expressions based on values in the text (e.g. for csv parsing) and remove them when they are no longer needed.
+
+Finally, any `rules` that take effect after the child expressions are run. This includes the `PostX` rule names and resetting the target for after the `TargetRoot` rule.
+
+
+
+
+

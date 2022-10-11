@@ -1,0 +1,88 @@
+= How to merge json
+
+Parse can match all json files with `path: .*.json` then merge them into a single json object
+```yaml
+name: json-array
+path: .*.json
+nest: ``
+asJson: '' #empty means no content filtering
+```
+If more than one file has the same `nest` then parse will merge the json (without replacing keys) into a single json
+```
+#> cat a.json
+{ "foo" : "one" }
+#> cat b.json
+{ "foo" : "two" }
+```
+Running the above parse rule on `a.json` and `b.json` creates a result:
+```
+{ "foo" : "one" }
+```
+This is because parse will try and merge the two json and will not replace the value of `foo` when it encounters `b.json`
+We can use `nest` and `path` to change how the different json files are merged.
+
+== nest into an array
+We can create an array from `a.json` and `b.json` by using a javascript nesting function
+```yaml
+name: json-array
+path: .*.json
+nest: (all,next)=>{all.push(next)}
+asJson: '' #empty means no content filtering
+```
+Running the above parse rule will create the array:
+```
+[{ "foo" : "one" },{ "foo" : "two" }]
+```
+== nest under file name key
+Another option is to capture the file name in `path` and use it in nest.
+```yaml
+name: json-array
+path: ^(?<fileName>.*?).json$
+nest: ${{fileName}}
+asJson: '' #empty means no content filtering
+```
+This will create the following json:
+```
+{ "a" : { "foo" : "one" } , "b" : { "foo" : "two" } }
+```
+But this will only work if `a.json` and `b.json` are in the base `/` folder because
+`path` acts on the full path to the file. If the files are in the `/tmp` directory then the result json will have different keys:
+```
+{ "/tmp/a" : { "foo" : "one" } , "/tmp/b" : { "foo" : "two" } }
+```
+We can avoid this by changing the regex
+```yaml
+path: "^.*?/(?<fileName>[^/]+).json$"
+```
+This will ensure we get the original result with `a` and `b` keys no matter the path to the json.
+
+== nesting path
+The `nest` key can be a dot separated series of keys.
+```
+nest : biz.buz
+```
+This creates a result with multiple parent objects.
+```
+{ "biz" : { "buz": ... } }
+```
+We can use this along with the pattern's javascript execution to create custom nesting based on more complex file names.
+Take for example the following files:
+```
+http-direct.json
+http-proxy.json
+ftp-direct.json
+ftp-proxy.json
+```
+We could create a result that groups by `http` or `ftp` by changing the `nest`
+```yaml
+name: json-array
+path: "^.*?/(?<fileName>[^/]+).json$"
+nest: ${{="${{fileName}}".replaceAll('-','.')}}
+asJson: '' #empty means no content filtering
+```
+Now the result has our desired nesting:
+```
+{ "http" : { "direct": {...}, "proxy": {...}},
+  "ftp" : { "direct": {...}, "proxy": {...}},
+}
+```

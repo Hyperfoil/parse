@@ -1,21 +1,5 @@
 # Parse
-Use regex patterns to build json from text files
-
-
-## Warnings
-* I use this to parse all the logs from a benchmark run but that does not mean the API is stable.
-* The result json from any factory is subject to change :)
-* caveat emptor
-
-## Building
-The parse project depends on yaup which as of now is un-published
-```bash
-git clone https://github.com/Hyperfoil/yaup.git
-cd yaup
-mvn clean install
-```
-It would be wise to re-build yaup from master so long as the dependency is SNAPSHOT then build parse with
-`mvn clean package`
+Use regex patterns to build structured json from text files
 
 Parse creates two artifacts: 
 - a normal jar for java development 
@@ -36,7 +20,7 @@ Each source will only use 1 thread (because of parser state) but in `--batch` th
 ## Rules
 The library was created as a java utility but also supports `yaml` or `json` rule definitions with `javascript` taking the place of `java` code.
 
-There are a collection of default rules in `resources/defaultRules.yaml` which are loaded when `--rules` are not specified and act as example rules.
+There are a collection of default rules in `resources/defaultRules.yaml` which are loaded unless `--disableDefault` is used.
 There is also `resources/filerule-schema.json` to use with the vscode Red Hat yaml plugin to validate any rule files.
 
 Each rule works in 3 phases

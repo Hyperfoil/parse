@@ -1,0 +1,50 @@
+= Value Merge Options
+
+== Auto
+
+Sets `key: value` if the `key` is is not in the current json. Otherwise `key : [..., value]` where `...` is any previous values for `key` that were not already an array
+
+== BooleanKey
+
+Sets `key: true` indicating that the named capture group in the pattern matched part of the line.
+
+== BooleanValue
+
+Sets `value: true` where value is the value that was captured from the input line by the expression capture group.
+
+== TargetId
+
+Uses the `value` to determine if this is the start of a new json object or if hte values should be merged into the existing object. A new object is created if hte current target json object ha a value defined and that values is not equal to the captured value from this expression.
+
+== Count
+
+Sets `key: #` where `#` is the number of times the pattern has matched while building the current json object.
+
+== Add
+Add the value to any existing value already store for `key`. The `value` will be converted to a number.
+
+== List
+Sets `key: [value,...]` even if `key` does not already exist in the target json object.
+
+== Key
+Uses the value from the input as the key for the value from another specified capture group.
+```yaml
+- pattern: (?<foo:key=bar>\\S+) (?<bar>\\S+)
+```
+The above example would use the value captured by `foo` as the key for the value captured by `bar`
+
+== Set
+Sets `key: [value,...]` but `value` can only appear once under `key`
+
+== First
+Sets `key: value` only if `key` does not aleady exist
+
+== Last
+Sets `key: value`
+
+== TreeSibling
+
+Uses the `value` length to create a tree with key as the branch identifier. `value` with the same length are treated as sibling branches.
+
+== TreeMerging
+use the `value` length to create a tree with key as the branch identifier. `value` with the same length are merged together if the values are equal.

@@ -59,6 +59,12 @@ public enum ExpRule {
    }
    private static final RuleAction DO_NOTHING = (b,t,d)->false;
 
+   /**
+    *
+    * @param builder
+    * @param data
+    * @return true if the current target json changes
+    */
    public boolean prePopulate(JsonBuilder builder, List<Object> data){
       boolean changedTarget = false;
       List<Object> filteredData = filterRules(data);

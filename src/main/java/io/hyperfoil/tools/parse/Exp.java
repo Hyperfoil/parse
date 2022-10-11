@@ -791,7 +791,7 @@ public class Exp {
 
       boolean rtrn = false;
       try {
-         //cannot return for line.length==0 becausGe pattern may expect empty line
+         //cannot return for line.length==0 because pattern may expect empty line
          if (startIndex.get() > line.length() && this.matchRange.equals(MatchRange.AfterParent)) {
 
             if(isDebug()){
@@ -800,6 +800,7 @@ public class Exp {
             return false;
          }
 
+         //check if all requires are satisfied
          if (!this.requires.isEmpty() && parser != null) {
             boolean satisfyRequired = requires.stream()
                .filter(required -> !parser.getState(required))//return true if the requirement isn't satisfied
@@ -814,7 +815,7 @@ public class Exp {
             }
          }
 
-
+         //check if the pattern matches
          int matchStart = this.matchRange.apply(this.matcher, line, startIndex.get());
 
          if (this.matcher.find()) {
@@ -904,6 +905,9 @@ public class Exp {
                this.rules.forEach((rule, roleObjects) -> {
                   rule.preChildren(builder, ruleTarget, roleObjects);
                });
+               if(ruleTarget != builder.getTarget()){
+                  //the target changed?
+               }
                if (!disables.isEmpty() && parser != null) {
                   disables.forEach(v -> parser.setState(v, false));
                   if(isDebug()){

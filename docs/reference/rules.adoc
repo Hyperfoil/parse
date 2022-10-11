@@ -1,0 +1,62 @@
+= Expression Rules
+
+Rules are used to control what expressions do after their pattern matches the input. The rules deal with two topics:
+
+1. Do the expression and/or its children repeat
+2. How the expression changes the shape of the json.
+
+== Repeat
+Repeatedly apply the pattern until it does not match part of the input line
+
+== RepeatChildren
+Repeatedly loop through the children until none of them match part of the input line.
+
+== PushTarget
+Make the current json object the target of expression capture groups
+
+== PreClose
+Close all json targets and start a new json object **before** applying the capture groups from this expression or its children
+
+If the rule is applied with a `name` then the close is only applied if a target has a key matching `name`
+
+```
+target.hasOwnProperty(name)
+```
+
+== PostClose
+Close all json targets and start a new json object **after** applying the capture groups from this expression or its children
+
+If the rule is applied with a `name` then the close is only applied if a target has a key matching `name`
+
+```
+target.hasOwnProperty(name)
+```
+
+== PrePopTarget
+Revert to the previous target json object **before** applying the capture groups from this expression or its children
+
+If the rule is applied with a `name` then targets are popped until the current target has the desired `name`
+
+== PostPopTarget
+Revert to the previous target json object **after** applying the capture groups from this expression or its children
+
+If the rule is applied with a `name` then targets are popped until the current target has the desired `name`
+
+== PreClearTarget
+Remove all target json objects and go back to the root json object **before ** applying the capture groups from this expression or its children
+
+If the rule is applied with a `name` then targets are cleared until the current target has the desired `name`
+
+== PostClearTarget
+Remove all target json objects and go back to the root json object **after ** applying the capture groups from this expression or its children
+
+If the rule is applied with a `name` then targets are cleared until the current target has the desired `name`
+
+== RemoveOnClose
+Remove the exp when the parser closes (after the current file)
+
+== TargetRoot
+
+Change the target to the root json object for this expression and its children. The targeting will not change the target for next sibling or ancestor expression.
+
+

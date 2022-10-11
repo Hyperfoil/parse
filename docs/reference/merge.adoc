@@ -1,0 +1,11 @@
+= Expression Merge
+
+== ByKey
+Each key is merged separately into the current json object. This uses the value merge settings for each value to determine how multiple matches are merged together. This is the default merge setting.
+
+== AsEntry
+Creates a new json object with all the values captured by the current expression and adds them to an array under `nest` or the parent array of the current json target
+
+== Extend
+
+Merges all the values into the last entry in expression nesting or the last entry in the current json targets.
