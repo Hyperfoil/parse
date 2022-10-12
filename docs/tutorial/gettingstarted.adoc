@@ -1,5 +1,7 @@
 = How to get started
 
+
+
 == Prerequisites
 
 parse is distributed as a Java executable jar. We need install Java and download the parse release from GitHub.
@@ -28,3 +30,4 @@ Parse releases are available to download from the link:https://github.com/Hyperf
 </dependency>
 ```
 
+==
