@@ -1,0 +1,30 @@
+[
+  {
+    "name" : "io.hyperfoil.tools.yaup.json.graaljs.JsFetch",
+    "queryAllDeclaredConstructors" : true,
+    "queryAllPublicConstructors" : true,
+    "queryAllDeclaredMethods" : true,
+    "queryAllPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  },
+  {
+    "name" : "io.hyperfoil.tools.parse.Exp",
+    "queryAllDeclaredConstructors" : true,
+    "queryAllPublicConstructors" : true,
+    "queryAllDeclaredMethods" : true,
+    "queryAllPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  },
+  {
+    "name": "io.hyperfoil.tools.parse.Parser",
+    "queryAllDeclaredConstructors": true,
+    "queryAllPublicConstructors": true,
+    "queryAllDeclaredMethods": true,
+    "queryAllPublicMethods": true,
+    "allDeclaredFields": true,
+    "allPublicFields": true
+  }
+
+]
