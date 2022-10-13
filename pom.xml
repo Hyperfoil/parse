@@ -62,10 +62,104 @@
         <version.maven.gpg>1.6</version.maven.gpg>
         <version.maven.source>3.2.0</version.maven.source>
         <version.maven.javadoc>3.2.0</version.maven.javadoc>
+        <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
+        <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
+        <quarkus.platform.version>2.12.3.Final</quarkus.platform.version>
+        <skipITs>true</skipITs>
+        <surefire-plugin.version>3.0.0-M7</surefire-plugin.version>
+        <graal.version>22.2.0</graal.version>
     </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>${quarkus.platform.group-id}</groupId>
+                <artifactId>${quarkus.platform.artifact-id}</artifactId>
+                <version>${quarkus.platform.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <build>
         <plugins>
-            <plugin>
+      <plugin>
+        <groupId>${quarkus.platform.group-id}</groupId>
+        <artifactId>quarkus-maven-plugin</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <extensions>true</extensions>
+        <configuration>
+            <skipOriginalJarRename>true</skipOriginalJarRename>
+        </configuration>
+        <executions>
+          <execution>
+            <id>uber</id>
+            <goals>
+              <goal>build</goal>
+              <goal>generate-code</goal>
+              <goal>generate-code-tests</goal>
+            </goals>
+            <configuration>
+                <properties>
+                    <quarkus.package.type>uber-jar</quarkus.package.type>
+                </properties>
+            </configuration>
+          </execution>
+<!--            <execution>-->
+<!--                <id>skinny</id>-->
+<!--                <goals>-->
+<!--                    <goal>build</goal>-->
+<!--                    <goal>generate-code</goal>-->
+<!--                    <goal>generate-code-tests</goal>-->
+<!--                </goals>-->
+<!--                <configuration>-->
+<!--                    <properties>-->
+<!--                        <quarkus.package.type>fast-jar</quarkus.package.type>-->
+<!--                    </properties>-->
+<!--                </configuration>-->
+<!--            </execution>-->
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${compiler-plugin.version}</version>
+        <configuration>
+          <compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
+        <configuration>
+          <systemPropertyVariables>
+            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+            <maven.home>${maven.home}</maven.home>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <systemPropertyVariables>
+                <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
+                <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                <maven.home>${maven.home}</maven.home>
+              </systemPropertyVariables>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    
+		<plugin>
                 <groupId>pl.project13.maven</groupId>
                 <artifactId>git-commit-id-plugin</artifactId>
                 <version>3.0.0</version>
@@ -82,7 +176,7 @@
                     <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
                 </configuration>
             </plugin>
-            <plugin>
+<!--            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>3.2.1</version>
@@ -93,22 +187,22 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <!-- cannot minimizeJar: java.util.ServiceConfigurationError: org.graalvm.polyglot.impl.AbstractPolyglotImpl: Provider com.oracle.truffle.polyglot.PolyglotImpl not found -->
+                            &lt;!&ndash; cannot minimizeJar: java.util.ServiceConfigurationError: org.graalvm.polyglot.impl.AbstractPolyglotImpl: Provider com.oracle.truffle.polyglot.PolyglotImpl not found &ndash;&gt;
                             <minimizeJar>false</minimizeJar>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>uber</shadedClassifierName> <!-- Any name that makes sense -->
+                            <shadedClassifierName>uber</shadedClassifierName> &lt;!&ndash; Any name that makes sense &ndash;&gt;
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>io.hyperfoil.tools.parse.ParseCommand</mainClass>
                                 </transformer>
-                                <!-- https://github.com/oracle/graaljs/issues/125 -->
-                                <!-- https://maven.apache.org/plugins/maven-shade-plugin/examples/resource-transformers.html#ServicesResourceTransformer -->
+                                &lt;!&ndash; https://github.com/oracle/graaljs/issues/125 &ndash;&gt;
+                                &lt;!&ndash; https://maven.apache.org/plugins/maven-shade-plugin/examples/resource-transformers.html#ServicesResourceTransformer &ndash;&gt;
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                             </transformers>
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -150,6 +244,45 @@
     </build>
     <dependencies>
         <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>graal-sdk</artifactId>
+            <version>${graal.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.js</groupId>
+            <artifactId>js</artifactId>
+            <version>${graal.version}</version>
+            <scope>compile</scope>
+        </dependency>
+<!--
+        com.oracle.svm.core.util.UserError$UserException: Classes that should be initialized at run time got initialized during image building:
+        io.netty.buffer.PooledByteBufAllocator the class was requested to be initialized at run time (from 'META-INF/native-image/io.netty/buffer/native-image.properties' in 'file:///home/wreicher/code/perf/parse/target/parse-0.1.13-SNAPSHOT-native-image-source-jar/lib/io.netty.netty-buffer-4.1.79.Final.jar' with 'io.netty.buffer.PooledByteBufAllocator' and from feature io.quarkus.runner.Feature.beforeAnalysis with 'PooledByteBufAllocator.class'). To see why io.netty.buffer.PooledByteBufAllocator got initialized use &#45;&#45;trace-class-initialization=io.netty.buffer.PooledByteBufAllocator
+-->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-vertx</artifactId>
+        </dependency>
+<!--
+        Caused by: com.oracle.graal.pointsto.constraints.UnresolvedElementException: Discovered unresolved type during parsing: io.netty.util.internal.logging.Log4J2Logger. This error is reported at image build time because class io.netty.util.internal.logging.Log4J2LoggerFactory is registered for linking at image build time by command line
+-->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-netty</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-picocli</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-arc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.hyperfoil.tools</groupId>
             <artifactId>yaup</artifactId>
             <version>0.8.18</version>
@@ -158,16 +291,11 @@
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
             <version>1.31</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>commons-cli</groupId>
-            <artifactId>commons-cli</artifactId>
-            <version>1.4</version>
-        </dependency>
-        <dependency>
-            <groupId>org.aesh</groupId>
-            <artifactId>aesh</artifactId>
-            <version>2.3</version>
+            <groupId>org.jboss.slf4j</groupId>
+            <artifactId>slf4j-jboss-logmanager</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -175,25 +303,7 @@
             <version>1.7.25</version>
             <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-ext</artifactId>
-            <version>1.7.26</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.1</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.7.32</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
+<!--        <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
             <version>${version.log4j}</version>
@@ -207,13 +317,36 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
             <version>${version.log4j}</version>
+        </dependency>-->
+<!--        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-ext</artifactId>
+            <version>1.7.26</version>
+            <scope>compile</scope>
+        </dependency>-->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.1</version>
+            <scope>test</scope>
         </dependency>
-
     </dependencies>
-
-
     <profiles>
-        <profile>
+    <profile>
+      <id>native</id>
+      <activation>
+        <property>
+          <name>native</name>
+        </property>
+      </activation>
+      <properties>
+        <skipITs>false</skipITs>
+        <quarkus.package.type>native</quarkus.package.type><!-- language:js  -H:ReflectionConfigurationFiles=${project.basedir}/src/main/resources/reflection-config.json ,-H:ResourceConfigurationFiles=${project.basedir}/src/main/resources/resources-config.json -->
+        <quarkus.native.additional-build-args>-Dpolyglot.image-build-time.PreinitializeContexts=js,--language:js,--report-unsupported-elements-at-runtime,-Dtruffle.TruffleRuntime=com.oracle.truffle.api.impl.DefaultTruffleRuntime,-H:ReflectionConfigurationFiles=reflection-config.json,-H:ResourceConfigurationFiles=resources-config.json</quarkus.native.additional-build-args>
+      </properties>
+    </profile>
+    
+	    <profile>
             <id>release</id>
             <activation>
                 <property>

@@ -17,20 +17,15 @@ import io.hyperfoil.tools.yaup.json.graaljs.JsException;
 import io.hyperfoil.tools.yaup.time.SystemTimer;
 import io.hyperfoil.tools.yaup.yaml.MapRepresenter;
 import io.hyperfoil.tools.yaup.yaml.OverloadConstructor;
-import org.aesh.AeshRuntimeRunner;
-import org.aesh.command.Command;
-import org.aesh.command.CommandDefinition;
-import org.aesh.command.CommandException;
-import org.aesh.command.CommandResult;
-import org.aesh.command.invocation.CommandInvocation;
-import org.aesh.command.option.Option;
-import org.aesh.command.option.OptionGroup;
-import org.aesh.command.option.OptionList;
+import io.quarkus.runtime.QuarkusApplication;
+import io.quarkus.runtime.annotations.QuarkusMain;
+import io.quarkus.runtime.Quarkus;
 import org.slf4j.ext.XLogger;
 import org.slf4j.ext.XLoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.nodes.Tag;
+import picocli.CommandLine;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -41,18 +36,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-@CommandDefinition(name = "parse",description = "parse text files into structured json")
-public class ParseCommand implements Command {
+//@CommandDefinition(name = "parse",description = "parse text files into structured json")
+@QuarkusMain
+@CommandLine.Command(name = "parse", mixinStandardHelpOptions = true, version = "0.1.13",
+        description = "parse structured json from text files")
+public class ParseCommand implements Callable<Integer>, QuarkusApplication {
 
    final static XLogger logger = XLoggerFactory.getXLogger(MethodHandles.lookup().lookupClass());
 
@@ -182,29 +174,38 @@ public class ParseCommand implements Command {
 
       }
    }
-   @Option(shortName = 't', name="threads", description = "number of parallel threads for parsing sources",defaultValue = "-1")
+   //@Option(shortName = 't', name="threads", description = "number of parallel threads for parsing sources",defaultValue = "-1")
+   @CommandLine.Option(names={"-t", "--threads"}, defaultValue = "-1")
    Integer threadCount;
 
-   @Option(name = "disableDefault", description = "disables default rules", hasValue = false)
-   Boolean disableDefault;
+   //@Option(name = "disableDefault", description = "disables default rules", hasValue = false)
+   @CommandLine.Option(names = {"--disableDefaults"},description = "disables default rules")
+   Boolean disableDefault = false;
 
-   @OptionList(shortName = 'r', name = "rules", description = "parse rule definitions")
+
+   //@OptionList(shortName = 'r', name = "rules", description = "parse rule definitions")
+   @CommandLine.Option(names= {"-r", "--rules"},description = "parse rule definitions")
    Set<String> config;
 
-   @Option(shortName = 's', name="source",description = "source of files to scan, supports folder or archive")
+   //@Option(shortName = 's', name="source",description = "source of files to scan, supports folder or archive")
+   @CommandLine.Option(names = {"-s","--source"},description = "source of files to scan, supports folder or archive")
    String source;
 
-   @OptionList(shortName = 'b',name="batch",description = "batch of files to individually scan")
+   //@OptionList(shortName = 'b',name="batch",description = "batch of files to individually scan")
+   @CommandLine.Option(names = {"-b","--batch"},description = "batch of files to individually scan")
    Set<String> batch;
 
-   @Option(shortName = 'd', name="destination",description = "destination for the resulting json")
+   //@Option(shortName = 'd', name="destination",description = "destination for the resulting json")
+   @CommandLine.Option(names = {"-d","--destination"}, description = "destination for the resulting json")
    String destination;
 
-   @OptionGroup(shortName = 'S', name="state",description = "state variables for patterns",defaultValue = {  })
+   //@OptionGroup(shortName = 'S', name="state",description = "state variables for patterns",defaultValue = {  })
+   @CommandLine.Option(names = { "-S", "--state"}, description = "state variables for patterns")
    Map<String,String> state;
 
+
    @Override
-   public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
+   public Integer call() throws Exception {
       SystemTimer systemTimer = new SystemTimer("fileparser");
       List<FileRule> fileRules = new ArrayList<>();
       JsonValidator validator = getValidator();
@@ -257,7 +258,7 @@ public class ParseCommand implements Command {
       if(batch.isEmpty()){
          if (source == null || source.isEmpty() || !Files.exists(Paths.get(source))) {
             logger.error("source cannot be found: " + source);
-            return CommandResult.FAILURE;
+            return 1;
          }else{
             batch.add(source);
          }
@@ -303,7 +304,7 @@ public class ParseCommand implements Command {
       //loaded all the file rules
       if(fileRules.isEmpty()){
          logger.error("failed to load any rules");
-         return CommandResult.FAILURE;
+         return 1;
       }
 
       int heapMb = (int)(Runtime.getRuntime().maxMemory() / (1024*1024) );
@@ -329,10 +330,11 @@ public class ParseCommand implements Command {
 
       logger.info(systemTimer.getJson().toString(2));
 
-      return CommandResult.SUCCESS;
+      return 0;
    }
-   public static void main(String[] args) {
-      AeshRuntimeRunner.builder().command(ParseCommand.class).args(args).execute();
+   @Override
+   public int run(String[] args) {
+//      AeshRuntimeRunner.builder().command(ParseCommand.class).args(args).execute();
       String cmdLineSyntax = "";
       cmdLineSyntax =
       "java -jar " +
@@ -344,6 +346,11 @@ public class ParseCommand implements Command {
          )).getName() +
          " " +
          cmdLineSyntax;
+      int exitCode = new CommandLine(new ParseCommand()).execute(args);
+      if(exitCode!=0){
+         CommandLine.usage(new ParseCommand(), System.out);
+      }
+      return exitCode;
    }
 
    public static JsonValidator getValidator() {
