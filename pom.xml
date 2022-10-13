@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.hyperfoil.tools</groupId>
     <artifactId>parse</artifactId>
-    <version>0.1.13-SNAPSHOT </version>
+    <version>0.1.13 </version>
     <name>Hyperfoil parse</name>
     <description>Use regex patterns and rules to build json from text files</description>
     <url>https://github.com/Hyperfoil/parse</url>
@@ -11,7 +11,7 @@
         <connection>scm:git:git://github.com/Hyperfoil/parse.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/Hyperfoil/parse.git</developerConnection>
         <url>https://github.com/Hyperfoil/parse</url>
-        <tag>HEAD</tag>
+        <tag>parse-0.1.13</tag>
     </scm>
     <licenses>
         <license>
