@@ -5,6 +5,23 @@
     "queryAllPublicConstructors" : true,
     "queryAllDeclaredMethods" : true,
     "queryAllPublicMethods" : true,
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  },
+  {
+    "name" : "io.hyperfoil.tools.yaup.xml.pojo.Xml",
+    "queryAllDeclaredConstructors" : true,
+    "queryAllPublicConstructors" : true,
+    "queryAllDeclaredMethods" : true,
+    "queryAllPublicMethods" : true,
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
     "allDeclaredFields" : true,
     "allPublicFields" : true
   },
@@ -14,6 +31,10 @@
     "queryAllPublicConstructors" : true,
     "queryAllDeclaredMethods" : true,
     "queryAllPublicMethods" : true,
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
     "allDeclaredFields" : true,
     "allPublicFields" : true
   },
@@ -23,8 +44,51 @@
     "queryAllPublicConstructors": true,
     "queryAllDeclaredMethods": true,
     "queryAllPublicMethods": true,
-    "allDeclaredFields": true,
-    "allPublicFields": true
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  },
+  {
+    "name": "io.hyperfoil.tools.parse.Eat",
+    "queryAllDeclaredConstructors": true,
+    "queryAllPublicConstructors": true,
+    "queryAllDeclaredMethods": true,
+    "queryAllPublicMethods": true,
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  },
+  {
+    "name": "io.hyperfoil.tools.parse.ExpRule",
+    "queryAllDeclaredConstructors": true,
+    "queryAllPublicConstructors": true,
+    "queryAllDeclaredMethods": true,
+    "queryAllPublicMethods": true,
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  },
+  {
+    "name": "io.hyperfoil.tools.parse.ExpMerge",
+    "queryAllDeclaredConstructors": true,
+    "queryAllPublicConstructors": true,
+    "queryAllDeclaredMethods": true,
+    "queryAllPublicMethods": true,
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
   }
 
 ]
