@@ -340,6 +340,7 @@ public class FileRule {
             boolean matched = getCriteria().match(path, state);
 
             if (matched) {
+                logger.debug(getName()+" matched "+path);
                 Json result = getConverter().apply(path);
                 String nestPath = StringUtil.populatePattern(getNest(), Json.toObjectMap(state));
 
