@@ -143,7 +143,17 @@ public class ParseCommand implements Callable<Integer>, QuarkusApplication {
                      }
                      sourceDestination = sourceDestination + ".json";
                   } else {
-                     sourceDestination = sourcePath.endsWith("/") ? sourcePath.substring(0, sourcePath.length() - 1) + ".json" : sourcePath + ".json";
+                     Path path = Paths.get(sourcePath);
+                     Path effectivePath = path;
+                     if (!path.isAbsolute()) {
+                        Path base = Paths.get("");
+                        effectivePath = base.resolve(path).toAbsolutePath().normalize();
+                     }
+                     if(effectivePath.toFile().isDirectory()){
+                        sourceDestination = effectivePath.toFile().getName()+".json";
+                     }else{
+                        sourceDestination = sourcePath.endsWith("/") ? sourcePath.substring(0, sourcePath.length() - 1) + ".json" : sourcePath + ".json";
+                     }
                   }
                }
                logger.info("writing to {}", sourceDestination);
