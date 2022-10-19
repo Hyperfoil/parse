@@ -8,6 +8,7 @@ import io.hyperfoil.tools.parse.json.JsonBuilder;
 import io.hyperfoil.tools.yaup.HashedLists;
 import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.json.Json;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import org.slf4j.Marker;
 import org.slf4j.ext.XLogger;
 import org.slf4j.ext.XLoggerFactory;
@@ -27,6 +28,7 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
+@RegisterForReflection
 public class Exp {
 
    final static XLogger logger = XLoggerFactory.getXLogger(MethodHandles.lookup().lookupClass());

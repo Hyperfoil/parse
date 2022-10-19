@@ -93,7 +93,7 @@ public class ParseCommand implements Callable<Integer>, QuarkusApplication {
                for (String entry : entries) {
                   for (FileRule rule : fileRules) {
                      try {
-                        rule.apply(entry, (nest, json) -> {
+                        rule.apply(entry, thisTimer, (nest, json) -> {
                            try {
                               if (nest == null || nest.trim().isEmpty()) {
                                  if (!json.isArray()) {
@@ -327,10 +327,10 @@ public class ParseCommand implements Callable<Integer>, QuarkusApplication {
       RejectedExecutionHandler rejectedExecutionHandler = new ThreadPoolExecutor.CallerRunsPolicy();
       ExecutorService executorService =  new ThreadPoolExecutor(numOfThread, numOfThread,
          0L, TimeUnit.MINUTES, blockingQueue, rejectedExecutionHandler);
-      systemTimer.start("parse");
+      SystemTimer parseTimer = systemTimer.start("parse");
 
       for(String sourcePath : batch){
-         RuleRunner ruleRunner = new RuleRunner(fileRules,systemTimer, heapSemaphore, heapMb);
+         RuleRunner ruleRunner = new RuleRunner(fileRules,parseTimer, heapSemaphore, heapMb);
          ruleRunner.setSourcePath(sourcePath);
          executorService.submit(ruleRunner);
       }

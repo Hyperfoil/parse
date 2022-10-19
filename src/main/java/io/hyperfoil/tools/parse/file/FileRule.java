@@ -7,6 +7,7 @@ import io.hyperfoil.tools.parse.JsJsonFunction;
 import io.hyperfoil.tools.yaup.PopulatePatternException;
 import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.json.Json;
+import io.hyperfoil.tools.yaup.time.SystemTimer;
 import org.slf4j.ext.XLogger;
 import org.slf4j.ext.XLoggerFactory;
 
@@ -335,12 +336,16 @@ public class FileRule {
     }
 
     public boolean apply(String path, BiConsumer<String,Json> callback){
+        return apply(path,new SystemTimer(""),callback);
+    }
+    public boolean apply(String path, SystemTimer timer, BiConsumer<String, Json> callback){
         try {
             Json state = with.clone();
             boolean matched = getCriteria().match(path, state);
 
             if (matched) {
                 logger.debug(getName()+" matched "+path);
+                timer.start(path);
                 Json result = getConverter().apply(path);
                 String nestPath = StringUtil.populatePattern(getNest(), Json.toObjectMap(state));
 
