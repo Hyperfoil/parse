@@ -7,6 +7,7 @@
     <name>Hyperfoil parse</name>
     <description>Use regex patterns and rules to build json from text files</description>
     <url>https://github.com/Hyperfoil/parse</url>
+    <packaging>jar</packaging><!-- picocli-native-imag-maven-demo -->
     <scm>
         <connection>scm:git:git://github.com/Hyperfoil/parse.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/Hyperfoil/parse.git</developerConnection>
@@ -150,7 +151,7 @@
             </goals>
             <configuration>
               <systemPropertyVariables>
-                <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
+                <native.image.path>${project.build.directory}/${project.build.finalName}-uber</native.image.path>
                 <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                 <maven.home>${maven.home}</maven.home>
               </systemPropertyVariables>
@@ -176,33 +177,6 @@
                     <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
                 </configuration>
             </plugin>
-<!--            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.1</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            &lt;!&ndash; cannot minimizeJar: java.util.ServiceConfigurationError: org.graalvm.polyglot.impl.AbstractPolyglotImpl: Provider com.oracle.truffle.polyglot.PolyglotImpl not found &ndash;&gt;
-                            <minimizeJar>false</minimizeJar>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>uber</shadedClassifierName> &lt;!&ndash; Any name that makes sense &ndash;&gt;
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>io.hyperfoil.tools.parse.ParseCommand</mainClass>
-                                </transformer>
-                                &lt;!&ndash; https://github.com/oracle/graaljs/issues/125 &ndash;&gt;
-                                &lt;!&ndash; https://maven.apache.org/plugins/maven-shade-plugin/examples/resource-transformers.html#ServicesResourceTransformer &ndash;&gt;
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-                            </transformers>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -303,27 +277,6 @@
             <version>1.7.25</version>
             <scope>compile</scope>
         </dependency>
-<!--        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>${version.log4j}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>${version.log4j}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <version>${version.log4j}</version>
-        </dependency>-->
-<!--        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-ext</artifactId>
-            <version>1.7.26</version>
-            <scope>compile</scope>
-        </dependency>-->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
