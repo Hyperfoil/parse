@@ -1,0 +1,11 @@
+---
+name: jfr
+path: ".*.jfr?"
+nest: files.jfr
+asPath: |
+  (path)=>{
+    console.log('asPath',path)
+    const val = {path}
+    console.log("val",val)
+    return val;
+  }

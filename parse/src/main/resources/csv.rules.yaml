@@ -1,0 +1,18 @@
+name: csv
+path: "\\.csv"
+nest: foo
+asText:
+- name: csv_pattern
+  pattern: "^(?<header>[^,$]+)(?:,|$)"
+  rules: [Repeat]
+  execute: |
+    (line,match,pattern,parser)=>{
+      const e = new Exp("a","b")
+      const newPattern = (match.header||[]).reduce((x,v)=>x+`(?<${v.trim()}>[^,$]+)(?:,|$)`,'');
+      const newExp = new Exp("data",newPattern)
+        .nest("data")
+        .setMerge(ExpMerge.AsEntry)
+        .eat(Eat.Line)
+        .addRule(ExpRule.RemoveOnClose)
+      parser.addAhead(newExp);
+    }

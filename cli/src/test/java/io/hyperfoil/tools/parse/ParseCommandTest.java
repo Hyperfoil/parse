@@ -2,6 +2,7 @@ package io.hyperfoil.tools.parse;
 
 import io.hyperfoil.tools.yaup.json.Json;
 import io.hyperfoil.tools.yaup.json.JsonValidator;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -12,7 +13,7 @@ public class ParseCommandTest {
 
     @Test @Ignore
     public void getValidator_asText_key(){
-        JsonValidator validator = ParseCommand.getValidator();
+        JsonValidator validator = io.hyperfoil.tools.parse.ParseCommand.getValidator();
 
         Json json = Json.fromYaml(
             "name: \"sar_summary\"\n" +
@@ -24,6 +25,6 @@ public class ParseCommandTest {
             "    key: cpu"
         );
         Json errors = validator.validate(json);
-        assertFalse("expect errors:\n"+errors.toString(2),errors.isEmpty());
+        Assert.assertFalse("expect errors:\n"+errors.toString(2),errors.isEmpty());
     }
 }
