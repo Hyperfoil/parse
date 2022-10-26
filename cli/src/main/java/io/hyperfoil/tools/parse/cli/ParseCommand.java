@@ -1,5 +1,6 @@
 package io.hyperfoil.tools.parse.cli;
 
+import io.hyperfoil.tools.parse.Exp;
 import io.hyperfoil.tools.parse.file.FileRule;
 import io.hyperfoil.tools.parse.file.Filter;
 import io.hyperfoil.tools.parse.file.MatchCriteria;

@@ -13,7 +13,7 @@ public class ParseCommandTest {
 
     @Test @Ignore
     public void getValidator_asText_key(){
-        JsonValidator validator = io.hyperfoil.tools.parse.ParseCommand.getValidator();
+        JsonValidator validator = io.hyperfoil.tools.parse.cli.ParseCommand.getValidator();
 
         Json json = Json.fromYaml(
             "name: \"sar_summary\"\n" +
