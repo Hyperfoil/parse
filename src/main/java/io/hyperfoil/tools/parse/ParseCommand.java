@@ -96,7 +96,7 @@ public class ParseCommand implements Command {
                   FileUtility.getArchiveEntries(sourcePath).stream().map(entry -> sourcePath + FileUtility.ARCHIVE_KEY + entry).collect(Collectors.toList()) :
                   FileUtility.getFiles(sourcePath, "", true);
 
-               Json result = new Json();
+               Json result = new Json(false);
 
                for (String entry : entries) {
                   for (FileRule rule : fileRules) {
