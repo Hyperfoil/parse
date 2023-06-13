@@ -94,8 +94,7 @@ public class ParseCommand implements Command {
                SystemTimer thisTimer = systemTimer.start(sourcePath, true);
                List<String> entries = FileUtility.isArchive(sourcePath) ?
                   FileUtility.getArchiveEntries(sourcePath).stream().map(entry -> sourcePath + FileUtility.ARCHIVE_KEY + entry).collect(Collectors.toList()) :
-                  FileUtility.getFiles(sourcePath, "", true);
-
+                  FileUtility.getFiles(sourcePath, "", true,scanArchives);
                Json result = new Json(false);
 
                for (String entry : entries) {
@@ -187,6 +186,9 @@ public class ParseCommand implements Command {
 
    @Option(name = "disableDefault", description = "disables default rules", hasValue = false)
    Boolean disableDefault;
+
+   @Option(name = "scanArchives", description = "scan inside archives (tar, gzip, ...)", hasValue = false)
+   Boolean scanArchives;
 
    @OptionList(shortName = 'r', name = "rules", description = "parse rule definitions")
    Set<String> config;
