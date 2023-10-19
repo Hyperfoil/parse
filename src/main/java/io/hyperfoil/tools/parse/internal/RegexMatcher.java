@@ -37,17 +37,19 @@ public class RegexMatcher implements IMatcher {
     public RegexMatcher(String pattern){
         String newPattern = pattern;
         renames = new LinkedHashMap<>();
-
+        int captureCounter=0;
         fieldMatcher.reset(newPattern);
         while(fieldMatcher.find()){
             int start = fieldMatcher.start(1);
             int end = fieldMatcher.end(1);
             String realName = fieldMatcher.group(1);
-            String compName = realName.replaceAll("[\"/_ +.()\\[\\]\\- \\\\]","x").replaceAll(" ","");
+            String compName = realName.replaceAll("[^a-zA-Z0-9]",SAFE_PREFIX);
             if(!Character.isLetter(compName.charAt(0))){
                 compName = SAFE_PREFIX + compName;
             }
             if(!compName.equals(realName)){
+                //append the counter to avoid creating matching new names
+                compName=compName+String.format("%03d",captureCounter++);
                 newPattern = newPattern.substring(0,start)+compName+newPattern.substring(end);
                 fieldMatcher.reset(newPattern);
             }else{
