@@ -282,7 +282,7 @@ public class Exp {
    /**
       Stores the merge info for each value in the pattern
     */
-   private static class ValueInfo {
+   public static class ValueInfo {
 
       final String name;
       String target;
