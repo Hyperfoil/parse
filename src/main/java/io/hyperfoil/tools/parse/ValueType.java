@@ -42,8 +42,19 @@ public enum ValueType {
       }
    },
    /**
+    * Convert the input value into the number of milliseconds (Double).
+    * Uses StringUtil.parseToMs
+    */
+   Duration {
+      @Override
+      public Object apply(String input){
+         return StringUtil.parseToMs(input);
+      }
+   },
+   /**
     * Convert the input value into the number of bytes (Long).
-    * Supports the usual K, Kb, or KB type suffixes. Assumes no suffix is already bytes
+    * Uses StringUtil.parseKMV
+    *
     */
    KMG {
       @Override

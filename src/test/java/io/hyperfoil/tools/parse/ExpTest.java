@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 import static org.junit.Assert.*;
@@ -17,6 +18,14 @@ import static org.junit.Assert.*;
 public class ExpTest {
 
    Function<String, DropString> factory = CheatChars::new;
+
+   @Test
+   public void parsePattern_valueType_duration(){
+      Map<String,Exp.ValueInfo> parsed = Exp.parsePattern("(?<foo:duration>");
+      assertNotNull(parsed);
+      assertTrue(parsed.containsKey("foo"));
+      assertEquals(ValueType.Duration,parsed.get("foo").getType());
+   }
 
    @Test @Ignore
    public void removePatternValues_negative_lookbehind(){
@@ -440,6 +449,14 @@ public class ExpTest {
       p.apply(factory.apply("age=23"),b,null);
 
       Assert.assertEquals(23,b.getRoot().getLong("value"));
+   }
+   @Test
+   public void autoNumber_disabled(){
+      JsonBuilder b = new JsonBuilder();
+      Exp p = new Exp("kv","(?<key>\\w+)=(?<value:sring>\\w+)");
+      p.apply(factory.apply("age=23"),b,null);
+
+      Assert.assertEquals("23",b.getRoot().get("value"));
    }
    @Test
    public void valueKMG(){
