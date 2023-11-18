@@ -109,17 +109,17 @@
         },
         "asJbossCli": {
           "oneOf": [
-            {"type": "string"}
+            {"type": ["string","null"]}
           ]
         },
         "asJson": {
           "oneOf": [
-            {"type": "string"}
+            {"type": ["string","null"]}
           ]
         },
-        "asXml": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"$ref": "#/definitions/filter"}}]},
-        "asPath": {"type": "string"},
-        "asContent": {"type": "string"}
+        "asXml": {"oneOf": [{"type": ["string","null"]}, {"type": "array", "items": {"$ref": "#/definitions/filter"}}]},
+        "asPath": {"type": ["string","null"]},
+        "asContent": {"type": ["string","null"]}
       },
       "oneOf": [
         {"required": ["asText"]},
