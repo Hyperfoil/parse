@@ -21,9 +21,24 @@ public class ParseCommandTest {
             "asText:\n" +
             "  - name: 'data'\n" +
             "    pattern: \"(?<cpu>\\\\d+) (?<user>\\\\d+\\\\.\\\\d+) (?<system>\\\\d+\\\\.\\\\d+)\"\n" +
-            "    key: cpu"
+            "    additional_key: should_not_be_here"
         );
         Json errors = validator.validate(json);
+        System.out.println(errors.toString(2));
         assertFalse("expect errors:\n"+errors.toString(2),errors.isEmpty());
+    }
+    @Test
+    public void getValidator_asJson_null(){
+        JsonValidator validator = ParseCommand.getValidator();
+        Json json = Json.fromYaml(
+                "name: \"sar_summary\"\n" +
+                        "path: \".*?/(?<hostName>[^/\\\\.]+)[^/]*/[^/]*filename[^/]*\"\n" +
+                        "nest: \"${{hostName}}.cpu-utilization\"\n" +
+                        "asJson:"
+
+        );
+        Json errors = validator.validate(json);
+        System.out.println(errors.toString(2));
+        assertTrue("unexpect errors:\n"+errors.toString(2),errors.isEmpty());
     }
 }
