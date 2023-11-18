@@ -383,6 +383,19 @@ public class ExpTest {
       Json expected = Json.fromString("{\"key\":\"foo\",\"value\":\"bar\",\"child\":[[{\"key\":\"a\",\"value\":\"Alpha\"},{\"key\":\"b\",\"value\":\"Bravo\"}],[{\"key\":\"y\",\"value\":\"Yankee\"},{\"key\":\"z\",\"value\":\"Zulu\"}]]}\n");
       Assert.assertEquals("root should have 2 children each with 2 entries",expected,root);
    }
+
+
+   @Test
+   public void execute_modifies_match(){
+      JsonBuilder b = new JsonBuilder();
+      Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)");
+      p.execute((line, match, pattern, parser) -> {
+         match.set("value",42);
+         match.set("key","");
+      });
+      p.apply(factory.apply("age=23"),b,null);
+      Assert.assertEquals(42,b.getRoot().getLong("value"));
+   }
    @Test
    public void value_nestLength(){
 
@@ -453,7 +466,7 @@ public class ExpTest {
    @Test
    public void autoNumber_disabled(){
       JsonBuilder b = new JsonBuilder();
-      Exp p = new Exp("kv","(?<key>\\w+)=(?<value:sring>\\w+)");
+      Exp p = new Exp("kv","(?<key>\\w+)=(?<value:string>\\w+)");
       p.apply(factory.apply("age=23"),b,null);
 
       Assert.assertEquals("23",b.getRoot().get("value"));
