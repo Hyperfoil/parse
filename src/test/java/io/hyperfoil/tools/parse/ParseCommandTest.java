@@ -24,7 +24,6 @@ public class ParseCommandTest {
             "    additional_key: should_not_be_here"
         );
         Json errors = validator.validate(json);
-        System.out.println(errors.toString(2));
         assertFalse("expect errors:\n"+errors.toString(2),errors.isEmpty());
     }
     @Test
@@ -38,7 +37,6 @@ public class ParseCommandTest {
 
         );
         Json errors = validator.validate(json);
-        System.out.println(errors.toString(2));
         assertTrue("unexpect errors:\n"+errors.toString(2),errors.isEmpty());
     }
 }
