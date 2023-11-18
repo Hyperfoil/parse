@@ -71,7 +71,7 @@ public enum ValueMerge {
        return rtrn.get();
     }),
     /**
-     * sets key = the number of times the patter has matched while building the current json object
+     * sets key = the number of times the pattern has matched while building the current json object
      */
     Count((key,value,builder,data)->{
        Json.chainAct(builder.getTarget(),key,value,(target,k,v)->{
