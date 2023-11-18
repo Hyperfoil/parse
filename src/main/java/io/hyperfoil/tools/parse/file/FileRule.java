@@ -7,6 +7,7 @@ import io.hyperfoil.tools.parse.JsJsonFunction;
 import io.hyperfoil.tools.yaup.PopulatePatternException;
 import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.json.Json;
+import io.hyperfoil.tools.yaup.json.graaljs.JsException;
 import org.slf4j.ext.XLogger;
 import org.slf4j.ext.XLoggerFactory;
 
@@ -255,7 +256,7 @@ public class FileRule {
            "    { type: 'string'}," +
            "    { type: 'array', items: { $ref: '#/definitions/filter'} }," +
            "  ]}," +
-           "  asPath: {type: 'string'}," +
+           "  asPath: {type: ['string','null']}," +
            "}," +
            "oneOf: [" +
            "  { required: ['asContent'] }," +
@@ -340,20 +341,24 @@ public class FileRule {
             boolean matched = getCriteria().match(path, state);
 
             if (matched) {
-                Json result = getConverter().apply(path);
-                String nestPath = StringUtil.populatePattern(getNest(), Json.toObjectMap(state));
+                try {
+                    Json result = getConverter().apply(path);
+                    String nestPath = StringUtil.populatePattern(getNest(), Json.toObjectMap(state));
 
-                if (getFilters().isEmpty()) {
-                    callback.accept(nestPath, result);
-                } else {
-                    final Json postFilter = new Json();
-                    BiConsumer<String, Object> filterCallback = (nest, json) -> {
-                        Json.chainSet(postFilter, nest, json);
-                    };
-                    for (Filter filter : getFilters()) {
-                        filter.apply(result, filterCallback);
+                    if (getFilters().isEmpty()) {
+                        callback.accept(nestPath, result);
+                    } else {
+                        final Json postFilter = new Json();
+                        BiConsumer<String, Object> filterCallback = (nest, json) -> {
+                            Json.chainSet(postFilter, nest, json);
+                        };
+                        for (Filter filter : getFilters()) {
+                            filter.apply(result, filterCallback);
+                        }
+                        callback.accept(nestPath, postFilter);
                     }
-                    callback.accept(nestPath, postFilter);
+                }catch(JsException jse){
+                    logger.error("Javacript exception processing "+path+"\n"+jse,jse);
                 }
             }
             return matched;
