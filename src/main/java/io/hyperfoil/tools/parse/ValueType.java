@@ -25,8 +25,10 @@ public enum ValueType {
             return io.hyperfoil.tools.yaup.json.Json.fromString(a);
          } else if (KmgPattern.matcher(a).matches()) {
             return StringUtil.parseKMG(a);
-         } else if ("true".equals(a.toLowerCase()) || "false".equals(a.toLowerCase())){
+         } else if ("true".equals(a.toLowerCase()) || "false".equals(a.toLowerCase())) {
             return Boolean.valueOf(a);
+         } else if ( StringUtil.isDuration(a)) {
+            return StringUtil.parseToMs(a);
          } else {
             return a;
          }
