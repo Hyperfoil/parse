@@ -784,7 +784,6 @@ public class Exp {
       return apply(line,builder,parser,line.reference(0));
    }
    protected boolean apply(DropString line, JsonBuilder builder, Parser parser, DropString.Ref startIndex){
-
       if(isDebug() && startIndex.get() < line.length()){
          logger.debug("{} apply to {}",getName(),line.subSequence(startIndex.get(),line.length()));
       }

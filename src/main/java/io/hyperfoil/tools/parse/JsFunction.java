@@ -33,9 +33,8 @@ public class JsFunction {
       String also = new BufferedReader(new InputStreamReader(getClass().getClassLoader().getResourceAsStream("jsonpath.js"))).lines()
                          .parallel().collect(Collectors.joining("\n"));
       Object fromJs = null;
-      try {
          fromJs = StringUtil.jsEval(js, Arrays.asList(
-                 "const StringUtil = Packages.io.hyperfoil.tool.yaup.StringUtil;",
+                 "const StringUtil = Packages.io.hyperfoil.tools.yaup.StringUtil;",
                  "const Exp = Java.type('io.hyperfoil.tools.parse.Exp');",
                  "const ExpMerge = Java.type('io.hyperfoil.tools.parse.ExpMerge');",
                  "const MatchRange = Java.type('io.hyperfoil.tools.parse.MatchRange');",
@@ -48,9 +47,7 @@ public class JsFunction {
                  "const Json = Java.type('io.hyperfoil.tools.yaup.json.Json');",
                  also
          ), arguments);
-      }catch(JsException jse){
-         logger.error("exception for js:\n"+js+"\n"+jse.getMessage());
-      } finally {}
+
       if(fromJs == null){
          return new Json();
       }
