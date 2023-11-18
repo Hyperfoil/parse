@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.hyperfoil.tools</groupId>
     <artifactId>parse</artifactId>
-    <version>0.1.17-SNAPSHOT </version>
+    <version>0.1.17-SNAPSHOT</version>
     <name>Hyperfoil parse</name>
     <description>Use regex patterns and rules to build json from text files</description>
     <url>https://github.com/Hyperfoil/parse</url>
@@ -152,12 +152,12 @@
         <dependency>
             <groupId>io.hyperfoil.tools</groupId>
             <artifactId>yaup</artifactId>
-            <version>0.8.22</version>
+            <version>0.8.24</version>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.31</version>
+            <version>1.32</version>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>
