@@ -91,15 +91,17 @@ public class ParseCommand implements Command {
             semaphore.acquire(acquire);
             try {
                logger.info("Starting {}", sourcePath);
-               SystemTimer thisTimer = systemTimer.start(sourcePath, true);
+               SystemTimer runnerTimer = systemTimer.start(sourcePath, true);
                List<String> entries = FileUtility.isArchive(sourcePath) ?
                   FileUtility.getArchiveEntries(sourcePath).stream().map(entry -> sourcePath + FileUtility.ARCHIVE_KEY + entry).collect(Collectors.toList()) :
                   FileUtility.getFiles(sourcePath, "", true,scanArchives);
                Json result = new Json(false);
 
                for (String entry : entries) {
+                  SystemTimer entryTimer = runnerTimer.start(entry);
                   for (FileRule rule : fileRules) {
                      try {
+                        entryTimer.start(rule.getName());
                         rule.apply(entry, (nest, json) -> {
                            try {
                               if (nest == null || nest.trim().isEmpty()) {
@@ -120,7 +122,8 @@ public class ParseCommand implements Command {
                                  try {
                                     StringUtil.jsEval(nest,result,json,state);
                                  }catch (JsException jse){
-                                    logger.error(jse.getMessage());
+                                    logger.error("Nest javascript error for rule="+rule.getName()+"\n"+nest,jse);
+
                                  }
 
                               } else {
@@ -135,6 +138,7 @@ public class ParseCommand implements Command {
                      }
                   }
                }
+               runnerTimer.start("merging");
                if (result.isEmpty()) {
                   logger.error("failed to match rules to {}", sourcePath);
                }
@@ -165,7 +169,7 @@ public class ParseCommand implements Command {
                   e.printStackTrace();
                }
 
-               thisTimer.stop();
+               runnerTimer.stop();
             }catch(Exception e){
                e.printStackTrace();
             }finally{
@@ -207,7 +211,7 @@ public class ParseCommand implements Command {
 
    @Override
    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-      SystemTimer systemTimer = new SystemTimer("fileparser");
+      SystemTimer systemTimer = new SystemTimer("fileparse");
       List<FileRule> fileRules = new ArrayList<>();
       JsonValidator validator = getValidator();
       systemTimer.start("load config");
@@ -318,10 +322,12 @@ public class ParseCommand implements Command {
       RejectedExecutionHandler rejectedExecutionHandler = new ThreadPoolExecutor.CallerRunsPolicy();
       ExecutorService executorService =  new ThreadPoolExecutor(numOfThread, numOfThread,
          0L, TimeUnit.MINUTES, blockingQueue, rejectedExecutionHandler);
-      systemTimer.start("parse");
+      SystemTimer parseTimer = systemTimer.start("parse");
+
 
       for(String sourcePath : batch){
-         RuleRunner ruleRunner = new RuleRunner(fileRules,systemTimer, heapSemaphore, heapMb);
+
+         RuleRunner ruleRunner = new RuleRunner(fileRules,parseTimer, heapSemaphore, heapMb);
          ruleRunner.setSourcePath(sourcePath);
          executorService.submit(ruleRunner);
       }
@@ -330,6 +336,11 @@ public class ParseCommand implements Command {
       systemTimer.stop();
 
       logger.info(systemTimer.getJson().toString(2));
+      try {
+         Files.write(Paths.get(System.getProperty("user.dir"),"parse-timers.json"),systemTimer.getJson().toString().getBytes());
+      } catch (IOException e) {
+         logger.error("failed to write parse-timers");
+      }
 
       return CommandResult.SUCCESS;
    }
@@ -352,9 +363,7 @@ public class ParseCommand implements Command {
       try (InputStreamReader fileStream = new InputStreamReader(ParseCommand.class.getClassLoader().getResourceAsStream("filerule-schema.json"))) {
          try (BufferedReader reader = new BufferedReader(fileStream)) {
             String content = reader.lines().collect(Collectors.joining("\n"));
-
             Json schemaJson = Json.fromString(content);
-
             JsonValidator validator = new JsonValidator(schemaJson);
             return validator;
          }
@@ -388,9 +397,7 @@ public class ParseCommand implements Command {
       constructor.addMapKeys(new Tag("rule"), Sets.of("asXml"));
       constructor.addMapKeys(new Tag("rule"), Sets.of("asPath"));
 
-
       //TODO FileRuleConstruct.MAPPING
-
       MatchCriteriaConstruct matchCriteriaConstruct = new MatchCriteriaConstruct();
       constructor.addConstruct(new Tag("match"), matchCriteriaConstruct);
       constructor.addConstruct(new Tag(MatchCriteria.class), matchCriteriaConstruct);
@@ -400,7 +407,6 @@ public class ParseCommand implements Command {
       constructor.addConstruct(new Tag("filter"), filterConstruct);
       constructor.addConstruct(new Tag(Filter.class), filterConstruct);
       //TODO FilterConstruct.MAPPING
-
 
       return yaml;
    }
