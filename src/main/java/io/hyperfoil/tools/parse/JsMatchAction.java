@@ -10,9 +10,13 @@ import io.hyperfoil.tools.yaup.json.Json;
  * parser - the Parser that ran the Exp.
  *
  * The CSV parser could use a JsMatchAction to create a custom Exp based on the name of the columns in the first row of the input:
+ * <pre>
+ * {@code
  * (line,match,exp,parser)=>{
  *     parser.addAhead(new Exp('first',match.map(key=>`(?<${key}[^,]+)`).join(',')))
  * }
+ * }
+ * </pre>
  * Using addAhead ensures the new Exp will run before the Exp that matched the header row.
  */
 public class JsMatchAction extends JsFunction implements MatchAction {
