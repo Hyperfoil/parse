@@ -62,9 +62,43 @@
         <version.maven.gpg>1.6</version.maven.gpg>
         <version.maven.source>3.2.0</version.maven.source>
         <version.maven.javadoc>3.2.0</version.maven.javadoc>
+        <graalvm.version>23.1.1</graalvm.version>
     </properties>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.2.2</version>
+                <configuration>
+                <skipTests>false</skipTests>
+                <systemPropertyVariables>
+                    <uberJarPath>${project.build.directory}/${project.artifactId}-${project.version}-uber.jar</uberJarPath>
+                </systemPropertyVariables>
+                </configuration>
+                <executions>
+                <execution>
+                    <phase>integration-test</phase>
+                    <goals>
+                    <goal>integration-test</goal>
+                    <goal>verify</goal>
+                    </goals>
+                </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.2</version>
+                <configuration>
+                <excludes>pkg/**/*IT.java</excludes>
+                <excludes>%regex[.*IT.class]</excludes>
+                <systemPropertyVariables>
+                    <projectArtifactId>${project.artifactId}-${project.version}</projectArtifactId>
+                    <projectDir>${project.build.outputDirectory}</projectDir>
+                </systemPropertyVariables>
+                </configuration>
+            </plugin>        
             <plugin>
                 <groupId>pl.project13.maven</groupId>
                 <artifactId>git-commit-id-plugin</artifactId>
@@ -152,7 +186,7 @@
         <dependency>
             <groupId>io.hyperfoil.tools</groupId>
             <artifactId>yaup</artifactId>
-            <version>0.9.1</version>
+            <version>0.9.2</version>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
