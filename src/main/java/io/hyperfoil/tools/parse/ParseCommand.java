@@ -76,6 +76,9 @@ public class ParseCommand implements Command {
 
       @Override
       public void run() {
+         //https://github.com/oracle/graaljs/issues/764
+         System.setProperty("polyglotimpl.DisableClassPathIsolation", "true");        
+
          if( !Files.exists(Paths.get(sourcePath)) ){
             logger.error("cannot access "+sourcePath);
             return;
