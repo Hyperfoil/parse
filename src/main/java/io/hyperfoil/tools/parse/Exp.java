@@ -8,9 +8,7 @@ import io.hyperfoil.tools.parse.json.JsonBuilder;
 import io.hyperfoil.tools.yaup.HashedLists;
 import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.json.Json;
-import org.slf4j.Marker;
-import org.slf4j.ext.XLogger;
-import org.slf4j.ext.XLoggerFactory;
+import org.jboss.logging.Logger;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
@@ -29,7 +27,7 @@ import java.util.stream.Collectors;
 
 public class Exp {
 
-   final static XLogger logger = XLoggerFactory.getXLogger(MethodHandles.lookup().lookupClass());
+   final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
    public Json toJson(){
       Json rtrn = new Json();
@@ -785,7 +783,7 @@ public class Exp {
    }
    protected boolean apply(DropString line, JsonBuilder builder, Parser parser, DropString.Ref startIndex){
       if(isDebug() && startIndex.get() < line.length()){
-         logger.debug("{} apply to {}",getName(),line.subSequence(startIndex.get(),line.length()));
+         logger.debugf("%s apply to %s",getName(),line.subSequence(startIndex.get(),line.length()));
       }
 
       boolean rtrn = false;
@@ -808,7 +806,7 @@ public class Exp {
 
             if (!satisfyRequired) {
                if(isDebug()){
-                  logger.debug("{} does not satisfy {}",getName(),requires.stream().filter(required -> !parser.getState(required)).collect(Collectors.toList()));
+                  logger.debugf("%s does not satisfy %s",getName(),requires.stream().filter(required -> !parser.getState(required)).collect(Collectors.toList()));
                }
                return false;
             }
@@ -834,7 +832,7 @@ public class Exp {
                boolean changed = rule.prePopulate(builder, roleObjects);
                if(changed){
                   if(isDebug()){
-                     logger.debug("{} pre-populated target json due to {}",getName(),rule);
+                     logger.debugf("%s pre-populated target json due to %s",getName(),rule);
                   }
                }
             });
@@ -845,7 +843,7 @@ public class Exp {
             do {//repeat this
 
                if(isDebug()){
-                  logger.debug("{} matches {} of {}",
+                  logger.debugf("%s matches %s of %s",
                      getName(),
                      line.subSequence(matcher.start(),matcher.end()),
                      line.subSequence(startIndex.get(),line.length())
@@ -864,7 +862,7 @@ public class Exp {
                   needPop = true;
 
                   if(isDebug()){
-                     logger.debug("{} created a nested target json",getName());
+                     logger.debugf("%s created a nested target json",getName());
                   }
 
                }
@@ -874,12 +872,12 @@ public class Exp {
                   currentTarget = builder.getTarget();
                   populateChangedTarget = true;
                   if(isDebug()){
-                     logger.debug("{} changed target json when populated pattern values",getName());
+                     logger.debugf("%s changed target json when populated pattern values",getName());
 
                   }
                }
                if(isDebug()){
-                  logger.debug("{} post populate json\n{}",getName(),builder.getRoot().toString(2));
+                  logger.debugf("%s post populate json%n%s",getName(),builder.getRoot().toString(2));
                }
 
                DropString beforeMatch = line;
@@ -897,7 +895,7 @@ public class Exp {
                }
                boolean preEatChanged = Eat.preEat(this.eat, line, matcher.start(), matcher.end());
                if(preEatChanged && isDebug()){
-                  logger.debug("{} changed line before children match",getName());
+                  logger.debugf("%s changed line before children match",getName());
                }
 
                Json ruleTarget = currentTarget;//ugh, lambdas
@@ -910,13 +908,13 @@ public class Exp {
                if (!disables.isEmpty() && parser != null) {
                   disables.forEach(v -> parser.setState(v, false));
                   if(isDebug()){
-                     logger.debug("{} disabled {}",getName(),disables);
+                     logger.debugf("%s disabled %s",getName(),disables);
                   }
                }
                if (!enables.isEmpty() && parser != null) {
                   enables.forEach(v -> parser.setState(v, true));
                   if(isDebug()){
-                     logger.debug("{} enabled {}",getName(),enables);
+                     logger.debugf("%s enabled %s",getName(),enables);
                   }
                }
                int lineLength = line.length();
@@ -933,7 +931,7 @@ public class Exp {
                            //default is to start children from end of current match
                            boolean matched = child.apply(line, builder, parser, beforeMatchEnd);//startIndex?
                            if(isDebug()){
-                              logger.debug("{} applied child {} matched={}",getName(),child.getName(),matched);
+                              logger.debugf("%s applied child %s matched=%s",getName(),child.getName(),matched);
                            }
                            childMatched = matched || childMatched;
                         }
@@ -948,7 +946,7 @@ public class Exp {
                if (line.length() != lineLength) {//reset matcher if children modified the line
                   matcher.reset(line);
                   if(isDebug()){
-                     logger.debug("{} children modified line",getName());
+                     logger.debugf("%s children modified line",getName());
                   }
                }
                //default is to loop from end of current match
@@ -1085,8 +1083,6 @@ public class Exp {
          }
       }
    }
-
-
    public Set<String> getRequires(){return requires;}
    public Set<String> getEnables(){return enables;}
    public Set<String> getDisables(){return disables;}

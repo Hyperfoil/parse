@@ -4,8 +4,7 @@ import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.json.Json;
 import io.hyperfoil.tools.yaup.json.graaljs.JsException;
 import org.graalvm.polyglot.Source;
-import org.slf4j.ext.XLogger;
-import org.slf4j.ext.XLoggerFactory;
+import org.jboss.logging.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -16,7 +15,7 @@ import java.util.stream.Collectors;
 
 public class JsFunction {
 
-   private static final XLogger logger = XLoggerFactory.getXLogger(MethodHandles.lookup().lookupClass());
+   private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
    private final String js;
 

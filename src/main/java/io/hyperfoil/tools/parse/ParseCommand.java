@@ -26,8 +26,7 @@ import org.aesh.command.invocation.CommandInvocation;
 import org.aesh.command.option.Option;
 import org.aesh.command.option.OptionGroup;
 import org.aesh.command.option.OptionList;
-import org.slf4j.ext.XLogger;
-import org.slf4j.ext.XLoggerFactory;
+import org.jboss.logging.Logger;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.nodes.Tag;
@@ -54,7 +53,7 @@ import java.util.stream.Collectors;
 @CommandDefinition(name = "parse",description = "parse text files into structured json")
 public class ParseCommand implements Command {
 
-   final static XLogger logger = XLoggerFactory.getXLogger(MethodHandles.lookup().lookupClass());
+   final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
    private class RuleRunner implements Runnable{
 
@@ -93,7 +92,7 @@ public class ParseCommand implements Command {
          try {
             semaphore.acquire(acquire);
             try {
-               logger.info("Starting {}", sourcePath);
+               logger.infof("Starting %s", sourcePath);
                SystemTimer runnerTimer = systemTimer.start(sourcePath, true);
                List<String> entries = FileUtility.isArchive(sourcePath) ?
                   FileUtility.getArchiveEntries(sourcePath).stream().map(entry -> sourcePath + FileUtility.ARCHIVE_KEY + entry).collect(Collectors.toList()) :
@@ -143,7 +142,7 @@ public class ParseCommand implements Command {
                }
                runnerTimer.start("merging");
                if (result.isEmpty()) {
-                  logger.error("failed to match rules to {}", sourcePath);
+                  logger.errorf("failed to match rules to %s", sourcePath);
                }
                String sourceDestination = batch.size() > 1 ? null : destination;
                if (sourceDestination == null || sourceDestination.isEmpty()) {
@@ -160,7 +159,7 @@ public class ParseCommand implements Command {
                      sourceDestination = sourcePath.endsWith("/") ? sourcePath.substring(0, sourcePath.length() - 1) + ".json" : sourcePath + ".json";
                   }
                }
-               logger.info("writing to {}", sourceDestination);
+               logger.infof("writing to %s", sourceDestination);
                Path parentPath = Paths.get(sourceDestination).toAbsolutePath().getParent();
                if (!parentPath.toFile().exists()) {
                   parentPath.toFile().mkdirs();
@@ -168,20 +167,19 @@ public class ParseCommand implements Command {
                try {
                   Files.write(Paths.get(sourceDestination), result.toString(0).getBytes());
                } catch (IOException e) {
-                  logger.error("failed to write to {}", sourceDestination);
-                  e.printStackTrace();
+                  logger.errorf("failed to write to %s", sourceDestination);
+                  //e.printStackTrace();
                }
 
                runnerTimer.stop();
             }catch(Exception e){
-               e.printStackTrace();
+               logger.error("un-handled exception from scanner thread",e);
             }finally{
                semaphore.release(acquire);
             }
-
-
          } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error("interrupted while running scanner thread");
+            //e.printStackTrace();
          }
 
 
@@ -279,7 +277,7 @@ public class ParseCommand implements Command {
          config.forEach(configPath->{
             Json loaded = configPath.endsWith("yaml") || configPath.endsWith("yml") ? Json.fromYamlFile(configPath) : Json.fromFile(configPath);
             if (loaded.isEmpty()) {
-               logger.error("failed to load content from {}", configPath);
+               logger.errorf("failed to load content from %s", configPath);
             } else if (loaded.isArray()) {
                loaded.forEach(entry -> {
                   if (entry instanceof Json) {
@@ -294,7 +292,7 @@ public class ParseCommand implements Command {
                         fileRules.add(rule);
                      }
                   } else {
-                     logger.error("cannot create rule from {}", entry.toString());
+                     logger.errorf("cannot create rule from %s", entry.toString());
                      System.exit(1);
                   }
                });
