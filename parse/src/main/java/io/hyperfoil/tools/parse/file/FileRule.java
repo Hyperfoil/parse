@@ -8,8 +8,7 @@ import io.hyperfoil.tools.yaup.PopulatePatternException;
 import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.json.Json;
 import io.hyperfoil.tools.yaup.time.SystemTimer;
-import org.slf4j.ext.XLogger;
-import org.slf4j.ext.XLoggerFactory;
+import org.jboss.logging.Logger;
 
 import java.lang.invoke.MethodHandles;
 import java.util.LinkedList;
@@ -21,7 +20,7 @@ import java.util.function.Function;
 
 public class FileRule {
 
-    final static XLogger logger = XLoggerFactory.getXLogger(MethodHandles.lookup().lookupClass());
+    final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     public static FileRule fromJson(Json json, Map<Object,Object> state){
         FileRule rtrn = new FileRule(json.getString("name",""));

@@ -75,6 +75,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+                <version>${version.maven.jar}</version>
                 <configuration>
                     <archive>
                         <manifest>
@@ -112,23 +113,23 @@
         <dependency>
             <groupId>org.graalvm.sdk</groupId>
             <artifactId>graal-sdk</artifactId>
-            <version>${graal.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.graalvm.js</groupId>
-            <artifactId>js</artifactId>
-            <version>${graal.version}</version>
-            <scope>compile</scope>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>polyglot</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>js-community</artifactId>
+            <type>pom</type>
         </dependency>
         <dependency>
             <groupId>io.hyperfoil.tools</groupId>
             <artifactId>yaup</artifactId>
-            <version>0.8.18-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.31</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

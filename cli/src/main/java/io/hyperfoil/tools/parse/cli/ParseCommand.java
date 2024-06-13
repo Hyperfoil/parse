@@ -21,8 +21,7 @@ import io.hyperfoil.tools.yaup.yaml.OverloadConstructor;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
 import io.quarkus.runtime.Quarkus;
-import org.slf4j.ext.XLogger;
-import org.slf4j.ext.XLoggerFactory;
+import org.jboss.logging.Logger;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.nodes.Tag;
@@ -47,7 +46,7 @@ import java.util.stream.Collectors;
         description = "parse structured json from text files")
 public class ParseCommand implements Callable<Integer>, QuarkusApplication {
 
-   final static XLogger logger = XLoggerFactory.getXLogger(MethodHandles.lookup().lookupClass());
+   final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
    private class RuleRunner implements Runnable{
 
@@ -83,7 +82,7 @@ public class ParseCommand implements Callable<Integer>, QuarkusApplication {
          try {
             semaphore.acquire(acquire);
             try {
-               logger.info("Starting {}", sourcePath);
+               logger.infof("Starting %s", sourcePath);
                SystemTimer thisTimer = systemTimer.start(sourcePath, true);
                List<String> entries = FileUtility.isArchive(sourcePath) ?
                   FileUtility.getArchiveEntries(sourcePath).stream().map(entry -> sourcePath + FileUtility.ARCHIVE_KEY + entry).collect(Collectors.toList()) :
@@ -130,7 +129,7 @@ public class ParseCommand implements Callable<Integer>, QuarkusApplication {
                   }
                }
                if (result.isEmpty()) {
-                  logger.error("failed to match rules to {}", sourcePath);
+                  logger.errorf("failed to match rules to %s", sourcePath);
                }
                String sourceDestination = batch.size() > 1 ? null : destination;
                if (sourceDestination == null || sourceDestination.isEmpty()) {
@@ -157,7 +156,7 @@ public class ParseCommand implements Callable<Integer>, QuarkusApplication {
                      }
                   }
                }
-               logger.info("writing to {}", sourceDestination);
+               logger.infof("writing to %s", sourceDestination);
                Path parentPath = Paths.get(sourceDestination).toAbsolutePath().getParent();
                if (!parentPath.toFile().exists()) {
                   parentPath.toFile().mkdirs();
@@ -165,7 +164,7 @@ public class ParseCommand implements Callable<Integer>, QuarkusApplication {
                try {
                   Files.write(Paths.get(sourceDestination), result.toString(0).getBytes());
                } catch (IOException e) {
-                  logger.error("failed to write to {}", sourceDestination);
+                  logger.errorf("failed to write to %s", sourceDestination);
                   e.printStackTrace();
                }
 
@@ -282,7 +281,7 @@ public class ParseCommand implements Callable<Integer>, QuarkusApplication {
          config.forEach(configPath->{
             Json loaded = configPath.endsWith("yaml") || configPath.endsWith("yml") ? Json.fromYamlFile(configPath) : Json.fromFile(configPath);
             if (loaded.isEmpty()) {
-               logger.error("failed to load content from {}", configPath);
+               logger.errorf("failed to load content from %s", configPath);
             } else if (loaded.isArray()) {
                loaded.forEach(entry -> {
                   if (entry instanceof Json) {
@@ -297,7 +296,7 @@ public class ParseCommand implements Callable<Integer>, QuarkusApplication {
                         fileRules.add(rule);
                      }
                   } else {
-                     logger.error("cannot create rule from {}", entry.toString());
+                     logger.errorf("cannot create rule from %s", entry.toString());
                      System.exit(1);
                   }
                });
