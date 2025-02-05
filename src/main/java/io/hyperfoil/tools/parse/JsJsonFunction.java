@@ -14,6 +14,6 @@ public class JsJsonFunction extends JsFunction implements Function<Json, Json> {
 
    @Override
    public Json apply(Json json) {
-      return execute(json);
+      return execute( /*context*/ new Json(),json);
    }
 }

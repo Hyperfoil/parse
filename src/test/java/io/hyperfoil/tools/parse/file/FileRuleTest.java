@@ -17,10 +17,10 @@ import static org.junit.Assert.assertEquals;
 
 public class FileRuleTest {
 
-   public String join(String...args){
+   public static String join(String...args){
       return Arrays.asList(args).stream().collect(Collectors.joining("\n"));
    }
-   public String writeFile(String...lines){
+   public static String writeFile(String...lines){
       String content = join(lines);
       try {
          File f = File.createTempFile(FileRule.class.getSimpleName(),null);
@@ -38,10 +38,14 @@ public class FileRuleTest {
       String path = writeFile("{\"foo\":\"bar\",\"biz\":\"buz\"}");
       FileRule rule = new FileRule("asJson").setCriteria(
          new MatchCriteria("")
-      ).setConverter(new JsonConverter().andThen( new JsJsonFunction(join("(data)=>{",
-         "  const { foo, biz } = data;",
-         "  return { data: [foo, biz] }",
-         "}"))));
+      ).setConverter(new JsonConverter().andThen( new JsJsonFunction(
+         """
+         (data)=>{
+           const { foo, biz } = data;
+           return { data: [foo, biz] }
+         }
+         """
+      )));
       List<Json> found = new ArrayList<>();
       rule.apply(path,(nest,json)->{
          found.add(json);

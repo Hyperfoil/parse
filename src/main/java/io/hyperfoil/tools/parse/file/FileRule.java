@@ -272,7 +272,7 @@ public class FileRule {
 
     private String name;
 
-    private Json with;
+    private final Json with;
     private MatchCriteria criteria = new MatchCriteria();
     private final List<Filter> filters = new LinkedList<>();
     private String nest="";

@@ -12,6 +12,6 @@ public class JsStringFunction extends JsFunction implements Function<String, Jso
 
    @Override
    public Json apply(String s) {
-      return execute(s);
+      return execute(new Json(),s);
    }
 }

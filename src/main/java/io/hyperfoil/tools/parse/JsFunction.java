@@ -25,7 +25,7 @@ public class JsFunction {
 
    public String getJs(){return js;}
 
-   public Json execute(Object...arguments) {
+   public Json execute(Json context,Object...arguments) {
       if(arguments==null ){
          return new Json(false);
       }

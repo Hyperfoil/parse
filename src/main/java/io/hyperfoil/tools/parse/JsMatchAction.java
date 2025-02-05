@@ -27,6 +27,6 @@ public class JsMatchAction extends JsFunction implements MatchAction {
 
    @Override
    public void onMatch(String line, Json match, Exp pattern, Parser parser) {
-      Json rtrn = execute(line,match,pattern,parser);
+      Json rtrn = execute(new Json(),line,match,pattern,parser);
    }
 }

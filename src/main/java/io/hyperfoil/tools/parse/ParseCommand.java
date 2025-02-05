@@ -195,6 +195,9 @@ public class ParseCommand implements Command {
    @Option(name = "scanArchives", description = "scan inside archives (tar, gzip, ...)", hasValue = false)
    Boolean scanArchives;
 
+   @Option(name = "warn-unparsed", description = "warn when there are unparsed portions of a line", hasValue = false)
+   Boolean warnUnparsed;
+
    @OptionList(shortName = 'r', name = "rules", description = "parse rule definitions")
    Set<String> config;
 
@@ -237,6 +240,10 @@ public class ParseCommand implements Command {
                            System.exit(1);
                         }
                         FileRule rule = FileRule.fromJson(entryJson, Json.toObjectMap(Json.fromMap(state)));
+                        if(warnUnparsed){
+
+                        }
+
                         if (rule != null) {
                            fileRules.add(rule);
                         }
@@ -288,6 +295,9 @@ public class ParseCommand implements Command {
                         System.exit(1);
                      }
                      FileRule rule = FileRule.fromJson(entryJson, Json.toObjectMap(Json.fromMap(state)));
+                     if(warnUnparsed){
+
+                     }
                      if (rule != null) {
                         fileRules.add(rule);
                      }

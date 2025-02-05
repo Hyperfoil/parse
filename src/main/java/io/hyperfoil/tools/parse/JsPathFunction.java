@@ -12,6 +12,6 @@ public class JsPathFunction extends JsFunction implements Function<String, Json>
 
    @Override
    public Json apply(String path) {
-      return execute(path);
+      return execute(new Json(),path);
    }
 }

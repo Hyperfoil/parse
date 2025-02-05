@@ -84,6 +84,9 @@ public class Exp {
 
       String name = json.getString("name",json.getString("pattern"));
       Exp rtrn = new Exp(name,json.getString("pattern"));
+      if(json.has("debug")){
+         rtrn.debug(json.getBoolean("debug",true));
+      }
       if(json.has("eat")){
          rtrn.eat(Eat.from(json.get("eat").toString()));
       }
@@ -663,29 +666,40 @@ public class Exp {
    public Json getNestedTarget(Json currentTarget, JsonBuilder builder){
       Json returnTarget = currentTarget;
       if(nesting.isEmpty()){//for Tree
+
          switch (this.expMerge){
             case AsEntry:
                if(currentTarget == builder.getRoot()){
                   if (builder.getRoot().isArray()){
                      Json newEnty = new Json();
                      currentTarget.add(newEnty);
+                     //TODO should this get removed
                      builder.pushTarget(newEnty);
-                     currentTarget = builder.getTarget();
+                     //currentTarget = builder.getTarget();
+                     returnTarget = builder.getTarget();
                   }
                   //currently do nothing
                }else if (currentTarget.isEmpty()){
                   Json newEntry = new Json();
                   currentTarget.add(newEntry);
                   builder.pushTarget(newEntry);
-                  currentTarget = builder.getTarget();
+                  //currentTarget = builder.getTarget();
+                  returnTarget = builder.getTarget();
                }else if (!currentTarget.isArray()){
                   if(builder.peekTarget(1) != null && builder.peekTarget(1).isArray()){
                      Json newTarget = new Json();
                      builder.popTarget();
                      builder.getTarget().add(newTarget);
                      builder.pushTarget(newTarget);
-                     currentTarget = builder.getTarget();
+                     //currentTarget = builder.getTarget();
+                     returnTarget = builder.getTarget();
                   }
+               }else if (currentTarget.isArray()){
+                  //add an entry into the array?
+                  Json newTarget = new Json();
+                  currentTarget.add(newTarget);
+                  builder.pushTarget(newTarget);
+                  returnTarget = builder.getTarget();
                }
                break;
 
@@ -985,7 +999,7 @@ public class Exp {
          if(valueInfo.getMerge().isTargeting()){
             String key = valueInfo.getName();
             Object value = valueInfo.type.apply(matcher.group(key));
-            valueInfo.getMerge().merge(key,value,builder,null);
+            valueInfo.getMerge().merge(key,value,valueInfo.getTarget(),builder,null);
          }
       }
       //now populate values from non-targeting fields
@@ -996,12 +1010,12 @@ public class Exp {
          if(!valueInfo.getMerge().isTargeting()){
             String key = valueInfo.getName();
             Object target = valueInfo.getTarget();
-            if(target != null){
+            if(target != null && fields.containsKey(target)){
                target = fields.get(target).type.apply(matcher.group(target.toString()));
             }
             Object value = valueInfo.type.apply(matcher.group(key));
             if (value!=null) {
-               valueInfo.getMerge().merge(key, value, builder, target);
+               valueInfo.getMerge().merge(key, value, valueInfo.getTarget(), builder, target);
             }
          }
       }
