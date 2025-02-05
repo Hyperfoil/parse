@@ -26,7 +26,14 @@ public class ExpTest {
       assertTrue(parsed.containsKey("foo"));
       assertEquals(ValueType.Duration,parsed.get("foo").getType());
    }
-
+   @Test
+   public void parsePattern_valueType_add_space_separator(){
+      Map<String,Exp.ValueInfo> parsed = Exp.parsePattern("(?<foo:add= >");
+      assertNotNull(parsed);
+      assertTrue(parsed.containsKey("foo"));
+      assertEquals(ValueMerge.Add,parsed.get("foo").getMerge());
+      assertEquals(" ",parsed.get("foo").getTarget());
+   }
    @Test @Ignore
    public void removePatternValues_negative_lookbehind(){
       String input = "((?<![\\\\])['\"])(?<name>(?:.(?!(?<![\\\\])\\1))*.?)\\1";
@@ -217,7 +224,25 @@ public class ExpTest {
       assertTrue("root[1] should have an a",json.has("a"));
 
    }
+   //still a work in progress
+   @Test @Ignore
+   public void pushTarget_no_capture(){
+      Exp push = new Exp("push","a").addRule(ExpRule.PushTarget).addRule(ExpRule.PreClearTarget).nest("nest").setMerge(ExpMerge.AsEntry);
+      Exp entry = new Exp("entry","(?<a>\\S) (?<b>\\S)").setMerge(ExpMerge.AsEntry);
+      JsonBuilder b = new JsonBuilder();
+      push.apply(factory.apply("a"),b,null);
+      System.out.println("First a\n"+b.debug(true));
+      entry.apply(factory.apply("1 2"),b,null);
 
+      entry.apply(factory.apply("3 4"),b,null);
+      System.out.println("Before next a\n"+b.debug(true));
+      push.apply(factory.apply("a"),b,null);
+      System.out.println("Second a\n"+b.debug(true));
+      entry.apply(factory.apply("1 2"),b,null);
+
+      System.out.println(b.size());
+      System.out.println(b.getRoot().toString(2));
+   }
 
    @Test
    public void pushTarget_named(){
