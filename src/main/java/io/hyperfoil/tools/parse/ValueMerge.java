@@ -9,7 +9,7 @@ public enum ValueMerge {
     /**
      * Sets key = value if key is not defined, otherwise key = [value,...]
      */
-    Auto(false,(key,value,builder,data)->{
+    Auto(false,(key,value,targetName,builder,data)->{
        Json.chainAct(builder.getTarget(),key,value,(target,k,v)->{
           if(!target.has(k)){
              target.set(k,v);
@@ -27,14 +27,14 @@ public enum ValueMerge {
     /**
      * Sets key = true
      */
-    BooleanKey(false,(key,value,builder,data)->{
+    BooleanKey(false,(key,value,targetName,builder,data)->{
         Json.chainSet(builder.getTarget(),key,true);
         return false;
     }),
     /**
      * Sets value = true where value is from the input
      */
-    BooleanValue(false,(key,value,builder,data)->{
+    BooleanValue(false,(key,value,targetName,builder,data)->{
         //Json.chainSet(builder.getTarget(),key,true);
         builder.getTarget().set(value,true);//chainSet value??
         return false;
@@ -45,7 +45,7 @@ public enum ValueMerge {
      * is created if the current objects has a value defined and that value
      * is not equal to the value from the input
      */
-    TargetId(true,(key,value,builder,data)->{
+    TargetId(true,(key,value,targetName,builder,data)->{
        AtomicBoolean rtrn = new AtomicBoolean(false);
        Object existing = builder.getContext("TargetId:"+key,true,null);
        if(existing==null){
@@ -73,7 +73,7 @@ public enum ValueMerge {
     /**
      * sets key = the number of times the pattern has matched while building the current json object
      */
-    Count((key,value,builder,data)->{
+    Count((key,value,targetName,builder,data)->{
        Json.chainAct(builder.getTarget(),key,value,(target,k,v)->{
            if(target.has(v) && target.get(v) instanceof Long){
                target.set(v,target.getLong(v)+1);
@@ -86,12 +86,13 @@ public enum ValueMerge {
     /**
      * Add the value to any existing value already stored for key, converting to numbers if the value
      */
-    Add((key, value, builder, data)->{
+    Add((key, value, targetName, builder, data)->{
         Json.chainAct(builder.getTarget(),key,value,(target,k,v)->{
-            if(v instanceof Number){
+            if(v instanceof Number && (!target.has(k) || target.get(k) instanceof Number )){
                 target.set(k, ((Number)v).doubleValue() + target.getDouble(k, 0.0));
             }else{
-                target.set(k,target.getString(k,"")+v.toString());
+                String separator = targetName!=null ? targetName : "";
+                target.set(k,target.getString(k,"")+separator+v.toString());
             }
         });
 
@@ -100,7 +101,7 @@ public enum ValueMerge {
     /**
      * Sets key = [value,...] even if only one value is found
      */
-    List((key,value,builder,data)->{
+    List((key,value,targetName,builder,data)->{
         Json.chainAdd(builder.getTarget(),key,value);
         return false;
     }),
@@ -109,7 +110,7 @@ public enum ValueMerge {
      * Can be specified in the capture name with {@literal(?<foo:key=bar>\\S+) (?<bar>\\S+)} to create json {biz:buz}
      * from input "biz buz"
      */
-    Key((key,value,builder,data)->{
+    Key((key,value,targetName,builder,data)->{
        Json.chainAct(builder.getTarget(),key,value,(target,k,v)->{
            if(target.has(v)){
                if(target.get(v) instanceof Json && target.getJson(v).isArray()){
@@ -129,7 +130,7 @@ public enum ValueMerge {
     /**
      * Sets key = [value,...] where the array only contains unique entries
      */
-    Set((key,value,builder,data)->{
+    Set((key,value,targetName,builder,data)->{
         Json.chainAct(builder.getTarget(),key,value,(target,k,v)->{
            if(!target.has(k)){
                target.set(k,new Json());
@@ -150,7 +151,7 @@ public enum ValueMerge {
     /**
      * Sets key = value only if key is not defined on the current json object
      */
-    First((key,value,builder,data)->{
+    First((key,value,targetName,builder,data)->{
         Json.chainAct(builder.getTarget(),key,value,(target,k,v)->{
             if(!target.has(k)){
                 target.set(k,v);
@@ -161,7 +162,7 @@ public enum ValueMerge {
     /**
      * Sets key = value for each time the value is found in the input
      */
-    Last((key,value,builder,data)->{
+    Last((key,value,targetName,builder,data)->{
         Json.chainSet(builder.getTarget(),key,value);
         return false;
     }),
@@ -178,7 +179,7 @@ public enum ValueMerge {
     TreeMerging(true,new TreeMerger(true));
 
     private interface Merger {
-        boolean merge(String key,Object value,JsonBuilder builder,Object data);
+        boolean merge(String key,Object value,String target,JsonBuilder builder,Object data);
     }
     private static class TreeMerger implements Merger {
 
@@ -188,7 +189,7 @@ public enum ValueMerge {
         }
 
         @Override
-        public boolean merge(String key, Object value, JsonBuilder builder,Object data) {
+        public boolean merge(String key, Object value, String target, JsonBuilder builder,Object data) {
             boolean changedTarget = false;
             int valueLength = value.toString().length();
             int contextLength = builder.getContextInteger(key,true);
@@ -270,8 +271,8 @@ public enum ValueMerge {
     }
 
     public boolean isTargeting(){return isTargeting;}
-    public boolean merge(String key,Object value,JsonBuilder builder,Object data){
-        return mergeFunction.merge(key,value,builder,data);
+    public boolean merge(String key,Object value,String target,JsonBuilder builder,Object data){
+        return mergeFunction.merge(key,value,target,builder,data);
     }
 
 }

@@ -10,6 +10,7 @@
           "properties": {
             "name": {"type": "string"},
             "pattern": {"type": "string"},
+            "debug": {"type":  "boolean"},
             "eat": {
               "oneOf": [
                 {"type": "number"},
