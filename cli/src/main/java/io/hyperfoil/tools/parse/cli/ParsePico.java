@@ -19,7 +19,6 @@ import io.hyperfoil.tools.yaup.yaml.MapRepresenter;
 import io.hyperfoil.tools.yaup.yaml.OverloadConstructor;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
-import org.aesh.command.CommandResult;
 import org.jboss.logging.Logger;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;

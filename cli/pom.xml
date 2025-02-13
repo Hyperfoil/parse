@@ -27,10 +27,6 @@
             <artifactId>yaup</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.aesh</groupId>
-            <artifactId>aesh</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-picocli</artifactId>
         </dependency>
