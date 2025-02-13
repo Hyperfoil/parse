@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "definitions": {
+    "version": {
+      "type": "object",
+      "properties": {
+        "vm": {"type": "string"},
+        "version": {"type": "string"}
+      }
+    },
+    "monitor": {
+      "type": "object",
+      "properties": {
+        "id": {"type": "string","pattern": "0x[9-9a-f]{16}"},
+        "class": {"type": "string"}
+      }
+    },
+    "thread": {
+      "type": "object",
+      "properties": {
+        "nid": {"type": "string", "pattern": "0x[9-9a-f]{4}"},
+        "hex": {"type": "string", "pattern": "0x[9-9a-f]{16}"},
+        "daemon": {"type": "boolean"},
+        "prio": {"type": "integer"},
+        "tid": {"type": "string", "pattern": "0x[9-9a-f]{16}"},
+        "osprio": {"type": "integer"},
+        "Name": {"type": "string"},
+        "status": {"type": "string"},
+        "state": {"type": "string"},
+        "stack": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "file": {"type": "string"},
+              "frame": {"type": "string"},
+              "line": {"type": "integer"},
+              "lock": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/monitor"
+                }
+              },
+              "nativeMethod": {"type": "boolean"},
+              "wait": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/monitor"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  }

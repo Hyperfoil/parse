@@ -1,0 +1,400 @@
+---
+name: flamegraphFile
+path: ".*flamegraph.*.svg?"
+nest: files.flamegraph
+asPath: |
+  (path)=>({name: path.substring(path.lastIndexOf("/")+1) })
+---
+name: jfrFile
+path: ".*.jfr?"
+nest: files.jfr
+asPath: |
+  (path)=>({name: path.substring(path.lastIndexOf("/")+1) })
+---
+name: all.json
+path: ".*all.json?"
+nest: hyperfoil.stats
+asJson: ''
+---
+name: printGc
+path: ".*?run/(?<serverName>[^\\./]+)\\.[^/]+/.*?\\.gclog?"
+headerLines: 1
+findHeader: "JRE (1."
+nest: "${{serverName}}.gclog"
+asText: PrintGcFactory
+---
+name: jep271
+path: ".*?run/(?<serverName>[^\\./]+)\\.[^/]+/.*?\\.gclog?"
+headerLines: 1
+avoidHeader: "JRE (1."
+nest: "${{serverName}}.gclog"
+asText: Jep271Factory
+---
+name: run.json
+path: run.json
+nest: qdup
+asJson: |
+  (json) => {
+    const { latches, state, timestamps } = json;
+    const rtrn = {latches, state, timestamps};
+    return rtrn
+  }
+---
+name: run.xml
+path: run.xml
+nest: faban.run
+asXml: ""
+---
+name: dstat
+path: ".*?run/(?<serverName>[^\\./]+).+?/dstat\\.log?"
+nest: "${{serverName}}.dstat"
+asText: DstatFactory
+---
+name: vmstat
+path: ".*?run/(?<serverName>[^\\./]+).+?/vmstat\\.log?"
+nest: "${{serverName}}.vmstat"
+asText: VmstatFactory
+---
+name: wrk
+path: "^(.+)\\/(?<filename>([^/]+))\\.wrk$"
+nest: "wrk.${{filename}}"
+asText: WrkFactory
+---
+name: detail.xan
+path: ".*?/detail.xan$"
+nest: xan.detail
+asText: XanFactory
+---
+name: host.proc-stats
+path: ".*?/(?<hostName>[^/\\.]+)[^/]*/proc-stats\\.log$"
+nest: "${{hostName}}.procStat.host"
+asText:
+  - name: timestamp
+    pattern: "^(?<timestamp>\\d+)$"
+    eat: Line
+    rules: [ PreClose ]
+    children:
+      - name: cpu
+        pattern: "\
+          ^\
+          (?<cpu>cpu\\d*)\\s+\
+          (?<user>\\d+) \
+          (?<nice>\\d+) \
+          (?<system>\\d+) \
+          (?<idle>\\d+) \
+          (?<iowait>\\d+) \
+          (?<irq>\\d+) \
+          (?<softirq>\\d+) \
+          (?<steal>\\d+) \
+          (?<guest>\\d+) \
+          (?<guest_nice>\\d+)\
+          $"
+        eat: Line
+        nest: cpu
+        merge: AsEntry
+      - name: intr
+        pattern: "^intr (?<intrTotal>\\d+)[\\s\\d]+$"
+        eat: Line
+      - name: ctxt
+        pattern: "^ctxt (?<ctxt>\\d+)$"
+        eat: Line
+      - name: btime
+        pattern: "^btime (?<btime>\\d+)$"
+        eat: Line
+      - name: processes
+        pattern: "^processes (?<processes>\\d+)$"
+        eat: Line
+      - name: procs_running
+        pattern: "^procs_running (?<procs_running>\\d+)$"
+        eat: Line
+      - name: procs_blocked
+        pattern: "^procs_blocked (?<procs_blocked>\\d+)$"
+        eat: Line
+      - name: softirq
+        pattern: "^softirq (?<softirq>\\d+)[\\s\\d+]$"
+        eat: Line
+
+---
+name: pidstat
+path: ".*?/(?<hostName>[^/\\.]+)[^/]*/[^/]*pidstat[^/]*"
+nest: "${{hostName}}.pidstat"
+asText:
+    - name: ignore
+      pattern: "\\|__"
+      eat: Match
+      children:
+        - name: child
+          pattern: "\
+            \\s*\
+            (?<timestamp>\\d+)\\s+\
+            (?<uid>\\d+)\\s+\
+            (?<tgid>\\d+)\\s+\
+            (?<tid>\\d+)\\s+\
+            (?<user>\\d+\\.\\d{2})\\s+\
+            (?<system>\\d+\\.\\d{2})\\s+\
+            (?<guest>\\d+\\.\\d{2})\\s+\
+            (?<cpu>\\d+\\.\\d{2})\\s+\
+            (?<core>\\d+)\\s+\
+            (?<minflts>\\d+\\.\\d{2})\\s+\
+            (?<majflts>\\d+\\.\\d{2})\\s+\
+            (?<vsz>\\d+)\\s+\
+            (?<rss>\\d+)\\s+\
+            (?<mem>\\d+\\.\\d{2})\\s+\
+            (?<command>\\S+)\
+            .*"
+          range: EntireLine
+          nest: children
+          merge: AsEntry
+    - name: header
+      pattern: "^#.*?"
+      rules: [ PreClose ]
+    - name: row
+      pattern: "\
+        \\s*\
+        (?<timestamp>\\d+)\\s+\
+        (?<uid>\\d+)\\s+\
+        (?<tgid>\\d+)\\s+\
+        (?<tid>\\d+)\\s+\
+        (?<user>\\d+\\.\\d{2})\\s+\
+        (?<system>\\d+\\.\\d{2})\\s+\
+        (?<guest>\\d+\\.\\d{2})\\s+\
+        (?<cpu>\\d+\\.\\d{2})\\s+\
+        (?<core>\\d+)\\s+\
+        (?<minflts>\\d+\\.\\d{2})\\s+\
+        (?<majflts>\\d+\\.\\d{2})\\s+\
+        (?<vsz>\\d+)\\s+\
+        (?<rss>\\d+)\\s+\
+        (?<mem>\\d+\\.\\d{2})\\s+\
+        (?<command>\\S+)\
+        .*"
+      rules: [ PreClose ]
+---
+name: name.proc-stats
+path: ".*?/(?<hostName>[^/\\.]+)[^/]*/proc-stats\\.(?<name>\\w+)\\.log$"
+nest: "${{hostName}}.procStat.${{name}}"
+asText:
+  - name: timestamp
+    pattern: "^(?<timestamp>\\d+)$"
+    rules: [ PreClose ]
+    eat: Line
+  - name: pidline
+    pattern: "\
+      ^(?<pid>\\d+) \
+      (?<comm>\\([^\\)]+\\)) \
+      (?<state>\\S) \
+      (?<ppip>\\d+) \
+      (?<pgrp>\\d+) \
+      (?<session>\\d+) \
+      (?<tty_nr>\\d+) \
+      (?<tpgid>-?\\d+) \
+      (?<flags>\\d+) \
+      (?<minflt>\\d+) \
+      (?<cminflt>\\d+) \
+      (?<majflt>\\d+) \
+      (?<cmajflt>\\d+) \
+      (?<utime>\\d+) \
+      (?<stime>\\d+) \
+      (?<cutime>\\d+) \
+      (?<cstime>\\d+) \
+      (?<priority>\\d+) \
+      (?<nice>\\d+) \
+      (?<num_threads>\\d+) \
+      0 \
+      (?<starttime>\\d+) \
+      (?<vsize>\\d+) \
+      (?<rss>\\d+) \
+      (?<rsslim>\\d+) \
+      (?<startcode>\\d+) \
+      (?<endcode>\\d+) \
+      (?<startstack>\\d+) \
+      (?<kstkesp>\\d+) \
+      (?<kstkeip>\\d+) \
+      (?<signal>\\d+) \
+      (?<blocked>\\d+) \
+      (?<sigignore>\\d+) \
+      (?<sigcatch>\\d+) \
+      (?<wchan>\\d+) \
+      0 \
+      0 \
+      (?<exit_signal>-?\\d+) \
+      (?<processor>\\d+) \
+      (?<rt_priority>\\d+) \
+      (?<policy>\\d+) \
+      (?<delayacct_blkio_ticks>\\d+) \
+      (?<guest_time>\\d+) \
+      (?<cguest_time>\\d+) \
+      \\d+ \
+      \\d+ \
+      \\d+ \
+      \\d+ \
+      \\d+ \
+      \\d+ \
+      \\d+ \
+      \\d+\
+      $"
+    eat: Line
+---
+name: VmHWM
+path: ".*?/run/(?<serverName>[^\\./]+).*?/VmHWM.log"
+nest: "${{serverName}}.vmhwm"
+asText:
+  - name: vmhwm
+    pattern: "(?<timestamp>\\d+),(?<vmhwm>\\d+)"
+    rules: [ PreClose ]
+---
+name: spectre.log
+path: ".*?/run/(?<serverName>[^\\./]+).*?/spectre\\.log$"
+nest: "${{serverName}}.sys"
+asText:
+  - name: ibpb
+    pattern: "/sys/kernel/debug/x86/ibpb_enabled:(?<ibpb>\\d)"
+  - name: ibrs
+    pattern: "/sys/kernel/debug/x86/ibrs_enabled:(?<ibrs>\\d)"
+  - name: pti
+    pattern: "/sys/kernel/debug/x86/pti_enabled:(?<pti>\\d)"
+  - name: retp
+    pattern: "/sys/kernel/debug/x86/retp_enabled:(?<retp>\\d)"
+  - name: microcode
+    pattern: "microcode\\s+: (?<microcode>0x\\w+)"
+---
+name: faban log.xml
+path: .*?/log.xml$
+nest: faban.log
+asXml:
+  - path: $.log.record[0].millis['text()']
+    nest: timestamps.runStart
+  - path: $.log.record[?(@.message['text()'] == 'Ramp up started')].millis['text()']
+    nest: timestamps.rampUp
+  - path: $.log.record[?(@.message['text()'] == 'Ramp up completed')].millis['text()']
+    nest: timestamps.steadyState
+  - path: $.log.record[?(@.message['text()'] == 'Steady state completed')].millis['text()']
+    nest: timestamps.rampDown
+  - path: $.log.record[?(@.message['text()'] == 'Ramp down completed')].millis['text()']
+    nest: timestamps.runStop
+  - path: $.log.record[-1].millis['text()']
+    nest: timestamps.lastLog
+  - path: $.log.record[?(@.class['text()'] == 'com.sun.faban.driver.engine.MasterImpl$StatsWriter')]
+    nest: stats.insuranceDriver
+    children:
+      - path: $.millis['text()']
+        nest: timestamp
+      - path: $.message['text()']
+        exp:
+          - name: seconds
+            pattern: "(?<seconds>\\d+\\.\\d{2})s - "
+            rules: [ PreClose ]
+            children:
+              - name: MfgDriver
+                pattern: "MfgDriver: CreateVehicleEJB/CreateVehicleWS \
+                CThru=\
+                (?<CreateVehicleEJB.CThru>-|\\d+\\.\\d{3})/\
+                (?<CreateVehicleWS.CThru>-|\\d+\\.\\d{3}) \
+                OThru=\
+                (?<CreateVehicleEJB.OThru>-|\\d+\\.\\d{3})/\
+                (?<CreateVehicleWS.OThru>-|\\d+\\.\\d{3}) \
+                CErr=\
+                (?<CreateVehicleEJB.CErr>-|\\d+\\.\\d{3})/\
+                (?<CreateVehicleWS.CErr>-|\\d+\\.\\d{3}) \
+                CResp=\
+                (?<CreateVehicleEJB.CResp>-|\\d+\\.\\d{3})/\
+                (?<CreateVehicleWS.CResp>-|\\d+\\.\\d{3}) \
+                OResp=\
+                (?<CreateVehicleEJB.OResp>-|\\d+\\.\\d{3})/\
+                (?<CreateVehicleWS.OResp>-|\\d+\\.\\d{3}) \
+                CSD=\
+                (?<CreateVehicleEJB.CSD>-|\\d+\\.\\d{3})/\
+                (?<CreateVehicleWS.CSD>-|\\d+\\.\\d{3}) \
+                OSD=\
+                (?<CreateVehicleEJB.OSD>-|\\d+\\.\\d{3})/\
+                (?<CreateVehicleWS.OSD>-|\\d+\\.\\d{3}) \
+                C90%Resp=\
+                (?<CreateVehicleEJB.C90Resp>-|\\d+\\.\\d{3})/\
+                (?<CreateVehicleWS.C90Resp>-|\\d+\\.\\d{3}) \
+                O90%Resp=\
+                (?<CreateVehicleEJB.O90Resp>-|\\d+\\.\\d{3})/\
+                (?<CreateVehicleWS.O90Resp>-|\\d+\\.\\d{3})"
+              - name: DealerDriver
+                pattern: "DealerDriver: Purchase/Manage/Browse CThru=\
+                (?<purchase.CThru>-|\\d+\\.\\d{3})/\
+                (?<manage.CThru>-|\\d+\\.\\d{3})/\
+                (?<browse.CThru>-|\\d+\\.\\d{3}) \
+                OThru=\
+                (?<purchase.OThru>-|\\d+\\.\\d{3})/\
+                (?<manage.OThru>-|\\d+\\.\\d{3})/\
+                (?<browse.OThru>-|\\d+\\.\\d{3}) \
+                CErr=\
+                (?<purchase.CErr>-|\\d+\\.\\d{3})/\
+                (?<manage.CErr>-|\\d+\\.\\d{3})/\
+                (?<browse.CErr>-|\\d+\\.\\d{3}) \
+                CResp=\
+                (?<purchase.CResp>-|\\d+\\.\\d{3})/\
+                (?<manage.CResp>-|\\d+\\.\\d{3})/\
+                (?<browse.CResp>-|\\d+\\.\\d{3}) \
+                OResp=\
+                (?<purchase.OResp>-|\\d+\\.\\d{3})/\
+                (?<manage.OResp>-|\\d+\\.\\d{3})/\
+                (?<browse.OResp>-|\\d+\\.\\d{3}) \
+                CSD=\
+                (?<purchase.CSD>-|\\d+\\.\\d{3})/\
+                (?<manage.CSD>-|\\d+\\.\\d{3})/\
+                (?<browse.CSD>-|\\d+\\.\\d{3}) \
+                OSD=\
+                (?<purchase.OSD>-|\\d+\\.\\d{3})/\
+                (?<manage.OSD>-|\\d+\\.\\d{3})/\
+                (?<browse.OSD>-|\\d+\\.\\d{3}) \
+                C90%Resp=\
+                (?<purchase.C90Resp>-|\\d+\\.\\d{3})/\
+                (?<manage.C90Resp>-|\\d+\\.\\d{3})/\
+                (?<browse.C90Resp>-|\\d+\\.\\d{3}) \
+                O90%Resp=\
+                (?<purchase.O90Resp>-|\\d+\\.\\d{3})/\
+                (?<manage.O90Resp>-|\\d+\\.\\d{3})/\
+                (?<browse.O90Resp>-|\\d+\\.\\d{3})"
+                nest: stat
+---
+name: java-version
+path: ".*?/java-version.txt$"
+nest: version
+asContent: version
+---
+name: finalFlags
+path: ".*?/container.log$"
+nest: java.flags
+asText:
+  - name: globalflags
+    pattern: "\\[Global flags\\]"
+    enables: [ "globalFlags" ]
+  - name: jvmFlag
+    pattern: "\\s*(?<type>\\S+) (?<name>\\S+)\\s{2,}= (?<value>\\S*)\\s+\\{(?<scope>[^\\}]+)\\}"
+    requires: [ "globalFlags" ]
+    children:
+      - name: jdk11-source
+        pattern: " \\{(?<source>[^\\}]+)\\}"
+  - name: notJvmFlag
+    pattern: "^\033\\["
+    requires: [ "globalFlags" ]
+    disables: [ "globalFlags" ]
+---
+name: summary.xml
+path: ".*?/summary.xml$"
+nest: faban.summary
+asXml: ''
+---
+name: jboss-cli
+path: ".*?/run/(?<serverName>[^\\./]+)[^/]*?/cli\\.(?<name>.*?)\\.log?"
+nest: "${{serverName}}.pmi.${{name}}"
+asPath: |
+  (path)=>{
+    const rtrn = new Json(true);
+    FileUtility.stream(path).forEach(line => {
+      if(line.trim() === ""){
+
+      } else if (line.match( /^\d+$/ ) ) {
+        rtrn.add(new Json());
+        rtrn.getJson(rtrn.size() - 1).set("timestamp", parseInt(line));
+      } else {
+        rtrn.getJson(rtrn.size() - 1).set("data", Json.fromString(line));
+      }
+    });
+    return rtrn;
+  }

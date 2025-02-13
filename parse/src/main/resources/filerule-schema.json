@@ -1,0 +1,138 @@
+{
+  "$id": "filerule-schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "exp": {
+      "oneOf": [
+        {"type": "string"},
+        {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "pattern": {"type": "string"},
+            "debug": {"type":  "boolean"},
+            "eat": {
+              "oneOf": [
+                {"type": "number"},
+                {"enum": ["None","Match","ToMatch","Line"]}
+              ]
+            },
+            "range": {"enum": ["EntireLine","AfterParent","BeforeParent"]},
+            "nest": {"type": "string"},
+            "requires": { "oneOf": [ { "type": "string"}, { "type": "array", "items": { "type": "string" } } ] },
+            "enables": { "oneOf": [ { "type": "string"}, { "type": "array", "items": { "type": "string" } } ] },
+            "disables": { "oneOf": [ { "type": "string"}, { "type": "array", "items": { "type": "string" } } ] },
+            "merge": {"enum": ["ByKey","AsEntry","Extend"]},
+            "with": {"type": "object"},
+            "rules": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {"enum": [
+                    "Repeat",
+                    "RepeatChildren",
+                    "PushTarget",
+                    "PreClose",
+                    "PostClose",
+                    "PrePopTarget",
+                    "PostPopTarget",
+                    "PreClearTarget",
+                    "RemoveOnClose",
+                    "PostClearTarget",
+                    "TargetRoot"
+                  ]},
+                  {
+                    "type": "object",
+                    "properties": {
+                      "PushTarget": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+                      "PrePopTarget": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+                      "PostPopTarget": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+                      "PreClearTarget": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+                      "PostClearTarget": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+                      "PreClose": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+                      "PostClose": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+                      "TargetRoot": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]}
+                    }
+                  }
+                ]
+              }
+            },
+            "fields": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "type": {"enum": ["Auto","String","KMG","Integer","Decimal","Json"]},
+                  "merge": {"enum": ["Auto","BooleanKey","BooleanValue","TargetId","Count","Add","List","Key","Set","First","Last","TreeSibling","TreeMerge"]}
+                },
+                "if": {"properties": {"merge": {"enum": ["Key"]}}},
+                "then": {"requires": ["target"]}
+              }
+            },
+            "execute": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+            "children": {"type": "array","items": {"$ref": "#/definitions/exp"}}
+          },
+          "required": ["pattern"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "filter": {
+      "type": "object",
+      "properties": {
+        "path": {"type": "string"},
+        "nest": {"type": "string"},
+        "regex": {"type": "string"},
+        "result": {"type": "string"},
+        "exp": {"type": "array", "items": {"$ref": "#/definitions/exp"}},
+        "children": {"type": "array", "items": {"$ref": "#/definitions/filter"}}
+      }
+
+    },
+    "rule": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "nest": {"type": "string"},
+        "path": {"type": "string"},
+        "headerLines": {"type": "integer"},
+        "filter": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/filter"}
+        },
+        "findHeader": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+        "avoidHeader":{"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+        "asText": {
+          "oneOf": [
+            {"type": "string"},
+            {"type": "array","items": {"$ref": "#/definitions/exp"}}
+          ]
+        },
+        "asJbossCli": {
+          "oneOf": [
+            {"type": ["string","null"]}
+          ]
+        },
+        "asJson": {
+          "oneOf": [
+            {"type": ["string","null"]}
+          ]
+        },
+        "asXml": {"oneOf": [{"type": ["string","null"]}, {"type": "array", "items": {"$ref": "#/definitions/filter"}}]},
+        "asPath": {"type": ["string","null"]},
+        "asContent": {"type": ["string","null"]}
+      },
+      "oneOf": [
+        {"required": ["asText"]},
+        {"required": ["asJbossCli"]},
+        {"required": ["asJson"]},
+        {"required": ["asXml"]},
+        {"required": ["asPath"]},
+        {"required": ["asContent"]}
+      ],
+      "additionalProperties": false
+    }
+
+  },
+  "$ref": "#/definitions/rule"
+}

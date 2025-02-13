@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "definitions": {
+    "printGc": {
+      "type": "object",
+      "properties": {
+        "gctype": {"type": "string"},
+        "cause": {"type": "string"},
+        "before": {"type": "integer"},
+        "after": {"type": "integer"},
+        "seconds": {"type": "number"}
+      }
+    },
+    "verboesGc": {
+      "allOf": [
+        {"$ref": "#/definitions/printGc"},
+        {
+          "type": "object",
+          "properties": {
+            "nanoSeconds": {"type": "integer"},
+            "parameters": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "value": {"type": "number"},
+                  "policy": {"type": "string"}
+                }
+              }
+            },
+            "phase": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "phase": {"enum": ["before","after"]},
+                  "cause": {"type": "string"},
+                  "epoch": {"type": "integer"},
+                  "timestamp": {"type": "integer"},
+                  "type": {"type": "string"},
+                  "policy": {"type": "string"}
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
