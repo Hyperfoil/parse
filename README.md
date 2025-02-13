@@ -269,3 +269,20 @@ Finally any post-children rules are applied. Those rules follow the `PostX` nami
 
 
 The process is repeated for each `exp` until all exp do not match or the input line is empty
+
+
+Building the native cli utility
+
+```bash
+sdk use java 22-graalce
+export GRAALVM_HOME=${JAVA_HOME}
+mvn clean
+quarkus build --native --no-tests -Dquarkus.native.container-build=false
+```
+
+Releasing is current separate from building the CLI utility. Ideally we can do both in one command in the future
+
+```bash
+mvn release:prepare -Prelease
+mvn release:perform -Prelease
+```
