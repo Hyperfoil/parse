@@ -5,7 +5,7 @@
     <groupId>io.hyperfoil.tools</groupId>
     <artifactId>hyperfoil-parse</artifactId>
     <packaging>pom</packaging>
-    <version>0.3.0-SNAPSHOT</version>
+    <version>0.3.0</version>
     <modules>
         <module>parse</module>
         <module>cli</module>
@@ -18,7 +18,7 @@
         <connection>scm:git:git://github.com/Hyperfoil/parse.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/Hyperfoil/parse.git</developerConnection>
         <url>https://github.com/Hyperfoil/parse</url>
-        <tag>parse-0.2.3</tag>
+        <tag>0.3.0</tag>
     </scm>
     <licenses>
         <license>
@@ -85,7 +85,7 @@
         <surefire-plugin.version>3.2.5</surefire-plugin.version>
         <failsafe-plugin.version>3.2.5</failsafe-plugin.version>
     </properties>
-    <dependencies></dependencies>
+    <dependencies />
     <dependencyManagement>
         <dependencies>
             <dependency>
