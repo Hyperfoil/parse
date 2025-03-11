@@ -88,7 +88,7 @@ public class ParsePicoTest {
     }
     @Test
     public void asJson_function(QuarkusMainLauncher launcher) throws IOException {
-        Path sourcePath = Files.writeString(File.createTempFile("parse",".json").toPath(),
+        Path sourcePath = Files.writeString(File.createTempFile("asJson_function",".json").toPath(),
                 """
                 {
                     "foo": "uno",
@@ -96,11 +96,11 @@ public class ParsePicoTest {
                 }
                 """);
         sourcePath.toFile().deleteOnExit();
-        Path configPath = Files.writeString(File.createTempFile("parse",".yaml").toPath(),
+        Path configPath = Files.writeString(File.createTempFile("asJson_function",".yaml").toPath(),
                 """
                 ---
                 name: jsonpath
-                path: parse.*.json
+                path: asJson_function.*.json
                 asJson: |
                   (blob)=>{
                     const {foo, bar } = blob;
@@ -114,8 +114,8 @@ public class ParsePicoTest {
         assertEquals(0,result.exitCode());
         assertTrue(destination.exists(),"output file should be created");
         String created = Files.readString(destination.toPath());
-        assertTrue(created.contains("merged"),"resulting json should contain 'merged' key\n"+created);
-        assertTrue(created.contains("unodos"),"resulting json should contain 'unodos'\n"+created);
+        assertTrue(created.contains("merged"),"resulting json should contain 'merged' key\n"+created+"\n"+result.getErrorOutput()+"\n"+result.getOutput());
+        assertTrue(created.contains("unodos"),"resulting json should contain 'unodos'\n"+created+"\n"+result.getErrorOutput()+"\n"+result.getOutput());
     }
 
     /***
