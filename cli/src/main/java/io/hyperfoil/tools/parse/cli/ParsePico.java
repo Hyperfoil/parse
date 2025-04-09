@@ -289,14 +289,15 @@ public class ParsePico  implements Callable<Integer>, QuarkusApplication {
                     return 1;
                 } else if (loaded.isArray()) {
                     return loaded.stream().mapToInt(entry -> {
-                        if (entry instanceof Json) {
-                            Json entryJson = (Json) entry;
-                            Json errors = validator.validate(entryJson);
+                        Object value = entry.getValue();
+                        if (value instanceof Json) {
+                            Json valueJson = (Json) value;
+                            Json errors = validator.validate(valueJson);
                             if (!errors.isEmpty()) {
                                 logger.error("Errors\n"+errors.toString(2));
                                 return 1;
                             }
-                            FileRule rule = FileRule.fromJson(entryJson, Json.toObjectMap(Json.fromMap(state)));
+                            FileRule rule = FileRule.fromJson(valueJson, Json.toObjectMap(Json.fromMap(state)));
                             if(warnUnparsed){
 
                             }
@@ -304,7 +305,7 @@ public class ParsePico  implements Callable<Integer>, QuarkusApplication {
                                 fileRules.add(rule);
                             }
                         } else {
-                            logger.errorf("cannot create rule from %s", entry.toString());
+                            logger.errorf("cannot create rule from %s", value.toString());
                             return 1;
                         }
                         return 0;
