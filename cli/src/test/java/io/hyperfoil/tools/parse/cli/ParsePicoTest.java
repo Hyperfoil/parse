@@ -185,10 +185,9 @@ public class ParsePicoTest {
     @Test
     public void defaultRules(QuarkusMainLauncher launcher) throws IOException, URISyntaxException {
         Path sourcePath = File.createTempFile("foo",".txt").toPath();
-        Path configPath = Path.of(getClass().getClassLoader().getResource("defaultRules.yaml").toURI());
         File destination = File.createTempFile("parse",".json");
         destination.deleteOnExit();
-        LaunchResult result = launcher.launch("--disableDefaults","-s",sourcePath.toString(),"-r",configPath.toString(),"-d",destination.getPath());
+        LaunchResult result = launcher.launch("-s",sourcePath.toString(),"-d",destination.getPath());
         assertEquals(0,result.exitCode(),result.getOutput());
     }
 
