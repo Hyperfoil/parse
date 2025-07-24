@@ -155,7 +155,7 @@ public class ParsePico  implements Callable<Integer>, QuarkusApplication {
                         parentPath.toFile().mkdirs();
                     }
                     try {
-                        Files.write(Paths.get(sourceDestination), result.toString(0).getBytes());
+                        Files.write(Paths.get(sourceDestination), result.toString(prettyPrint).getBytes());
                     } catch (IOException e) {
                         logger.errorf("failed to write to %s", sourceDestination);
                         //e.printStackTrace();
@@ -212,6 +212,10 @@ public class ParsePico  implements Callable<Integer>, QuarkusApplication {
     //@OptionGroup(shortName = 'S', name="state",description = "state variables for patterns",defaultValue = {  })
     @CommandLine.Option(names = { "-S", "--state"}, description = "state variables for patterns")
     Map<String,String> state;
+
+    @CommandLine.Option(names = {"--pretty-print"}, description = "number of spaces for pretty-printing. 0 disables pretty-print", defaultValue = "0")
+    int prettyPrint;
+
 
     private Set<String> todo = new LinkedHashSet<>();
 
