@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.hyperfoil.tools</groupId>
         <artifactId>hyperfoil-parse</artifactId>
-        <version>0.3.2-SNAPSHOT</version>
+        <version>0.3.2</version>
     </parent>
     <name>parse</name>
     <artifactId>parse</artifactId>

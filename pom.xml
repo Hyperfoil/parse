@@ -5,7 +5,7 @@
     <groupId>io.hyperfoil.tools</groupId>
     <artifactId>hyperfoil-parse</artifactId>
     <packaging>pom</packaging>
-    <version>0.3.2-SNAPSHOT</version>
+    <version>0.3.2</version>
     <modules>
         <module>parse</module>
         <module>cli</module>
@@ -18,7 +18,7 @@
         <connection>scm:git:git://github.com/Hyperfoil/parse.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/Hyperfoil/parse.git</developerConnection>
         <url>https://github.com/Hyperfoil/parse</url>
-        <tag>parse-0.2.3</tag>
+        <tag>0.3.2</tag>
     </scm>
     <licenses>
         <license>
