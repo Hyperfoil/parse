@@ -6,7 +6,7 @@
         <artifactId>hyperfoil-parse</artifactId>
         <version>0.3.2-SNAPSHOT</version>
     </parent>
-
+    <name>parse</name>
     <artifactId>parse</artifactId>
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
