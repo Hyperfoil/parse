@@ -45,7 +45,7 @@ public class ParsePicoTest {
         configPath.toFile().deleteOnExit();
         File destination = File.createTempFile("parse",".json");
         destination.deleteOnExit();
-        LaunchResult result = launcher.launch("--disableDefaults","-s",sourcePath.toString(),"-r",configPath.toString(),"-d",destination.getPath());
+        LaunchResult result = launcher.launch("--disableDefault","-s",sourcePath.toString(),"-r",configPath.toString(),"-d",destination.getPath());
         assertEquals(0,result.exitCode());
         assertTrue(destination.exists(),"output file should be created");
         String created = Files.readString(destination.toPath());
@@ -78,7 +78,7 @@ public class ParsePicoTest {
         configPath.toFile().deleteOnExit();
         File destination = File.createTempFile("parse",".json");
         destination.deleteOnExit();
-        LaunchResult result = launcher.launch("--disableDefaults","-s",sourcePath.toString(),"-r",configPath.toString(),"-d",destination.getPath());
+        LaunchResult result = launcher.launch("--disableDefault","-s",sourcePath.toString(),"-r",configPath.toString(),"-d",destination.getPath());
         assertEquals(0,result.exitCode());
         assertTrue(destination.exists(),"output file should be created");
         String created = Files.readString(destination.toPath());
@@ -111,7 +111,7 @@ public class ParsePicoTest {
         configPath.toFile().deleteOnExit();
         File destination = File.createTempFile("parse",".json");
         destination.deleteOnExit();
-        LaunchResult result = launcher.launch("--disableDefaults","-s",sourcePath.toString(),"-r",configPath.toString(),"-d",destination.getPath());
+        LaunchResult result = launcher.launch("--disableDefault","-s",sourcePath.toString(),"-r",configPath.toString(),"-d",destination.getPath());
         assertEquals(0,result.exitCode());
         assertTrue(destination.exists(),"output file should be created");
         String created = Files.readString(destination.toPath());
@@ -175,7 +175,7 @@ public class ParsePicoTest {
         configPath.toFile().deleteOnExit();
         File destination = File.createTempFile("parse",".json");
         destination.deleteOnExit();
-        LaunchResult result = launcher.launch("--disableDefaults","-s",sourcePath.toString(),"-r",configPath.toString(),"-d",destination.getPath());
+        LaunchResult result = launcher.launch("--disableDefault","-s",sourcePath.toString(),"-r",configPath.toString(),"-d",destination.getPath());
         assertEquals(0,result.exitCode());
         assertTrue(destination.exists(),"output file should be created");
         String created = Files.readString(destination.toPath());

@@ -191,7 +191,7 @@ public class ParsePico  implements Callable<Integer>, QuarkusApplication {
     Integer threadCount;
 
     //@Option(name = "disableDefault", description = "disables default rules", hasValue = false)
-    @CommandLine.Option(names = {"--disableDefaults"},description = "disables default rules", defaultValue = "false")
+    @CommandLine.Option(names = {"--disableDefault"},description = "disables default rules", defaultValue = "false")
     boolean disableDefault;
 
     @CommandLine.Option(names = {"--scanArchives"}, description = "scan inside archives (tar, gzip, ...)", defaultValue = "false")
