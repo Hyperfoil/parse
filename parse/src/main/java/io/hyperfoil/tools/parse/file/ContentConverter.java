@@ -1,5 +1,6 @@
 package io.hyperfoil.tools.parse.file;
 
+import io.hyperfoil.tools.yaup.file.FileUtility;
 import io.hyperfoil.tools.yaup.json.Json;
 
 import java.io.IOException;
@@ -24,12 +25,9 @@ public class ContentConverter implements Function<String, Json> {
    @Override
    public Json apply(String s) {
       Json rtrn = new Json();
-      try {
-         String content = new String(Files.readAllBytes(Paths.get(s)));
-         rtrn.set(getKey(),content);
-      } catch (IOException e) {
-         e.printStackTrace();
-      }
+      //String content = new String(Files.readAllBytes(Paths.get(s))); //this didn't work with our ARCHIVE_KEY separated paths
+      String content = FileUtility.readFile(s);
+      rtrn.set(getKey(),content);
       return rtrn;
    }
 }
