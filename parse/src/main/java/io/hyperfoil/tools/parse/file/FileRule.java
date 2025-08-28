@@ -357,7 +357,7 @@ public class FileRule {
                         callback.accept(nestPath, postFilter);
                     }
                 }catch(JsException jse){
-                    logger.error("Javacript exception processing "+path+"\n"+jse,jse);
+                    logger.error("Javascript exception processing "+path+"\n"+jse,jse);
                 }
             }
             return matched;

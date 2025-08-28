@@ -1,5 +1,6 @@
 package io.hyperfoil.tools.parse.cli;
 
+import io.hyperfoil.tools.yaup.json.Json;
 import io.quarkus.test.junit.main.LaunchResult;
 import io.quarkus.test.junit.main.QuarkusMainLauncher;
 import io.quarkus.test.junit.main.QuarkusMainTest;
@@ -26,6 +27,78 @@ public class ParsePicoTest {
         LaunchResult result = launcher.launch();
         assertNotEquals(0,result.exitCode());
         assertTrue(result.getErrorOutput().contains("Usage:"),result.getErrorOutput());
+    }
+
+    @Test
+    public void asContent_newline(QuarkusMainLauncher launcher) throws IOException {
+        Path sourcePath = Files.writeString(File.createTempFile("parse",".txt").toPath(),
+                "0");
+        sourcePath.toFile().deleteOnExit();
+        String read = Files.readString(sourcePath);
+        assertFalse(read.contains("\n"));
+
+        Path configPath = Files.writeString(File.createTempFile("parse",".yaml").toPath(),
+                """
+                ---
+                name: jsonpath
+                path: parse.*.txt
+                asContent: nest
+                """);
+        File destination = File.createTempFile("parse",".json");
+        destination.deleteOnExit();
+        LaunchResult result = launcher.launch("--disableDefault","-s",sourcePath.toString(),"-r",configPath.toString(),"-d",destination.getPath());
+        assertEquals(0,result.exitCode());
+        Json resultJson = Json.fromFile(destination.getPath());
+        assertTrue(resultJson.has("nest"));
+        Object nest = resultJson.get("nest");
+        assertNotNull(nest);
+        assertFalse(nest.toString().contains("\n"));
+    }
+    @Test
+    public void nest_js_merge(QuarkusMainLauncher launcher) throws IOException {
+        Path baseFolder = Files.createTempDirectory("nest_json");
+        baseFolder.toFile().deleteOnExit();
+        Path sourcePath = Files.writeString(File.createTempFile("parse",".txt",baseFolder.toFile()).toPath(),
+                """
+                key
+                fey
+                key
+                """);
+        Path sourcePath2 = Files.writeString(File.createTempFile("parse",".txt",baseFolder.toFile()).toPath(),
+                """
+                fey
+                key
+                fey
+                """);
+        sourcePath.toFile().deleteOnExit();
+        sourcePath2.toFile().deleteOnExit();
+        Path configPath = Files.writeString(File.createTempFile("parse",".yaml").toPath(),
+                """
+                ---
+                name: jsonpath
+                path: parse.*.txt
+                nest: |
+                  (result,json,state)=>{
+                    if(json){
+                      json.forEach( entry => {
+                        Object.keys(entry).forEach( key => {
+                          result[key]=entry[key]+(result[key]||0)
+                        });
+                      });
+                    }
+                  }
+                asText:
+                - (?<found:matchcount>key)
+                """);
+        File destination = File.createTempFile("parse",".json");
+        destination.deleteOnExit();
+        LaunchResult result = launcher.launch("--disableDefault","-s",baseFolder.toString(),"-r",configPath.toString(),"-d",destination.getPath());
+        assertEquals(0,result.exitCode());
+        Json resultJson = Json.fromFile(destination.getPath());
+        assertTrue(resultJson.has("found"));
+        Object found = resultJson.get("found");
+        assertNotNull(found);
+        assertEquals("3",found.toString());
     }
 
     @Test

@@ -63,7 +63,7 @@
                 "type": "object",
                 "properties": {
                   "type": {"enum": ["Auto","String","KMG","Integer","Decimal","Json"]},
-                  "merge": {"enum": ["Auto","BooleanKey","BooleanValue","TargetId","Count","Add","List","Key","Set","First","Last","TreeSibling","TreeMerge"]}
+                  "merge": {"enum": ["Auto","BooleanKey","BooleanValue","TargetId","Count","MergeCount","Add","List","Key","Set","First","Last","TreeSibling","TreeMerge"]}
                 },
                 "if": {"properties": {"merge": {"enum": ["Key"]}}},
                 "then": {"requires": ["target"]}
