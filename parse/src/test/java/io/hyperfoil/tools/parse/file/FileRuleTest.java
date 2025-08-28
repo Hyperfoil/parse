@@ -47,8 +47,8 @@ public class FileRuleTest {
          """
       )));
       List<Json> found = new ArrayList<>();
-      rule.apply(path,(nest,json)->{
-         found.add(json);
+      rule.apply(path,(rr)->{
+         found.add(rr.result());
       });
       assertEquals("should only have 1 entry",1,found.size());
       Json entry = found.get(0);
@@ -76,8 +76,8 @@ public class FileRuleTest {
             "  }")));
 
          List<Json> found = new ArrayList<>();
-         rule.apply(path,(nest,json)->{
-            found.add(json);
+         rule.apply(path,(rr)->{
+            found.add(rr.result());
          });
          assertEquals("should only have 1 entry",1,found.size());
          Json entry = found.get(0);

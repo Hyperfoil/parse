@@ -60,13 +60,14 @@ public class MatchCriteria {
     public boolean hasNotFindPatterns(){return !notFindPatterns.isEmpty();}
     public boolean usesHeader(){return getHeaderLines()>0 && (hasFindPatterns() || hasNotFindPatterns());}
 
+
+    public record MatchResult(boolean matched,Json extracted){}
     /**
      * returns true if any pathPattern matches, any findPattern matches, and no notFindPatterns match.
      * @param input
-     * @param state
      * @return
      */
-    public boolean match(String input, Json state){
+    public MatchResult match(String input){
         boolean rtrn = true;
         Matcher m;
         Json toMerge = new Json();
@@ -125,9 +126,6 @@ public class MatchCriteria {
                 }
             }
         }
-        if(rtrn && !toMerge.isEmpty()){
-            state.merge(toMerge);
-        }
-        return rtrn;
+        return new MatchResult(rtrn,toMerge);
     }
 }

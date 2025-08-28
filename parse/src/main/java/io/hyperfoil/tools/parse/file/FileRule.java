@@ -334,18 +334,21 @@ public class FileRule {
         return this;
     }
 
-    public boolean apply(String path, BiConsumer<String,Json> callback){
+    public record RuleResult(String nest,Json result,Json state){}
+
+    public boolean apply(String path, Consumer<RuleResult> callback){
         try {
             Json state = with.clone();
-            boolean matched = getCriteria().match(path, state);
+            MatchCriteria.MatchResult matchResult = getCriteria().match(path);
 
-            if (matched) {
+            if (matchResult.matched()) {
+                state.merge(matchResult.extracted());
                 try {
                     Json result = getConverter().apply(path);
                     String nestPath = StringUtil.populatePattern(getNest(), Json.toObjectMap(state));
 
                     if (getFilters().isEmpty()) {
-                        callback.accept(nestPath, result);
+                        callback.accept(new RuleResult(nestPath, result,state));
                     } else {
                         final Json postFilter = new Json();
                         BiConsumer<String, Object> filterCallback = (nest, json) -> {
@@ -354,13 +357,13 @@ public class FileRule {
                         for (Filter filter : getFilters()) {
                             filter.apply(result, filterCallback);
                         }
-                        callback.accept(nestPath, postFilter);
+                        callback.accept(new RuleResult(nestPath, postFilter,state));
                     }
                 }catch(JsException jse){
                     logger.error("Javascript exception processing "+path+"\n"+jse,jse);
                 }
             }
-            return matched;
+            return matchResult.matched();
         }catch(Exception e){
             logger.error("Failed to convert "+path,e);
         }

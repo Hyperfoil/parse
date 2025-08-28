@@ -6,6 +6,7 @@ import org.junit.Test;
 import io.hyperfoil.tools.yaup.json.Json;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class MatchCriteriaTest {
 
@@ -15,16 +16,17 @@ public class MatchCriteriaTest {
         MatchCriteria matchCriteria = new MatchCriteria()
             .setPathPattern(".*?/run/(?<serverName>[^\\./]+).*?\\.gclog?");
 
-        boolean matched = false;
         Json state = new Json();
-        matched = matchCriteria.match("/tmp/867.zip#archive/run/benchserver4.perf.lab.eng.rdu.redhat.com/log/server_20190213_171157.gclog",state);
+        MatchCriteria.MatchResult matchResult = matchCriteria.match("/tmp/867.zip#archive/run/benchserver4.perf.lab.eng.rdu.redhat.com/log/server_20190213_171157.gclog");
+        assertTrue(matchResult.matched());
+        assertTrue(matchResult.extracted().has("serverName"));
 
     }
     @Test
     public void not_match(){
         MatchCriteria matchCriteria = new MatchCriteria()
                 .setPathPattern("foo.log");
-        boolean matched = matchCriteria.match("parse.13423234234.json",new Json());
+        boolean matched = matchCriteria.match("parse.13423234234.json").matched();
         assertFalse(matched);
     }
 }
