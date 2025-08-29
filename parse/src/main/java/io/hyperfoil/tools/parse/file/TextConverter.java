@@ -12,10 +12,11 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class TextConverter implements Function<String, Json> {
+public class TextConverter implements BiFunction<String, Json, Json> {
 
     private final List<Supplier<Parser>> factories = new ArrayList<>();
     private final List<Exp> exps = new LinkedList<Exp>();
@@ -37,7 +38,7 @@ public class TextConverter implements Function<String, Json> {
     }
 
     @Override
-    public Json apply(String s) {
+    public Json apply(String s, Json state) {
         Json rtrn = new Json();
         JsonConsumer consumer = (event)-> {
             //TODO filtering?
@@ -47,6 +48,7 @@ public class TextConverter implements Function<String, Json> {
         if(hasExp()){
             Parser p = new Parser();
             getExps().forEach(p::add);
+            p.setStateVariables(state);
             parsers.add(p);
         }
         getFactories().forEach(factory->parsers.add(factory.get()));

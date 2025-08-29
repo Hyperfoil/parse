@@ -1,5 +1,6 @@
 package io.hyperfoil.tools.parse.file;
 
+import io.hyperfoil.tools.parse.Exp;
 import io.hyperfoil.tools.parse.JsJsonFunction;
 import io.hyperfoil.tools.parse.JsPathFunction;
 import io.hyperfoil.tools.yaup.json.Json;
@@ -8,12 +9,13 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class FileRuleTest {
 
@@ -82,7 +84,35 @@ public class FileRuleTest {
          assertEquals("should only have 1 entry",1,found.size());
          Json entry = found.get(0);
          assertEquals("expected json data",Json.fromJs("[{timestamp:1234,data:{foo:'bar'}}]"),entry);
+   }
 
+   @Test
+   public void asText_variable_in_capture_group() throws IOException {
+       Path baseFolder = Files.createTempDirectory("nest_foo_nest");
+       baseFolder.toFile().deleteOnExit();
+       Path sourcePath = Files.writeString(File.createTempFile("parse",".txt",baseFolder.toFile()).toPath(),
+            "42"
+            );
+       FileRule rule = new FileRule("asText_variable_in_capture_group").setCriteria(
+               new MatchCriteria("nest_(?<name>[^_]+)_nest")
+       ).setConverter(
+               new TextConverter()
+                       .addExp(new Exp(("(?<${{name}}>\\d+)"))
+               )
+       );
+       List<Json> found = new ArrayList<>();
+       rule.apply(sourcePath.toString(),(rr)->{
+           found.add(rr.result());
+       });
+       assertEquals("should only have 1 entry",1,found.size());
+       Json entry = found.get(0);
+       assertNotNull(entry);
+       assertTrue(entry.isArray());
+       assertEquals(1,entry.size());
+       assertTrue(entry.get(0) instanceof Json);
+       Json first = entry.getJson(0);
+       assertNotNull(first);
 
+       System.out.println(entry.toString(2));
    }
 }

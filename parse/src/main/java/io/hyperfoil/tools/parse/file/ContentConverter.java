@@ -6,9 +6,10 @@ import io.hyperfoil.tools.yaup.json.Json;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class ContentConverter implements Function<String, Json> {
+public class ContentConverter implements BiFunction<String, Json, Json> {
 
 
    private String key = "content";
@@ -23,7 +24,7 @@ public class ContentConverter implements Function<String, Json> {
 
 
    @Override
-   public Json apply(String s) {
+   public Json apply(String s,Json state) {
       Json rtrn = new Json();
       //String content = new String(Files.readAllBytes(Paths.get(s))); //this didn't work with our ARCHIVE_KEY separated paths
       String content = FileUtility.readFile(s);

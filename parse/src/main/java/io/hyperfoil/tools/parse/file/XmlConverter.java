@@ -6,12 +6,13 @@ import io.hyperfoil.tools.yaup.xml.pojo.Xml;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
  * Reads the content of the file as xml and converst the entire document to json
  */
-public class XmlConverter implements Function<String, Json> {
+public class XmlConverter implements BiFunction<String, Json, Json> {
 
     private final List<Filter> filters = new ArrayList<>();
 
@@ -22,7 +23,7 @@ public class XmlConverter implements Function<String, Json> {
     }
 
     @Override
-    public Json apply(String s) {
+    public Json apply(String s,Json state) {
         Xml xml = Xml.parseFile(s);
         if(filters.isEmpty()){
             return xml.toJson();

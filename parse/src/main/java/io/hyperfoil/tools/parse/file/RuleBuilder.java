@@ -4,6 +4,7 @@ import io.hyperfoil.tools.parse.Exp;
 import io.hyperfoil.tools.parse.Parser;
 import io.hyperfoil.tools.yaup.json.Json;
 
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -36,7 +37,7 @@ public class RuleBuilder {
         rule.setNest(nest);
         return this;
     }
-    public FileRule asPath(Function<String, Json> converter){
+    public FileRule asPath(BiFunction<String, Json, Json> converter){
         rule.setConverter(converter);
         return rule;
     }

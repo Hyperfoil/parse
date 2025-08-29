@@ -15,6 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -178,7 +179,7 @@ public class FileRule {
         }
         return rtrn;
     }
-    public static Function<String,Json> asPath(String function){
+    public static BiFunction<String,Json,Json> asPath(String function){
         return new JsStringFunction(function);
 //        return (path)->{
 //            try(Context context = Context.newBuilder("js").allowAllAccess(true).allowHostAccess(true).build()){
@@ -276,7 +277,7 @@ public class FileRule {
     private MatchCriteria criteria = new MatchCriteria();
     private final List<Filter> filters = new LinkedList<>();
     private String nest="";
-    private Function<String, Json> converter =null;
+    private BiFunction<String, Json, Json> converter =null;
 
     public FileRule(){this("");}
     public FileRule(String name){
@@ -328,8 +329,8 @@ public class FileRule {
 
     public List<Filter> getFilters(){return filters;}
     public MatchCriteria getCriteria(){return criteria;}
-    public Function<String,Json> getConverter(){return converter;}
-    public FileRule setConverter(Function<String,Json> converter){
+    public BiFunction<String,Json,Json> getConverter(){return converter;}
+    public FileRule setConverter(BiFunction<String,Json,Json> converter){
         this.converter = converter;
         return this;
     }
@@ -344,7 +345,7 @@ public class FileRule {
             if (matchResult.matched()) {
                 state.merge(matchResult.extracted());
                 try {
-                    Json result = getConverter().apply(path);
+                    Json result = getConverter().apply(path, state);
                     String nestPath = StringUtil.populatePattern(getNest(), Json.toObjectMap(state));
 
                     if (getFilters().isEmpty()) {
