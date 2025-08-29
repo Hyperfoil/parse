@@ -26,7 +26,7 @@ public class XanFactoryTest {
     public void blank(){
         JsonBuilder jsonBuilder = new JsonBuilder();
 
-        boolean matched = f.blank().apply(new CheatChars(""),jsonBuilder,null);
+        boolean matched = f.blank().apply(new CheatChars(""),jsonBuilder,null,null);
         Assert.assertTrue("blank should match an empty string",matched);
     }
 

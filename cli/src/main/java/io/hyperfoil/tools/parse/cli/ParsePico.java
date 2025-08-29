@@ -94,7 +94,9 @@ public class ParsePico  implements Callable<Integer>, QuarkusApplication {
                         for (FileRule rule : fileRules) {
                             try {
                                 entryTimer.start(rule.getName());
-                                rule.apply(entry, (nest, json) -> {
+                                rule.apply(entry, (rr) -> {
+                                    String nest = rr.nest();
+                                    Json json = rr.result();
                                     try {
                                         if (nest == null || nest.trim().isEmpty()) {
                                             if (!json.isArray()) {

@@ -34,7 +34,7 @@ public class JStackFactoryTest {
         Exp p = f.threadInfo();
         Json o = null;
 
-        p.apply(new CheatChars("\"Name with \" and '\" prio=10 tid=0x00007fe444377000 nid=0x1036 in Object.wait() [0x00007fe42eef5000]"),b,null);
+        p.apply(new CheatChars("\"Name with \" and '\" prio=10 tid=0x00007fe444377000 nid=0x1036 in Object.wait() [0x00007fe42eef5000]"),b,null,null);
 
         o = b.getRoot();
 
@@ -47,7 +47,7 @@ public class JStackFactoryTest {
 
         b.close();b.takeClosed();
 
-        p.apply(new CheatChars("\"GC task thread#0 (ParallelGC)\" os_prio=0 tid=0x00007f9b4c023000 nid=0x4d0c runnable "),b,null);
+        p.apply(new CheatChars("\"GC task thread#0 (ParallelGC)\" os_prio=0 tid=0x00007f9b4c023000 nid=0x4d0c runnable "),b,null,null);
 
         o = b.getRoot();
         Assert.assertEquals("Name","GC task thread#0 (ParallelGC)",o.getString("Name"));
@@ -58,7 +58,7 @@ public class JStackFactoryTest {
 
         b.close();b.takeClosed();
 
-        p.apply(new CheatChars("\"C1 CompilerThread2\" #7 daemon prio=9 os_prio=0 tid=0x00007f9b4c0b4800 nid=0x4d16 waiting on condition [0x0000000000000000]\n"),b,null);
+        p.apply(new CheatChars("\"C1 CompilerThread2\" #7 daemon prio=9 os_prio=0 tid=0x00007f9b4c0b4800 nid=0x4d16 waiting on condition [0x0000000000000000]\n"),b,null,null);
 
         o = b.getRoot();
         Assert.assertEquals("Name","C1 CompilerThread2",o.getString("Name"));
@@ -77,10 +77,10 @@ public class JStackFactoryTest {
         Exp frame = f.stackFrame();
         Exp lock = f.locked();
 
-        frame.apply(new CheatChars("\tat sun.nio.ch.EPollArrayWrapper.epollWait(Native Method)\n"),b,null);
-        frame.apply(new CheatChars("\tat sun.nio.ch.SelectorImpl.lockAndDoSelect(SelectorImpl.java:86)\n"),b,null);
-        lock.apply(new CheatChars("\t- locked <0x00000000d440b740> (a io.netty.channel.nio.SelectedSelectionKeySet)\n"),b,null);
-        lock.apply(new CheatChars("\t- locked <0x00000000d440b760> (a java.util.Collections$UnmodifiableSet)\n"),b,null);
+        frame.apply(new CheatChars("\tat sun.nio.ch.EPollArrayWrapper.epollWait(Native Method)\n"),b,null,null);
+        frame.apply(new CheatChars("\tat sun.nio.ch.SelectorImpl.lockAndDoSelect(SelectorImpl.java:86)\n"),b,null,null);
+        lock.apply(new CheatChars("\t- locked <0x00000000d440b740> (a io.netty.channel.nio.SelectedSelectionKeySet)\n"),b,null,null);
+        lock.apply(new CheatChars("\t- locked <0x00000000d440b760> (a java.util.Collections$UnmodifiableSet)\n"),b,null,null);
 
         Json o = b.getRoot();
         Assert.assertEquals("stack should have 2 entries",2,o.getJson("stack").size());

@@ -69,7 +69,7 @@ public class Parser {
     private HashMap<String,Integer> counts;
     private JsonBuilder builder;
     private List<UnparsedConsumer> unparsedConsumers;
-
+    private Json stateVariables;
 
     public List<String> patternNames(){return patterns.stream().map(p->p.getName()).collect(Collectors.toList());}
 
@@ -81,6 +81,11 @@ public class Parser {
         states = new HashMap<>();
         counts = new HashMap<>();
     }
+
+    public void setStateVariables(Json stateVariables){
+        this.stateVariables = stateVariables;
+    }
+    public Json getStateVariables(){return stateVariables;}
 
     public void setCount(String name,int value){
         counts.put(name,value);
@@ -191,7 +196,7 @@ public class Parser {
         int size = patterns.size();
         for(int i=0; i<size; i++){ //to get around concurrent mod from exp matching
             Exp exp = patterns.get(i);
-            matched = exp.apply(line,builder,this) && matched;
+            matched = exp.apply(line,builder,this,stateVariables) && matched;
             int newSize = patterns.size();
             if(newSize!=size){ // deal with mod after executing exp
                 int newIndex = patterns.indexOf(exp);

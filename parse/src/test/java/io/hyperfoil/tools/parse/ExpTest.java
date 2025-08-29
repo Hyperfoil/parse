@@ -19,6 +19,24 @@ public class ExpTest {
 
    Function<String, DropString> factory = CheatChars::new;
 
+
+   @Test
+   public void apply_variable_reference() {
+      Exp exp = new Exp("(?<${{foo}}>.*)");
+      Json state = new Json();
+      state.set("foo","bizz");
+      Json result = exp.apply("buzz",state);
+      assertNotNull(result);
+      assertFalse(result.has("${{foo}}"));
+      assertTrue(result.has("bizz"));
+      Object bizz = result.get("bizz");
+      assertNotNull(bizz);
+      assertEquals("buzz",bizz.toString());
+
+
+
+   }
+
    @Test
    public void parsePattern_valueType_duration(){
       Map<String,Exp.ValueInfo> parsed = Exp.parsePattern("(?<foo:duration>");
@@ -146,7 +164,7 @@ public class ExpTest {
          .addRule(ExpRule.Repeat);
 
       JsonBuilder builder = new JsonBuilder();
-      exp.apply(input,builder,null);
+      exp.apply(input,builder,null,null);
 
       Json json = builder.getRoot();
       Assert.assertEquals(true,json.get("key") instanceof Json);
@@ -161,7 +179,7 @@ public class ExpTest {
          .add(new Exp("a","a=(?<a>\\w+)").setRange(MatchRange.BeforeParent));
       JsonBuilder builder = new JsonBuilder();
       DropString.Ref starIndex = input.reference(0);
-      b.apply(input,builder,null,starIndex);
+      b.apply(input,builder,null,null,starIndex);
 
       Json json = builder.getRoot();
       Assert.assertEquals("ball",json.getString("b"));
@@ -178,7 +196,7 @@ public class ExpTest {
 
       JsonBuilder builder = new JsonBuilder();
       DropString.Ref starIndex = input.reference(0);
-      b.apply(input,builder,null,starIndex);
+      b.apply(input,builder,null,null,starIndex);
 
       Json json = builder.getRoot();
       Assert.assertEquals("ball\n"+json.toString(2),"ball",json.getString("b"));
@@ -196,7 +214,7 @@ public class ExpTest {
       DropString input = factory.apply("1800.02s - InsuranceDriver: REST - Accept Quote/REST - Add Vehicle/REST - Delete Vehicle/REST - Login/REST - Logout/REST - Register/REST - Register Invalid/REST - Unregister/REST - Update User/REST - View Insurance/REST - View Quote/REST - View User/REST - View Vehicle CThru=114.592/130.791/50.430/427.272/424.505/41.431/11.166/27.232/52.030/51.597/132.058/78.661/170.655 OThru=114.527/132.157/51.557/427.414/427.291/42.737/10.774/26.162/52.975/49.549/132.237/79.503/164.191 CErr=0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000/0.000 CResp=0.009/0.003/0.004/0.001/0.000/0.002/0.003/0.003/0.004/0.001/0.002/0.002/0.001 OResp=0.011/0.005/0.006/0.002/0.000/0.003/0.006/0.004/0.005/0.003/0.004/0.003/0.003 CSD=0.004/0.003/0.000/0.000/0.000/0.000/0.000/0.000/0.050/0.000/0.003/0.000/0.002 OSD=0.038/0.033/0.036/0.029/0.000/0.031/0.057/0.029/0.033/0.027/0.028/0.030/0.028 C90%Resp=0.020/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010 O90%Resp=0.020/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010/0.010");
 
       JsonBuilder b = new JsonBuilder();
-      test.apply(input,b,null);
+      test.apply(input,b,null,null);
 
 
    }
@@ -209,8 +227,8 @@ public class ExpTest {
               .addRule(ExpRule.PrePopTarget);
 
       JsonBuilder b = new JsonBuilder();
-      exp.apply(factory.apply("1"),b,null);
-      exp.apply(factory.apply("2"),b,null);
+      exp.apply(factory.apply("1"),b,null,null);
+      exp.apply(factory.apply("2"),b,null,null);
 
       Json root = b.getRoot();
       assertNotNull(root);
@@ -230,15 +248,15 @@ public class ExpTest {
       Exp push = new Exp("push","a").addRule(ExpRule.PushTarget).addRule(ExpRule.PreClearTarget).nest("nest").setMerge(ExpMerge.AsEntry);
       Exp entry = new Exp("entry","(?<a>\\S) (?<b>\\S)").setMerge(ExpMerge.AsEntry);
       JsonBuilder b = new JsonBuilder();
-      push.apply(factory.apply("a"),b,null);
+      push.apply(factory.apply("a"),b,null,null);
       System.out.println("First a\n"+b.debug(true));
-      entry.apply(factory.apply("1 2"),b,null);
+      entry.apply(factory.apply("1 2"),b,null,null);
 
-      entry.apply(factory.apply("3 4"),b,null);
+      entry.apply(factory.apply("3 4"),b,null,null);
       System.out.println("Before next a\n"+b.debug(true));
-      push.apply(factory.apply("a"),b,null);
+      push.apply(factory.apply("a"),b,null,null);
       System.out.println("Second a\n"+b.debug(true));
-      entry.apply(factory.apply("1 2"),b,null);
+      entry.apply(factory.apply("1 2"),b,null,null);
 
       System.out.println(b.size());
       System.out.println(b.getRoot().toString(2));
@@ -249,7 +267,7 @@ public class ExpTest {
       Exp push = new Exp("push","(?<a>a)").addRule(ExpRule.PushTarget,"a");
 
       JsonBuilder b = new JsonBuilder();
-      push.apply(factory.apply("a"),b,null);
+      push.apply(factory.apply("a"),b,null,null);
 
       Assert.assertEquals("target Name","a",b.getContextString(JsonBuilder.NAME_KEY,false));
    }
@@ -263,7 +281,7 @@ public class ExpTest {
       b.getTarget().set("Name",1);
       b.pushTarget(new Json());
       b.getTarget().set("Name",2);
-      a.apply(factory.apply("a"),b,null);
+      a.apply(factory.apply("a"),b,null,null);
 
       Assert.assertFalse("no named target",b.hasContext(JsonBuilder.NAME_KEY,true));
    }
@@ -309,7 +327,7 @@ public class ExpTest {
    public void groupOrder(){
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").group("first").group("second");
-      p.apply(factory.apply("foo=bar"),b,null);
+      p.apply(factory.apply("foo=bar"),b,null,null);
       Assert.assertTrue("Groupings should be FiFo starting at root", b.getRoot().has("first"));
       Assert.assertTrue("Groupings should be FiFo starting at root", b.getRoot().getJson("first").has("second"));
 
@@ -328,7 +346,7 @@ public class ExpTest {
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)")
          .key("key");
-      p.apply(factory.apply("foo=bar"),b,null);
+      p.apply(factory.apply("foo=bar"),b,null,null);
       Assert.assertTrue("Should be grouped by value of key field (foo)", b.getRoot().has("foo"));
    }
    @Test
@@ -336,7 +354,7 @@ public class ExpTest {
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key:ignore>\\w+)=(?<value>\\w+)")
               .key("key");
-      p.apply(factory.apply("foo=bar"),b,null);
+      p.apply(factory.apply("foo=bar"),b,null,null);
       Assert.assertTrue("Should be grouped by value of key field (foo)", b.getRoot().has("foo"));
       Object foo = b.getRoot().get("foo");
       assertTrue("foo should be json "+foo,foo instanceof Json);
@@ -350,7 +368,7 @@ public class ExpTest {
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key>\\w+)")
               .key("key");
-      p.apply(factory.apply("foo"),b,null);
+      p.apply(factory.apply("foo"),b,null,null);
       Assert.assertTrue("Should be grouped by value of key field (foo)", b.getRoot().has("foo"));
    }
 
@@ -361,8 +379,8 @@ public class ExpTest {
       b.getRoot().set("status",status);
 
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").extend("status");
-      p.apply(factory.apply("foo=bar"),b,null);
-      p.apply(factory.apply("fizz=fuzz"),b,null);
+      p.apply(factory.apply("foo=bar"),b,null,null);
+      p.apply(factory.apply("fizz=fuzz"),b,null,null);
 
       Assert.assertTrue("Status should have value and keyas child objects but is "+b.getRoot(), status.has("value") && status.has("key"));
    }
@@ -373,8 +391,8 @@ public class ExpTest {
       b.getRoot().set("status",status);
 
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").extend("status").group("lock").setMerge(ExpMerge.AsEntry);
-      p.apply(factory.apply("foo=bar"),b,null);
-      p.apply(factory.apply("fizz=fuzz"),b,null);
+      p.apply(factory.apply("foo=bar"),b,null,null);
+      p.apply(factory.apply("fizz=fuzz"),b,null,null);
 
       Assert.assertTrue("Status should have <lock> as child object but is "+b.getRoot(), status.has("lock"));
    }
@@ -418,7 +436,7 @@ public class ExpTest {
          match.set("value",42);
          match.set("key","");
       });
-      p.apply(factory.apply("age=23"),b,null);
+      p.apply(factory.apply("age=23"),b,null,null);
       Assert.assertEquals(42,b.getRoot().getLong("value"));
    }
    @Test
@@ -429,10 +447,10 @@ public class ExpTest {
       p.setMerge("nest", ValueMerge.TreeSibling);
       //b.getRoot().add("Name","root");
 
-      p.apply(factory.apply("a"),b,null);
-      p.apply(factory.apply(" aa"),b,null);
-      p.apply(factory.apply("  aaa"),b,null);
-      p.apply(factory.apply("b"),b,null);
+      p.apply(factory.apply("a"),b,null,null);
+      p.apply(factory.apply(" aa"),b,null,null);
+      p.apply(factory.apply("  aaa"),b,null,null);
+      p.apply(factory.apply("b"),b,null,null);
 
       Assert.assertTrue("tree should use nest as the child key:\n"+b.getRoot().toString(2),b.getRoot().has("nest") && b.getRoot().getJson("nest").isArray());
       Assert.assertTrue("expect only one key on root json:\n"+b.getRoot().toString(2),b.getRoot().size()==1);
@@ -449,13 +467,13 @@ public class ExpTest {
       p.setMerge("nest", ValueMerge.TreeSibling);
       //b.getRoot().add("Name","root");
 
-      p.apply(factory.apply("a"),b,null);
-      p.apply(factory.apply("  aa"),b,null);
-      p.apply(factory.apply("    aaa"),b,null);
-      p.apply(factory.apply("    aab"),b,null);
-      p.apply(factory.apply("      aaba"),b,null);
-      p.apply(factory.apply("    aac"),b,null);
-      p.apply(factory.apply("b"),b,null);
+      p.apply(factory.apply("a"),b,null,null);
+      p.apply(factory.apply("  aa"),b,null,null);
+      p.apply(factory.apply("    aaa"),b,null,null);
+      p.apply(factory.apply("    aab"),b,null,null);
+      p.apply(factory.apply("      aaba"),b,null,null);
+      p.apply(factory.apply("    aac"),b,null,null);
+      p.apply(factory.apply("b"),b,null,null);
 
       Json root = b.getRoot();
       Assert.assertTrue("root has nest:",root.has("nest") && root.get("nest") instanceof Json);
@@ -469,13 +487,13 @@ public class ExpTest {
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("tid","(?<id>\\d+) (?<Name>\\S+)");
       p.setMerge("id",ValueMerge.TargetId);
-      p.apply(factory.apply("1 foo"),b,null);
-      p.apply(factory.apply("1 bar"),b,null);
+      p.apply(factory.apply("1 foo"),b,null,null);
+      p.apply(factory.apply("1 bar"),b,null,null);
 
       Assert.assertTrue("root should have a Name entry but was: "+b.getRoot(),b.getRoot().has("Name"));
       Assert.assertTrue("root should have two Name values but was: "+b.getRoot(),b.getRoot().getJson("Name").size()==2);
-      p.apply(factory.apply("2 biz"),b,null);
-      p.apply(factory.apply("2 fiz"),b,null);
+      p.apply(factory.apply("2 biz"),b,null,null);
+      p.apply(factory.apply("2 fiz"),b,null,null);
       Assert.assertTrue("root should have a Name entry but was: "+b.getRoot(),b.getRoot().has("Name"));
       Assert.assertTrue("root should have two Name values but was: "+b.getRoot(),b.getRoot().getJson("Name").size()==2);
 
@@ -484,7 +502,7 @@ public class ExpTest {
    public void autoNumber(){
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)");
-      p.apply(factory.apply("age=23"),b,null);
+      p.apply(factory.apply("age=23"),b,null,null);
 
       Assert.assertEquals(23,b.getRoot().getLong("value"));
    }
@@ -492,7 +510,7 @@ public class ExpTest {
    public void autoNumber_disabled(){
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value:string>\\w+)");
-      p.apply(factory.apply("age=23"),b,null);
+      p.apply(factory.apply("age=23"),b,null,null);
 
       Assert.assertEquals("23",b.getRoot().get("value"));
    }
@@ -500,25 +518,25 @@ public class ExpTest {
    public void valueKMG(){
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").setType("value", ValueType.KMG);
-      p.apply(factory.apply("age=1G"),b,null);
+      p.apply(factory.apply("age=1G"),b,null,null);
       Assert.assertEquals(Math.pow(1024.0,3),b.getRoot().getLong("value"),0.000);
    }
    @Test
    public void valueCount(){
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").setMerge("value", ValueMerge.Count);
-      p.apply(factory.apply("age=old"),b,null);
+      p.apply(factory.apply("age=old"),b,null,null);
       Assert.assertEquals(1,b.getRoot().getLong("old"));
-      p.apply(factory.apply("age=old"),b,null);
+      p.apply(factory.apply("age=old"),b,null,null);
       Assert.assertEquals(2,b.getRoot().getLong("old"));
    }
    @Test
    public void valueSum(){
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").setMerge("value", ValueMerge.Add);
-      p.apply(factory.apply("age=23"),b,null);
+      p.apply(factory.apply("age=23"),b,null,null);
       Assert.assertEquals(23,b.getRoot().getLong("value"));
-      p.apply(factory.apply("age=23"),b,null);
+      p.apply(factory.apply("age=23"),b,null,null);
       Assert.assertEquals(46,b.getRoot().getLong("value"));
    }
 
@@ -526,7 +544,7 @@ public class ExpTest {
    public void valueKey(){
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").setKeyValue("key", "value");
-      p.apply(factory.apply("age=23"),b,null);
+      p.apply(factory.apply("age=23"),b,null,null);
       Assert.assertTrue("Should turn value of <key> to the key for <value>", b.getRoot().has("age"));
       Assert.assertEquals("expected {\"age\":\"23\"}","23",b.getRoot().getString("age"));
       Json json = p.apply("age=23");
@@ -548,14 +566,14 @@ public class ExpTest {
    public void valueBooleanKey(){
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").setMerge("key", ValueMerge.BooleanKey);
-      p.apply(factory.apply("age=23"),b,null);
+      p.apply(factory.apply("age=23"),b,null,null);
       Assert.assertEquals("value should be a boolean",true,b.getRoot().getBoolean("key"));
    }
    @Test
    public void valueBooleanValue(){
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").setMerge("key", ValueMerge.BooleanValue);
-      p.apply(factory.apply("age=23"),b,null);
+      p.apply(factory.apply("age=23"),b,null,null);
       Assert.assertEquals("value should be a boolean\n"+b.getRoot().toString(2),true,b.getRoot().getBoolean("age"));
    }
    @Test @Ignore
@@ -569,8 +587,8 @@ public class ExpTest {
    public void valueString(){//now have to explicitly set ValueMerge=ADD
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").setType("value", ValueType.String).setMerge("value",ValueMerge.Add);
-      p.apply(factory.apply("age=23"),b,null);
-      p.apply(factory.apply("age=23"),b,null);
+      p.apply(factory.apply("age=23"),b,null,null);
+      p.apply(factory.apply("age=23"),b,null,null);
 
       Assert.assertEquals("<value> should use string concat rather than list append", "2323", b.getRoot().getString("value"));
    }
@@ -578,8 +596,8 @@ public class ExpTest {
    public void valueList(){
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").setMerge("value", ValueMerge.List);
-      p.apply(factory.apply("age=23"),b,null);
-      p.apply(factory.apply("age=23"),b,null);
+      p.apply(factory.apply("age=23"),b,null,null);
+      p.apply(factory.apply("age=23"),b,null,null);
 
       Assert.assertTrue("<key> should be treated as a list by default",b.getRoot().get("key") instanceof Json);
       Assert.assertTrue("<value> should be treated as a list",b.getRoot().get("value") instanceof Json);
@@ -590,7 +608,7 @@ public class ExpTest {
       DropString line = factory.apply("age=23, age=24, age=26");
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").eat(Eat.Match);
-      p.apply(line, b, null);
+      p.apply(line, b, null,null);
       Assert.assertEquals("should remove the matched string", ", age=24, age=26", line.toString());
    }
 
@@ -599,7 +617,7 @@ public class ExpTest {
       DropString line = factory.apply("foo=1 bar=1 foo=2");
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("bar","bar=(?<bar>\\S+)").eat(Eat.ToMatch);
-      p.apply(line,b,null);
+      p.apply(line,b,null,null);
       Assert.assertEquals("should remove first foo"," foo=2",line.toString());
    }
    @Test
@@ -607,7 +625,7 @@ public class ExpTest {
       DropString line = factory.apply("age=23, age=24, age=26");
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").eat(8);
-      p.apply(line,b,null);
+      p.apply(line,b,null,null);
       Assert.assertEquals("should remove the matched string","age=24, age=26",line.toString());
    }
    @Test
@@ -615,7 +633,7 @@ public class ExpTest {
       DropString line = factory.apply("age=23, age=24, age=26");
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv","(?<key>\\w+)=(?<value>\\w+)").eat(Eat.Line);
-      p.apply(line,b,null);
+      p.apply(line,b,null,null);
       Assert.assertEquals("should remove the matched string","",line.toString());
    }
    @Test
@@ -624,14 +642,14 @@ public class ExpTest {
       Exp p = new Exp("kv", "(?<key>\\w+)=(?<value>\\w+)")
          .add( new Exp("-","(?<sk>\\w+)\\-(?<sv>\\w+)").setRange(MatchRange.EntireLine) );
 
-      p.apply(factory.apply("a-b key=value foo-bar"),b,null);
+      p.apply(factory.apply("a-b key=value foo-bar"),b,null,null);
       Assert.assertEquals("should match first <sk>-<sv> not the last","a",b.getRoot().getString("sk"));
    }
    @Test
    public void repeat_orig(){
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("num","(?<num>\\d+)").addRule(ExpRule.Repeat);
-      p.apply(factory.apply("1 2 3 4"),b,null);
+      p.apply(factory.apply("1 2 3 4"),b,null,null);
       Assert.assertEquals("num should be an array with 4 elements",4,b.getRoot().getJson("num").size());
    }
 
@@ -639,9 +657,9 @@ public class ExpTest {
    public void pushTarget(){
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("num","(?<num>\\d+)").group("pushed").addRule(ExpRule.PushTarget).setMerge(ExpMerge.AsEntry);
-      p.apply(factory.apply(" 1 "), b, null);
-      p.apply(factory.apply(" 2 "), b, null);
-      p.apply(factory.apply(" 3 "), b, null);
+      p.apply(factory.apply(" 1 "), b, null,null);
+      p.apply(factory.apply(" 2 "), b, null,null);
+      p.apply(factory.apply(" 3 "), b, null,null);
 
       Assert.assertTrue("context should not equal root",b.getRoot()!=b.getTarget());
    }
@@ -653,7 +671,7 @@ public class ExpTest {
       lost.set("lost","lost");
       b.pushTarget(lost);
       Exp p = new Exp("num","(?<num>\\d+)").group("pushed").addRule(ExpRule.PostPopTarget);
-      p.apply(factory.apply(" 1 "),b,null);
+      p.apply(factory.apply(" 1 "),b,null,null);
       Assert.assertTrue("context should not equal starting context", lost != b.getTarget());
       Assert.assertTrue("fields should be applied to context before pop",lost.has("pushed"));
    }
@@ -664,7 +682,7 @@ public class ExpTest {
       lost.set("lost","lost");
       b.pushTarget(lost);
       Exp p = new Exp("num","(?<num>\\d+)").group("pushed").addRule(ExpRule.PrePopTarget);
-      p.apply(factory.apply(" 1 "), b, null);
+      p.apply(factory.apply(" 1 "), b, null,null);
       Assert.assertTrue("context should not equal starting context",lost!=b.getTarget());
       Assert.assertTrue("fields should be applied to context before pop", b.getTarget().has("pushed"));
    }
@@ -678,7 +696,7 @@ public class ExpTest {
       b.pushTarget(first);
       b.pushTarget(second);
       Exp p = new Exp("num","(?<num>\\d+)").group("pushed").addRule(ExpRule.PostClearTarget);
-      p.apply(factory.apply(" 1 "),b,null);
+      p.apply(factory.apply(" 1 "),b,null,null);
       Assert.assertTrue("context should not equal starting context",b.getRoot()==b.getTarget());
       Assert.assertTrue("fields should be applied to context before pop", second.has("pushed"));
    }
@@ -686,8 +704,8 @@ public class ExpTest {
    public void newStart(){
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("num","(?<num>\\d+)").addRule(ExpRule.PreClose);
-      p.apply(factory.apply(" 1 "),b,null);
-      p.apply(factory.apply(" 2 "), b, null);
+      p.apply(factory.apply(" 1 "),b,null,null);
+      p.apply(factory.apply(" 2 "), b, null,null);
       Assert.assertEquals("matches should not be combined", 2, b.getRoot().getLong("num"));
       Assert.assertTrue("previous match should be moved to a closed root",b.wasClosed());
    }
@@ -695,8 +713,8 @@ public class ExpTest {
    public void extend_entry(){
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("num","(?<num>\\d+)").extend("nums").setMerge(ExpMerge.AsEntry);
-      p.apply(factory.apply(" 1 "),b,null);
-      p.apply(factory.apply(" 2 "), b, null);
+      p.apply(factory.apply(" 1 "),b,null,null);
+      p.apply(factory.apply(" 2 "), b, null,null);
       Assert.assertEquals("nums should have 2 entries",2,b.getRoot().getJson("nums").size());
    }
 
@@ -704,8 +722,8 @@ public class ExpTest {
    public void group_entry(){
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("num","(?<num>\\d+)").group("nums").setMerge(ExpMerge.AsEntry);
-      p.apply(factory.apply(" 1 "),b,null);
-      p.apply(factory.apply(" 2 "), b, null);
+      p.apply(factory.apply(" 1 "),b,null,null);
+      p.apply(factory.apply(" 2 "), b, null,null);
 
       Assert.assertEquals("nums should have 2 entries",2,b.getRoot().getJson("nums").size());
 
@@ -714,8 +732,8 @@ public class ExpTest {
    public void group_extend(){
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv", "(?<key>\\w+)=(?<value>\\w+)").setKeyValue("key","value").group("kv").setMerge(ExpMerge.Extend);
-      p.apply(factory.apply(" age=23 "),b,null);
-      p.apply(factory.apply(" size=small "),b,null);
+      p.apply(factory.apply(" age=23 "),b,null,null);
+      p.apply(factory.apply(" size=small "),b,null,null);
 
       Assert.assertEquals("<kv> should be and array of length 1",1,b.getRoot().getJson("kv").size());
 
@@ -725,8 +743,8 @@ public class ExpTest {
    public void collection(){
       JsonBuilder b = new JsonBuilder();
       Exp p = new Exp("kv", "(?<key>\\w+)=(?<value>\\w+)").setKeyValue("key","value").group("kv").setMerge(ExpMerge.ByKey);
-      p.apply(factory.apply(" age=23 "),b,null);
-      p.apply(factory.apply(" size=small "),b,null);
+      p.apply(factory.apply(" age=23 "),b,null,null);
+      p.apply(factory.apply(" size=small "),b,null,null);
 
       Assert.assertTrue("<kv> should have kv.size\n"+b.getRoot().toString(2),b.getRoot().getJson("kv").has("size"));
       Assert.assertTrue("<kv> should have kv.age\n"+b.getRoot().toString(2),b.getRoot().getJson("kv").has("age"));
@@ -744,7 +762,7 @@ public class ExpTest {
          )
          .addRule(ExpRule.RepeatChildren);
 
-      p.apply(factory.apply("[ aa, \"bb,bb]bb\" ,cc]"),b,null);
+      p.apply(factory.apply("[ aa, \"bb,bb]bb\" ,cc]"),b,null,null);
 
       Json json = b.getRoot();
 

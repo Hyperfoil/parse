@@ -793,18 +793,21 @@ public class Exp {
       }
       return returnTarget;
    }
-   public Json apply(String line){
+   public Json apply(String line) {
+      return apply(line,new Json());
+   }
+   public Json apply(String line,Json state){
       if(line == null){
          throw new IllegalArgumentException("line cannot be null");
       }
       JsonBuilder builder = new JsonBuilder();
-      apply(new CheatChars(line),builder,null);
+      apply(new CheatChars(line),builder,null,state);
       return builder.getRoot();
    }
-   public boolean apply(DropString line, JsonBuilder builder, Parser parser){
-      return apply(line,builder,parser,line.reference(0));
+   public boolean apply(DropString line, JsonBuilder builder, Parser parser, Json state){
+      return apply(line,builder,parser,state,line.reference(0));
    }
-   protected boolean apply(DropString line, JsonBuilder builder, Parser parser, DropString.Ref startIndex){
+   protected boolean apply(DropString line, JsonBuilder builder, Parser parser, Json state, DropString.Ref startIndex){
       if(isDebug() && startIndex.get() < line.length()){
          logger.debugf("%s apply to %s",getName(),line.subSequence(startIndex.get(),line.length()));
       }
@@ -890,7 +893,7 @@ public class Exp {
 
                }
 
-               populate(builder);
+               populate(builder,state);
                if (currentTarget != builder.getTarget()) {//populating changed the target
                   currentTarget = builder.getTarget();
                   populateChangedTarget = true;
@@ -948,11 +951,11 @@ public class Exp {
                      childMatched = false;
                      for (Exp child : children) {
                         if (MatchRange.BeforeParent.equals(child.matchRange)) {
-                           boolean matched = child.apply(beforeMatch, builder, parser, beforeMatchStart);
+                           boolean matched = child.apply(beforeMatch, builder, parser, state, beforeMatchStart);
                            childMatched = matched || childMatched;
                         } else {
                            //default is to start children from end of current match
-                           boolean matched = child.apply(line, builder, parser, beforeMatchEnd);//startIndex?
+                           boolean matched = child.apply(line, builder, parser, state, beforeMatchEnd);//startIndex?
                            if(isDebug()){
                               logger.debugf("%s applied child %s matched=%s",getName(),child.getName(),matched);
                            }
@@ -998,7 +1001,7 @@ public class Exp {
 
       return rtrn;
    }
-   public void populate(JsonBuilder builder){
+   private void populate(JsonBuilder builder,Json state){
       //first do all targeting changes
       for(ValueInfo valueInfo : fields.values()){
 
@@ -1006,9 +1009,15 @@ public class Exp {
             continue;
          }
          if(valueInfo.getMerge().isTargeting()){
-            String key = valueInfo.getName();
-            Object value = valueInfo.type.apply(matcher.group(key));
-            valueInfo.getMerge().merge(key,value,valueInfo.getTarget(),builder,null);
+             String key = valueInfo.getName();
+             String populatedKey = key;
+             try {
+                 populatedKey = StringUtil.populatePattern(valueInfo.getName(), state == null ? null : Json.toObjectMap(state));
+             } catch (PopulatePatternException e) {
+                 logger.error("failed to populate pattern "+key+". Left with "+e.getResult());
+             }
+             Object value = valueInfo.type.apply(matcher.group(key));
+            valueInfo.getMerge().merge(populatedKey,value,valueInfo.getTarget(),builder,null);
          }
       }
       //now populate values from non-targeting fields
@@ -1018,13 +1027,19 @@ public class Exp {
          }
          if(!valueInfo.getMerge().isTargeting()){
             String key = valueInfo.getName();
+            String populatedKey = key;
+            try {
+               populatedKey = StringUtil.populatePattern(valueInfo.getName(), state == null ? null : Json.toObjectMap(state));
+            } catch (PopulatePatternException e) {
+               logger.error("failed to populate pattern "+key+". Left with "+e.getResult());
+            }
             Object target = valueInfo.getTarget();
             if(target != null && fields.containsKey(target)){
                target = fields.get(target).type.apply(matcher.group(target.toString()));
             }
             Object value = valueInfo.type.apply(matcher.group(key));
             if (value!=null) {
-               valueInfo.getMerge().merge(key, value, valueInfo.getTarget(), builder, target);
+               valueInfo.getMerge().merge(populatedKey, value, valueInfo.getTarget(), builder, target);
             }
          }
       }
