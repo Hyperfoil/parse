@@ -113,19 +113,6 @@ public class Filter {
         }
         return rtrn;
     }
-    public static Json getSchemaDefinition(){
-        return Json.fromJs(
-           "{" +
-           "  type: 'object'," +
-           "  properties: {" +
-           "    path: {type: 'string'}," +
-           "    nest: {type: 'string'}," +
-           "    regex: {type: 'string'}," +
-           "    result: {type: 'string'}," +
-           "  }," +
-           "  required: ['regex']," +
-           "}");
-    }
 
     private static Configuration yaup = Configuration.defaultConfiguration().jsonProvider(new YaupJsonProvider());
 

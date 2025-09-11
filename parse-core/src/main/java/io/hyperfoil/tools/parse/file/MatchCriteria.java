@@ -3,7 +3,9 @@ package io.hyperfoil.tools.parse.file;
 import io.hyperfoil.tools.yaup.StringUtil;
 import io.hyperfoil.tools.yaup.file.FileUtility;
 import io.hyperfoil.tools.yaup.json.Json;
+import org.jboss.logging.Logger;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -12,6 +14,8 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 public class MatchCriteria {
+
+    final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     private String pathPattern ="";
     private int headerLines = 0;
@@ -89,6 +93,13 @@ public class MatchCriteria {
                 }
             }
         }
+        if(rtrn && logger.isDebugEnabled()){
+            if(toMerge.isEmpty()) {
+                logger.debug("matched " + input);
+            }else{
+                logger.debugf("matched " + input+" and captured "+toMerge);
+            }
+        }
         if(rtrn && usesHeader()){//if a pathPattern matches or there were none
             String headerLines = FileUtility.readHead(input,getHeaderLines());
             if(hasFindPatterns()) {
@@ -112,6 +123,9 @@ public class MatchCriteria {
                     }
                 }
             }
+            if(!rtrn && logger.isDebugEnabled()){
+                logger.debug("did not match a header pattern");
+            }
             if(rtrn && hasNotFindPatterns()){
                 for(Iterator<String> iter = getNotFindPatterns(); iter.hasNext();){
                     String notFindPattern = iter.next();
@@ -124,6 +138,9 @@ public class MatchCriteria {
                         //don't change rtrn because an exception means it didn't match
                     }
                 }
+            }
+            if(!rtrn && logger.isDebugEnabled()){
+                logger.debug("matched a negative header pattern");
             }
         }
         return new MatchResult(rtrn,toMerge);

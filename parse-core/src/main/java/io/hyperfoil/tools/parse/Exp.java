@@ -207,74 +207,6 @@ public class Exp {
       return rtrn;
    };
 
-   public static Json getSchema(){
-      Json rtrn = new Json();
-      rtrn.set("$schema","http://json-schema.org/draft-07/schema");
-      rtrn.set("definitions",new Json());
-      rtrn.getJson("definitions").set("exp",getSchemaDefinition("exp"));
-      rtrn.set("$ref","#/definitions/exp");
-      return rtrn;
-   }
-   public static Json getSchemaDefinition(String name){
-      return Json.fromJs("" +
-         "{" +
-         "  oneOf: [" +
-         "    {type: 'string'}," +
-         "    {" +
-         "      type: 'object'," +
-         "      properties: {" +
-         "        name: { type: 'string' }," +
-         "        pattern: { type: 'string' }," +
-         "        eat: { oneOf: [ { type: 'number' }, { enum: ['None','Match','ToMatch','Line'] } ] }," +
-         "        range: { enum: ['EntireLine','AfterParent','BeforeParent'] }," +
-         "        nest: { type: 'string' }," +
-         "        requires: { oneOf: [ { type: 'string'}, { type: 'array', items: { type: 'string' } } ] }," +
-         "        enables: { oneOf: [ { type: 'string'}, { type: 'array', items: { type: 'string' } } ] }," +
-         "        disables: { oneOf: [ { type: 'string'}, { type: 'array', items: { type: 'string' } } ] }," +
-         "        merge: { enum: ['ByKey','AsEntry','Extend'] }," +
-         "        with: { type: 'object' }," +
-         "        rules: {" +
-         "          type: 'array'," +
-         "          items: {" +
-         "            oneOf: [" +
-         "              { enum: ['Repeat','RepeatChildren','PushTarget','PreClose','PostClose','PrePopTarget','PostPopTarget','PreClearTarget','PostClearTarget','TargetRoot'] }," +
-         "              {" +
-         "                type: 'object'," +
-         "                properties: {" +
-         "                  PushTarget: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }," +
-         "                  PreClearTarget: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }," +
-         "                  PostClearTarget: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }," +
-         "                  PreClose: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }," +
-         "                  PostClose: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }," +
-         "                  TargetRoot: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }" +
-         "                }" +
-         "              }" +
-         "            ]" +
-         "          }" +
-         "        }," +
-         "        fields: { " +
-         "          type: 'object'," +
-         "          additionalProperties: {" +
-         "            type: 'object'," +
-         "            properties: {" +
-         "              type: { enum: ['Auto','String','KMG','Integer','Decimal','Json'] }," +
-         "              merge: { enum: ['Auto','BooleanKey','BooleanValue','TargetId','Count','Add','List','Key','Set','First','Last','TreeSibling','TreeMerging'] }," +
-         "            }," +
-         "            if: { properties: { merge: {enum: ['Key']} } }," +
-         "            then: { required: ['target'] }" +
-         "          }" +
-         "        }," +
-         "        execute: {oneOf: [ {type: 'string'}, {type: 'array',items: { type: 'string'} } ] }," +
-         "        children: { type: 'array', items: {$ref: '#/definitions/"+name+"' } }" +
-         "      }," +
-         "      required: ['pattern']," +
-         "      additionalProperties: false" +
-         "    }" +
-         "  ]" +
-         "}" +
-         "");
-   }
-
    static final String NEST_ARRAY = "_array";
    static final String NEST_VALUE = "_value";
 
@@ -306,6 +238,13 @@ public class Exp {
          this.type = type;
          this.merge = merge;
       }
+
+      /**
+       * A valueInfo isSkip whenever it will not directly add the captured pattern to the result json.
+       * This occurs for targeting values (e.g. key=value)
+       * @return
+       */
+      //I believe any ValueInfo with a target is also skip, might be able to reduce the complexity
       public boolean isSkip(){return skip;}
       public void setSkip(boolean skip){
          this.skip = skip;
@@ -818,7 +757,7 @@ public class Exp {
          if (startIndex.get() > line.length() && this.matchRange.equals(MatchRange.AfterParent)) {
 
             if(isDebug()){
-
+               //TODO how do we want to debug individual expressions?
             }
             return false;
          }
@@ -832,7 +771,10 @@ public class Exp {
 
             if (!satisfyRequired) {
                if(isDebug()){
-                  logger.debugf("%s does not satisfy %s",getName(),requires.stream().filter(required -> !parser.getState(required)).collect(Collectors.toList()));
+
+               }
+               if(logger.isDebugEnabled()) { // wrapped in if due to stream processing
+                  logger.debugf("%s does not satisfy %s", getName(), requires.stream().filter(required -> !parser.getState(required)).collect(Collectors.toList()));
                }
                return false;
             }
@@ -842,6 +784,7 @@ public class Exp {
          int matchStart = this.matchRange.apply(this.matcher, line, startIndex.get());
 
          if (this.matcher.find()) {
+            logger.debugf("%s matched %s from index %i at %i",getName(),line,startIndex.get(),matchStart);
             rtrn = true;
 
             DropString.Ref firstStart = line.reference(matcher.start());
@@ -857,9 +800,10 @@ public class Exp {
             this.rules.forEach((rule, roleObjects) -> {
                boolean changed = rule.prePopulate(builder, roleObjects);
                if(changed){
-                  if(isDebug()){
-                     logger.debugf("%s pre-populated target json due to %s",getName(),rule);
+                  if(isDebug()) {
+                     //TODO how do we want to debug individual expressions?
                   }
+                  logger.debugf("%s pre-populated target json due to %s",getName(),rule);
                }
             });
 
@@ -868,7 +812,10 @@ public class Exp {
 
             do {//repeat this
 
-               if(isDebug()){
+               if(isDebug()) {
+                  //TODO how do we want to debug individual expressions?
+               }
+               if(logger.isDebugEnabled()){
                   logger.debugf("%s matches %s of %s",
                      getName(),
                      line.subSequence(matcher.start(),matcher.end()),
@@ -887,9 +834,10 @@ public class Exp {
                   builder.pushTarget(currentTarget, getName() + GROUPED_NAME);
                   needPop = true;
 
-                  if(isDebug()){
-                     logger.debugf("%s created a nested target json",getName());
+                  if(isDebug()) {
+                     //TODO how do we want to debug individual expressions?
                   }
+                  logger.debugf("%s created a nested target json",getName());
 
                }
 
@@ -897,14 +845,15 @@ public class Exp {
                if (currentTarget != builder.getTarget()) {//populating changed the target
                   currentTarget = builder.getTarget();
                   populateChangedTarget = true;
-                  if(isDebug()){
-                     logger.debugf("%s changed target json when populated pattern values",getName());
-
+                  if(isDebug()) {
+                     //TODO how do we want to debug individual expressions?
                   }
+                  logger.debugf("%s changed target json when populated pattern values",getName());
                }
-               if(isDebug()){
-                  logger.debugf("%s post populate json%n%s",getName(),builder.getRoot().toString(2));
+               if(isDebug()) {
+                  //TODO how do we want to debug individual expressions?
                }
+               logger.debugf("%s post populate json%n%s",getName(),builder.getRoot().toString(2));
 
                DropString beforeMatch = line;
                DropString.Ref beforeMatchStart = matcherStart;
@@ -920,8 +869,11 @@ public class Exp {
                   beforeMatchEnd = beforeMatch.reference(beforeMatchEnd.get());
                }
                boolean preEatChanged = Eat.preEat(this.eat, line, matcher.start(), matcher.end());
-               if(preEatChanged && isDebug()){
-                  logger.debugf("%s changed line before children match",getName());
+               if(preEatChanged) {
+                  if(isDebug()){
+                     //TODO how to debug a specific exp
+                  }
+                  logger.debugf("%s changed line before children match", getName());
                }
 
                Json ruleTarget = currentTarget;//ugh, lambdas
@@ -933,15 +885,17 @@ public class Exp {
                }
                if (!disables.isEmpty() && parser != null) {
                   disables.forEach(v -> parser.setState(v, false));
-                  if(isDebug()){
-                     logger.debugf("%s disabled %s",getName(),disables);
+                  if(isDebug()) {
+                     //TODO how to debug a specific exp
                   }
+                  logger.debugf("%s disabled %s",getName(),disables);
                }
                if (!enables.isEmpty() && parser != null) {
                   enables.forEach(v -> parser.setState(v, true));
-                  if(isDebug()){
-                     logger.debugf("%s enabled %s",getName(),enables);
+                  if(isDebug()) {
+                     //TODO debug a specific expression?
                   }
+                  logger.debugf("%s enabled %s",getName(),enables);
                }
                int lineLength = line.length();
 
@@ -956,9 +910,11 @@ public class Exp {
                         } else {
                            //default is to start children from end of current match
                            boolean matched = child.apply(line, builder, parser, state, beforeMatchEnd);//startIndex?
-                           if(isDebug()){
-                              logger.debugf("%s applied child %s matched=%s",getName(),child.getName(),matched);
+                           if(isDebug()) {
+                              //TODO debug a specific expression?
                            }
+                           logger.debugf("%s applied child %s matched=%s",getName(),child.getName(),matched);
+
                            childMatched = matched || childMatched;
                         }
                      }
@@ -971,9 +927,11 @@ public class Exp {
 
                if (line.length() != lineLength) {//reset matcher if children modified the line
                   matcher.reset(line);
-                  if(isDebug()){
-                     logger.debugf("%s children modified line",getName());
+                  if(isDebug()) {
+                     //TODO how do we want to debug an individual exp
                   }
+                  logger.debugf("%s children modified line",getName());
+
                }
                //default is to loop from end of current match
                //TODO how does this work if the Exp is EntireLine and doesn't eat? Is that supported?
@@ -992,13 +950,15 @@ public class Exp {
             //run the post-children rules
             Json ruleTarget = currentTarget;//ugh, lambdas
             this.rules.forEach((rule, roleObjects) -> {
-               rule.postChildren(builder, ruleTarget, roleObjects);
+               boolean changedTarget = rule.postChildren(builder, ruleTarget, roleObjects);
+               if(changedTarget){
+                  logger.debugf("%s changed target json due to %s",getName(),rule.name());
+               }
             });
          }
       }catch(Exception e){
          throw new RuntimeException((e));
       }
-
       return rtrn;
    }
    private void populate(JsonBuilder builder,Json state){

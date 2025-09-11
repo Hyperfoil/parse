@@ -3,15 +3,17 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.hyperfoil.tools</groupId>
-    <artifactId>hyperfoil-parse</artifactId>
+    <artifactId>parse-parent</artifactId>
+    <name>parse-parent</name>
+
     <packaging>pom</packaging>
     <version>0.3.4-SNAPSHOT</version>
     <modules>
+        <module>parse-core</module>
         <module>parse</module>
-        <module>cli</module>
     </modules>
 
-    <name>hyperfoil-parse</name>
+
     <description>Use regex patterns and rules to build json from text files</description>
     <url>https://github.com/Hyperfoil/parse</url>
     <scm>

@@ -41,7 +41,7 @@ public class FileRule {
                 if(f != null){
                     rtrn.addFilter(f);
                 }else{
-                    //TODO log error creating filter?
+                    logger.error("failed to create filter:\n"+jsonFilter);
                 }
             });
         }
@@ -58,7 +58,7 @@ public class FileRule {
                     rtrn.getCriteria().setHeaderLines(findList.size());
                 }
             }else{
-                //TODO alert error
+                logger.error("findHeader needs to be a string or list\n"+findHeader);
             }
         }
         if(json.has("avoidHeader")){
@@ -71,7 +71,7 @@ public class FileRule {
                     rtrn.getCriteria().addNotFindPattern(avoidIt.toString());
                 });
             }else{
-                //TODO alert error
+                logger.error("avoidHeader needs to be a string or list\n"+avoidheader);
             }
         }
         if (json.has("asContent")) {
@@ -109,7 +109,7 @@ public class FileRule {
                         Exp exp = Exp.fromJson((Json)expData,state);
                         converter.addExp(exp);
                     }else{
-                        //TODO alert error
+                        logger.error("cannot create an expression from input:\n"+expData);
                     }
                 });
             }
@@ -130,7 +130,7 @@ public class FileRule {
                     rtrn.setConverter(new JbossCliConverter().andThen(new JsJsonFunction(asString)));
                 }
             }else {
-                //TODO alert error
+                logger.error("cannot create asJbossCli from input:\n"+asJbossCli);
             }
         }
         if(json.has("asJson")){
@@ -147,6 +147,8 @@ public class FileRule {
                 }else{
                     rtrn.setConverter(new JsonConverter().andThen(new JsJsonFunction(asString)));
                 }
+            }else{
+                logger.error("cannot create asJson from input:\n"+asJson);
             }
         }
         if(json.has("asXml")){
@@ -172,6 +174,8 @@ public class FileRule {
                     }
                 });
                 rtrn.setConverter(converter);
+            }else{
+                logger.error("cannot create asXml from input:\n"+asXml);
             }
         }
         if(json.has("asPath")){
@@ -181,95 +185,7 @@ public class FileRule {
     }
     public static BiFunction<String,Json,Json> asPath(String function){
         return new JsStringFunction(function);
-//        return (path)->{
-//            try(Context context = Context.newBuilder("js").allowAllAccess(true).allowHostAccess(true).build()){
-//                context.enter();
-//                try {
-//                    context.eval("js", "function milliseconds(v){ return Packages.io.hyperfoil.tools.yaup.StringUtil.parseKMG(v)};");
-//                    context.eval("js", "const StringUtil = Packages.io.hyperfoil.tools.yaup.StringUtil;");
-//                    context.eval("js", "const FileUtility = Packages.io.hyperfoil.tools.yaup.file.FileUtility;");
-//                    context.eval("js", "const Exp = Java.type('io.hyperfoil.tools.parse.Exp');");
-//                    context.eval("js", "const ExpMerge = Java.type('io.hyperfoil.tools.parse.ExpMerge');");
-//                    context.eval("js", "const MatchRange = Java.type('io.hyperfoil.tools.parse.MatchRange');");
-//                    context.eval("js", "const Xml = Java.type('io.hyperfoil.tools.yaup.xml.pojo.Xml');");
-//                    context.eval("js", "const Json = Java.type('io.hyperfoil.tools.yaup.json.Json');");
-//                    context.eval("js", "const Eat = Java.type('io.hyperfoil.tools.parse.Eat');");
-//                    context.eval("js", "const ValueType = Java.type('io.hyperfoil.tools.parse.ValueType')");
-//                    context.eval("js", "const ValueMerge = Java.type('io.hyperfoil.tools.parse.ValueMerge');");
-//                    context.eval("js", "const ExpRule = Java.type('io.hyperfoil.tools.parse.ExpRule')");
-//                    //context.eval("js","");
-//
-//                    //context.eval("js","const console = {log: print}");
-//
-//                    Value matcher = context.eval("js", function);
-//                    Value result = matcher.execute(path);
-//                    if (result.isHostObject()) {
-//                        Object hostObj = result.asHostObject();
-//                        if (hostObj instanceof Json) {
-//                            return (Json) hostObj;
-//                        }
-//                    } else if (result.hasMembers()) {
-//                        //TODO convert value to Json
-//                    }
-//                }catch(Exception e){
-//                    throw new RuntimeException("asPath exception for "+path,e);
-//                }finally {
-//                    context.leave();
-//                }
-//            }
-//            //TODO alert that failed to return from converter
-//            return new Json();
-//        };
     }
-    public static Json getSchema(){
-        Json rtrn = new Json();
-        rtrn.set("$schema","http://json-schema.org/draft-07/schema");
-        rtrn.set("definitions",new Json());
-        rtrn.getJson("definitions").set("filter",Filter.getSchemaDefinition());
-        rtrn.getJson("definitions").set("rule",getSchemaDefinition("filter"));
-        rtrn.getJson("definitions").set("exp",Exp.getSchemaDefinition("exp"));
-        rtrn.set("$ref","#/definitions/rule");
-        return rtrn;
-    }
-    public static Json getSchemaDefinition(String filterRef){
-        return Json.fromJs("{" +
-           "type: 'object'," +
-           "properties: {" +
-           "  name: {type: 'string'}," +
-           "  nest: {type: 'string'}," +
-           "  path: {type: 'string'}," +
-           "  headerLines: {type: 'number'}," +
-           "  filter: {type: 'array', items: { $ref: '#/definitions/"+filterRef+"' } }," +
-           "  findHeader: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }," +
-           "  avoidHeader: { oneOf: [ {type: 'string'} , { type: 'array', items: { type: 'string' } } ] }," +
-           "  asText: {oneOf: [" +
-           "    { type: 'string'}," +//supplier name or exp string
-           "    { type: 'array', items: { $ref: '#/definitions/exp' } }," +
-           "  ]}," +
-           "  asJbossCli: {oneOf: [" +
-           "    { type: 'string'}," +//empty string or javascript function (json)=>json
-           "  ]}," +
-           "  asJson: {oneOf: [" +
-           "    { type: 'string'}," +//empty string or javascript function (json)=>json
-           "  ]}," +
-           "  asXml: {oneOf: [" +
-           "    { type: 'string'}," +
-           "    { type: 'array', items: { $ref: '#/definitions/filter'} }," +
-           "  ]}," +
-           "  asPath: {type: ['string','null']}," +
-           "}," +
-           "oneOf: [" +
-           "  { required: ['asContent'] }," +
-           "  { required: ['asJbossCli'] }," +
-           "  { required: ['asJson'] }," +
-           "  { required: ['asText'] }," +
-           "  { required: ['asPath'] }," +
-           "  { required: ['asXml'] }," +
-           "]," +
-           "additionalProperties: false" +
-           "}");
-    }
-
 
     private String name;
 
