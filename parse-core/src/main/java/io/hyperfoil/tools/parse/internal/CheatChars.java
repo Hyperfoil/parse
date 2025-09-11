@@ -40,6 +40,9 @@ public class CheatChars extends DropString implements CharSequence {
     }
     @Override
     public CheatChars subSequence(int start, int end) {
+        if(start > end || start > currentLine.length() || end > currentLine.length()){
+            return new CheatChars("");
+        }
         return new CheatChars(currentLine.subSequence(start,end).toString());
     }
     @Override
