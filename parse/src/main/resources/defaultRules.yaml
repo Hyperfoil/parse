@@ -17,14 +17,14 @@ nest: hyperfoil.stats
 asJson: ''
 ---
 name: printGc
-path: ".*?run/(?<serverName>[^\\./]+)\\.[^/]+/.*?\\.gclog?"
+path: ".*?run/(?<serverName>[^\\./]+)(?:\\.[^/]+)*/.*?\\.gclog(?:\\.\\d+)*?"
 headerLines: 1
 findHeader: "JRE (1."
 nest: "${{serverName}}.gclog"
 asText: PrintGcFactory
 ---
 name: jep271
-path: ".*?run/(?<serverName>[^\\./]+)\\.[^/]+/.*?\\.gclog?"
+path: ".*?run/(?<serverName>[^\\./]+)(?:\\.[^/]+)*/.*?\\.gclog(?:\\.\\d+)*?"
 headerLines: 1
 avoidHeader: "JRE (1."
 nest: "${{serverName}}.gclog"
