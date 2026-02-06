@@ -7,7 +7,7 @@
     <name>parse-parent</name>
 
     <packaging>pom</packaging>
-    <version>0.3.5</version>
+    <version>0.3.6-SNAPSHOT</version>
     <modules>
         <module>parse-core</module>
         <module>parse</module>
@@ -20,7 +20,7 @@
         <connection>scm:git:git://github.com/Hyperfoil/parse.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/Hyperfoil/parse.git</developerConnection>
         <url>https://github.com/Hyperfoil/parse</url>
-        <tag>0.3.5</tag>
+        <tag>parse-0.2.3</tag>
     </scm>
     <licenses>
         <license>
